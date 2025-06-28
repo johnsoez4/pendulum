@@ -1,0 +1,167 @@
+# Mojo Project .gitignore
+
+# Mojo build artifacts
+*.o
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Mojo specific
+*.mojo.o
+*.mojo.so
+*.mojopkg
+.mojo/
+mojo_cache/
+.mojo_cache/
+
+# Compilation and build directories
+target/
+out/
+output/
+bin/
+obj/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# VS Code workspace settings (keep workspace file but ignore settings)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*.swp
+*.swo
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+.cache/
+.tmp/
+temp/
+tmp/
+
+# Test artifacts
+test_results/
+coverage/
+.coverage
+.pytest_cache/
+.tox/
+
+# Documentation build
+docs/_build/
+docs/build/
+site/
+
+# Environment and configuration
+.env
+.env.local
+.env.*.local
+config.local.*
+*.local
+
+# Package managers
+node_modules/
+.npm
+.yarn/
+.pnpm-store/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Profiling and debugging
+*.prof
+*.trace
+core
+core.*
+vgcore.*
+
+# Platform specific
+# Linux
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Project specific (customize as needed)
+# Add any project-specific files or directories to ignore
