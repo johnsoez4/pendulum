@@ -1,0 +1,13 @@
+[workspace]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+name = "pendulum"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+update = "sh update.sh"
+
+[dependencies]
+modular = ">=25.5.0.dev2025062815,<26"
+python = ">=3.10,<3.13"
+max = "*"

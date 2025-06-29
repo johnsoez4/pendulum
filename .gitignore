@@ -165,3 +165,7 @@ Temporary Items
 
 # Project specific (customize as needed)
 # Add any project-specific files or directories to ignore
+
+# pixi environments
+.pixi
+*.egg-info
