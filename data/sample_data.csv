@@ -1,4 +1,4 @@
-la_position,pend_velocity,pend_position,cmd_volts,Elapsed
+la_position,pend_velocity,pend_position,cmd_volts,elapsed
 0,0,-180,-0.086914,40
 0,0,-180,-0.083008,40
 0,0,-180,-0.088867,40
