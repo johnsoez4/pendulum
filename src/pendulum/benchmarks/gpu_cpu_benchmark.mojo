@@ -8,7 +8,7 @@ different components of the pendulum AI control system.
 
 from collections import List
 from math import exp, tanh, sqrt
-from time import now
+from time import perf_counter_ns as now
 
 
 # Define max and min functions
@@ -288,13 +288,13 @@ struct GPUCPUBenchmark:
         print("=" * 70)
 
         # Run all benchmarks
-        var matrix_result = self.benchmark_matrix_operations()
+        var _ = self.benchmark_matrix_operations()
         print()
 
-        var inference_result = self.benchmark_neural_network_inference()
+        var _ = self.benchmark_neural_network_inference()
         print()
 
-        var control_result = self.benchmark_control_optimization()
+        var _ = self.benchmark_control_optimization()
         print()
 
         # Print summary
