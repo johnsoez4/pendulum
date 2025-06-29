@@ -30,7 +30,7 @@ from sys.ffi import external_call
 from memory import UnsafePointer
 from collections import Dict
 from testing import assert_equal, assert_true, assert_false
-from time import sleep, perf_counter_ns as now
+from time import sleep, perf_counter_ns as now  # Note: use perf_counter_ns as now for timing
 
 # Project imports with full paths from root
 from src.module_name import (
@@ -66,6 +66,25 @@ from src.module_name import SomeFunction
 4. **Group related imports** using parentheses for multi-line imports
 5. **Use aliases** for long names or to avoid conflicts
 6. **Sort imports** alphabetically within each group
+
+### ⏱️ **Timing Functions**
+
+**Important**: For timing operations, use the correct import:
+
+```mojo
+# CORRECT: Import perf_counter_ns as now for high-precision timing
+from time import perf_counter_ns as now
+
+# INCORRECT: This import does not exist
+from time import now  # ❌ ERROR: 'now' function doesn't exist in time module
+
+# Usage example:
+start_time = now()
+# ... some operation ...
+end_time = now()
+elapsed_ns = end_time - start_time
+elapsed_ms = Float64(elapsed_ns) / 1_000_000.0
+```
 
 **Related Files**: Any project source files with imports
 
