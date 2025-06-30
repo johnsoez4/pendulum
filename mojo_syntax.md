@@ -15,8 +15,9 @@ This file serves as the centralized guide for Mojo language best practices and s
 8. [Documentation Standards](#documentation-standards)
 9. [Code Formatting](#code-formatting)
 10. [Testing Patterns](#testing-patterns)
-11. [Common Patterns & Idioms](#common-patterns--idioms)
-12. [Compliance Checklist](#compliance-checklist)
+11. [GPU Simulation Labeling](#gpu-simulation-labeling)
+12. [Common Patterns & Idioms](#common-patterns--idioms)
+13. [Compliance Checklist](#compliance-checklist)
 
 ---
 
@@ -634,6 +635,121 @@ fn test_basic_functionality() raises:
 
 ---
 
+## 🎮 GPU Simulation Labeling
+
+### 📋 **GPU Implementation Transparency Requirements**
+
+**CRITICAL**: All GPU-related code in the pendulum project must clearly distinguish between simulated GPU operations (implementation structure/patterns) and actual GPU hardware execution. This ensures transparency and prepares for real MAX Engine GPU implementation.
+
+### ✅ **Required Labeling Prefixes**
+
+All simulated GPU operations, placeholder implementations, and mock benchmark data **MUST** use these prefixes in print statements and output:
+
+```mojo
+# For simulated GPU operations (CPU-based simulation)
+print("SIMULATED GPU: Matrix multiplication completed")
+print("SIMULATED GPU KERNEL: Memory coalescing optimization")
+
+# For placeholder implementations (structure ready for real GPU)
+print("PLACEHOLDER GPU: Tensor allocation pattern")
+print("PLACEHOLDER MAX ENGINE: Device enumeration structure")
+
+# For mock benchmark data (not real GPU performance)
+print("MOCK GPU PERFORMANCE: 4.2x speedup (simulated)")
+print("MOCK BENCHMARK: GPU memory bandwidth 85% (placeholder)")
+```
+
+### 🎯 **Implementation Guidelines**
+
+#### **1. GPU Operation Simulation**
+```mojo
+fn _gpu_matrix_multiply(self, other: GPUMatrix) -> GPUMatrix:
+    """GPU matrix multiplication with simulation labeling."""
+    if self.gpu_allocated and other.gpu_allocated:
+        print("SIMULATED GPU KERNEL: Matrix multiplication with memory coalescing")
+        print("  - PLACEHOLDER: Block size optimization (16x16 thread blocks)")
+        print("  - PLACEHOLDER: Shared memory utilization enabled")
+
+        # CPU-based simulation of GPU computation
+        # ... implementation ...
+
+        print("SIMULATED GPU: Matrix multiplication completed")
+
+    return result
+```
+
+#### **2. Performance Benchmarking**
+```mojo
+fn benchmark_gpu_performance(self) -> BenchmarkResult:
+    """GPU performance benchmarking with clear simulation labels."""
+    print("MOCK GPU BENCHMARK: Starting performance measurement")
+
+    # Simulated timing
+    var gpu_time = self._simulate_gpu_timing()
+
+    print("MOCK GPU PERFORMANCE:", speedup, "x speedup (simulated)")
+    print("MOCK BENCHMARK: Memory bandwidth", bandwidth, "% (placeholder)")
+
+    return result
+```
+
+#### **3. GPU Memory Management**
+```mojo
+fn _allocate_gpu_memory(mut self):
+    """GPU memory allocation with simulation labeling."""
+    print("PLACEHOLDER GPU: Memory allocation pattern")
+    print("SIMULATED: GPU tensor allocation for", self.rows, "x", self.cols, "matrix")
+
+    # Placeholder for actual MAX engine allocation:
+    # self.gpu_tensor = tensor.zeros([self.rows, self.cols], device=gpu_device)
+
+    self.gpu_allocated = True
+```
+
+### 🚫 **What NOT to Label**
+
+Do **NOT** add simulation labels to:
+- **Actual MAX Engine imports** (when implemented): `from max.tensor import Tensor`
+- **Real GPU hardware calls** (when implemented): `gpu_device.synchronize()`
+- **Genuine performance measurements** from real GPU hardware
+- **CPU-only operations** that don't simulate GPU behavior
+
+### 🔄 **Future Real GPU Implementation**
+
+When implementing actual MAX Engine GPU operations:
+
+1. **Remove simulation labels** from real GPU hardware calls
+2. **Keep placeholder comments** showing the transition:
+   ```mojo
+   # OLD: print("SIMULATED GPU: Matrix multiplication")
+   # NEW: Real GPU operation (no simulation label)
+   result_tensor = ops.matmul(gpu_a, gpu_b)
+   ```
+3. **Update documentation** to reflect real vs simulated operations
+4. **Maintain clear distinction** in mixed environments
+
+### 📋 **Labeling Checklist**
+
+- [ ] All GPU operation simulations labeled with `SIMULATED GPU:`
+- [ ] All placeholder implementations labeled with `PLACEHOLDER:`
+- [ ] All mock benchmark data labeled with `MOCK:`
+- [ ] Performance measurements clearly marked as simulated
+- [ ] GPU memory operations labeled appropriately
+- [ ] Documentation updated to reflect simulation status
+- [ ] Comments indicate future real GPU implementation patterns
+
+### 🎯 **Benefits of This Approach**
+
+1. **Transparency**: Clear distinction between simulation and real GPU operations
+2. **Maintainability**: Easy identification of code requiring real GPU implementation
+3. **Testing**: Ability to validate simulation vs real GPU behavior
+4. **Documentation**: Self-documenting code showing implementation status
+5. **Migration**: Smooth transition to real MAX Engine GPU operations
+
+**Related Files**: All GPU-related files in `src/pendulum/utils/`, `src/pendulum/digital_twin/`, `tests/`, `src/pendulum/benchmarks/`
+
+---
+
 ## 🔄 Common Patterns & Idioms
 
 ### ✅ **Preferred Idioms**
@@ -726,6 +842,9 @@ When reviewing existing Mojo files:
 - [ ] **Test functions** use TestLocation for assertion messages
 - [ ] **Test results** are recorded using g_test_results
 - [ ] **Test imports** work via symbolic links
+- [ ] **GPU simulation labels** are applied to all simulated GPU operations
+- [ ] **Mock benchmark data** is clearly labeled with appropriate prefixes
+- [ ] **Placeholder implementations** are marked for future real GPU implementation
 
 ### 📋 **Update Procedures**
 
