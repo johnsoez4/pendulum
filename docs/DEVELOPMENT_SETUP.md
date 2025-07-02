@@ -21,8 +21,8 @@ sudo snap install mojo
 ## MAX Engine Setup
 
 ### Requirements
-- **GPU**: Compatible NVIDIA GPU required for MAX engine
-- **CUDA**: CUDA toolkit installation
+- **GPU**: Compatible GPU required for MAX engine (NVIDIA or AMD)
+- **GPU Drivers**: Appropriate GPU drivers and toolkit installation
 - **Memory**: Sufficient GPU memory for AI/ML operations
 
 ### Installation
@@ -164,7 +164,7 @@ mojo run examples/benchmark.mojo
 
 ### MAX Engine Issues
 - Verify GPU compatibility
-- Check CUDA installation
+- Check GPU driver installation
 - Ensure sufficient GPU memory
 - Review MAX documentation
 
