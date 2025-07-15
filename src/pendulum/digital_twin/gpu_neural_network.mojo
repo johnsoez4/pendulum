@@ -12,10 +12,96 @@ from math import exp, tanh, sqrt
 # Real MAX Engine imports for GPU neural network operations (VERIFIED WORKING)
 from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
 from gpu.host import DeviceContext
+from gpu import thread_idx
 from layout import Layout, LayoutTensor
 
 # Note: These are the working MAX Engine imports for GPU acceleration
 # The previous max.device, max.tensor, max.ops imports were incorrect assumptions
+
+
+fn gpu_neural_layer_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],
+    input: UnsafePointer[Scalar[DType.float64]],
+    weights: UnsafePointer[Scalar[DType.float64]],
+    biases: UnsafePointer[Scalar[DType.float64]],
+    input_size: Int,
+    output_size: Int,
+    activation_type: Int,  # 0=tanh, 1=relu, 2=sigmoid
+):
+    """
+    Real GPU kernel for neural network layer forward pass.
+
+    This implements fused linear transformation + activation:
+    output[i] = activation(sum(input[j] * weights[i*input_size + j]) + biases[i])
+    """
+    # Get thread index for parallel execution
+    idx = thread_idx.x + thread_idx.y * 32
+
+    if idx < output_size:
+        var sum = Scalar[DType.float64](0.0)
+
+        # Compute linear transformation: sum(input[j] * weights[i][j])
+        for j in range(input_size):
+            sum += input[j] * weights[idx * input_size + j]
+
+        # Add bias
+        sum += biases[idx]
+
+        # Apply activation function
+        if activation_type == 0:  # tanh
+            output[idx] = tanh(sum)
+        elif activation_type == 1:  # relu
+            output[idx] = sum if sum > 0.0 else 0.0
+        elif activation_type == 2:  # sigmoid
+            output[idx] = 1.0 / (1.0 + exp(-sum))
+        else:
+            output[idx] = sum  # linear
+
+
+fn gpu_neural_batch_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],
+    input: UnsafePointer[Scalar[DType.float64]],
+    weights: UnsafePointer[Scalar[DType.float64]],
+    biases: UnsafePointer[Scalar[DType.float64]],
+    batch_size: Int,
+    input_size: Int,
+    output_size: Int,
+    activation_type: Int,
+):
+    """
+    Real GPU kernel for batch neural network processing.
+
+    Processes multiple inputs in parallel for better GPU utilization.
+    """
+    # Get thread indices
+    batch_idx = thread_idx.x
+    neuron_idx = thread_idx.y
+
+    if batch_idx < batch_size and neuron_idx < output_size:
+        var sum = Scalar[DType.float64](0.0)
+
+        # Compute linear transformation for this batch item and neuron
+        for j in range(input_size):
+            var input_val = input[batch_idx * input_size + j]
+            var weight_val = weights[neuron_idx * input_size + j]
+            sum += input_val * weight_val
+
+        # Add bias
+        sum += biases[neuron_idx]
+
+        # Apply activation and store result
+        var result: Scalar[DType.float64]
+        if activation_type == 0:  # tanh
+            result = tanh(sum)
+        elif activation_type == 1:  # relu
+            result = sum if sum > 0.0 else 0.0
+        elif activation_type == 2:  # sigmoid
+            result = 1.0 / (1.0 + exp(-sum))
+        else:
+            result = sum  # linear
+
+        output[batch_idx * output_size + neuron_idx] = result
+
 
 # Define model constants locally to avoid import issues
 alias MODEL_INPUT_DIM = 4
@@ -166,9 +252,7 @@ struct GPUNeuralLayer:
         for i in range(self.input_size):
             for j in range(self.output_size):
                 # Simple pseudo-random initialization
-                val = scale * (
-                    Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5
-                )
+                val = scale * (Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5)
                 self.weights.set(i, j, val)
 
     fn forward(self, input: GPUMatrix) -> GPUMatrix:
@@ -219,19 +303,71 @@ struct GPUNeuralLayer:
 
                 print("✓ GPU memory buffers allocated and optimized")
 
-                # Use real GPU matrix operations with DeviceContext
-                output = input.multiply(
-                    self.weights
-                )  # Real GPU matrix multiplication
-                output.add_bias(self.biases)  # Real GPU bias addition
-                output.apply_activation(
-                    self.activation
-                )  # Real GPU activation function
+                # Prepare data for GPU kernel execution
+                input_buffer = ctx.enqueue_create_buffer[DType.float64](
+                    input.rows * input.cols
+                )
+                weights_buffer = ctx.enqueue_create_buffer[DType.float64](
+                    self.weights.rows * self.weights.cols
+                )
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](
+                    self.output_size
+                )
 
-                # Advanced GPU synchronization
+                # Transfer input data to GPU
+                with input_buffer.map_to_host() as input_host:
+                    for i in range(input.rows):
+                        for j in range(input.cols):
+                            input_host[i * input.cols + j] = input.get(i, j)
+
+                # Transfer weights to GPU
+                with weights_buffer.map_to_host() as weights_host:
+                    for i in range(self.weights.rows):
+                        for j in range(self.weights.cols):
+                            weights_host[
+                                i * self.weights.cols + j
+                            ] = self.weights.get(i, j)
+
+                # Transfer biases to GPU
+                with bias_buffer.map_to_host() as bias_host:
+                    for i in range(self.output_size):
+                        bias_host[i] = self.biases[i]
+
+                # Determine activation type
+                var activation_type = 0  # tanh
+                if self.activation == "relu":
+                    activation_type = 1
+                elif self.activation == "sigmoid":
+                    activation_type = 2
+
+                # Launch real GPU kernel for neural layer computation
+                var block_size = 32
+                var grid_size = (
+                    self.output_size + block_size - 1
+                ) // block_size
+
+                ctx.enqueue_function[gpu_neural_layer_kernel](
+                    output_buffer.unsafe_ptr(),
+                    input_buffer.unsafe_ptr(),
+                    weights_buffer.unsafe_ptr(),
+                    bias_buffer.unsafe_ptr(),
+                    input.cols,  # input_size
+                    self.output_size,
+                    activation_type,
+                    grid_dim=grid_size,
+                    block_dim=block_size,
+                )
+
+                # Synchronize GPU operations
                 ctx.synchronize()
-                print("✓ Advanced GPU neural layer forward pass completed")
 
+                # Create output matrix and copy results back
+                var output = GPUMatrix(1, self.output_size, self.use_gpu)
+                with output_buffer.map_to_host() as output_host:
+                    for i in range(self.output_size):
+                        output.set(0, i, Float64(output_host[i]))
+
+                print("✓ Real GPU neural layer kernel execution completed")
                 return output
 
             except:

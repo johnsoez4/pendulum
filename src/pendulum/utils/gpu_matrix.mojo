@@ -13,6 +13,7 @@ from math import exp, tanh
 # Real MAX Engine imports for GPU operations (discovered from working examples)
 from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
 from gpu.host import DeviceContext
+from gpu import thread_idx
 from layout import Layout, LayoutTensor
 
 # Note: These are the working MAX Engine imports for GPU acceleration
@@ -35,6 +36,54 @@ alias ComputeMode_AUTO = 0
 alias ComputeMode_GPU_ONLY = 1
 alias ComputeMode_CPU_ONLY = 2
 alias ComputeMode_HYBRID = 3
+
+
+fn gpu_matrix_multiply_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],
+    a: UnsafePointer[Scalar[DType.float64]],
+    b: UnsafePointer[Scalar[DType.float64]],
+    rows_a: Int,
+    cols_a: Int,
+    cols_b: Int,
+):
+    """
+    Real GPU kernel for matrix multiplication using thread_idx patterns.
+
+    This implements parallel matrix multiplication where each thread computes
+    one element of the result matrix.
+    """
+    # Get thread indices for parallel execution
+    row = thread_idx.y
+    col = thread_idx.x
+
+    # Bounds checking
+    if row < rows_a and col < cols_b:
+        var sum = Scalar[DType.float64](0.0)
+
+        # Compute dot product for this element
+        for k in range(cols_a):
+            var a_val = a[row * cols_a + k]
+            var b_val = b[k * cols_b + col]
+            sum += a_val * b_val
+
+        # Store result
+        output[row * cols_b + col] = sum
+
+
+fn gpu_element_wise_add_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],
+    a: UnsafePointer[Scalar[DType.float64]],
+    b: UnsafePointer[Scalar[DType.float64]],
+    size: Int,
+):
+    """
+    Real GPU kernel for element-wise addition.
+    """
+    # Get thread index for parallel execution
+    idx = thread_idx.x + thread_idx.y * 32  # Assuming 32 threads per block
+
+    if idx < size:
+        output[idx] = a[idx] + b[idx]
 
 
 struct RealGPUMemoryManager:
@@ -489,9 +538,9 @@ struct AsyncGPUTransferManager:
 
         try:
             # Real asynchronous CPU to GPU transfer
-            buffer = self.device_context.enqueue_create_buffer[
-                DType.float64
-            ](data_size)
+            buffer = self.device_context.enqueue_create_buffer[DType.float64](
+                data_size
+            )
 
             # Fill buffer asynchronously (simulating data transfer)
             for i in range(min(data_size, 1000)):  # Limit for performance
@@ -534,9 +583,9 @@ struct AsyncGPUTransferManager:
 
         try:
             # Real asynchronous GPU to CPU transfer
-            buffer = self.device_context.enqueue_create_buffer[
-                DType.float64
-            ](data_size)
+            buffer = self.device_context.enqueue_create_buffer[DType.float64](
+                data_size
+            )
 
             # Simulate GPU data preparation
             for i in range(min(data_size, 1000)):
@@ -605,9 +654,7 @@ struct AsyncGPUTransferManager:
                     self.transfer_queue_size += 1
 
             # Update efficiency metrics
-            total_mb = Float64(self.total_bytes_transferred) / (
-                1024.0 * 1024.0
-            )
+            total_mb = Float64(self.total_bytes_transferred) / (1024.0 * 1024.0)
             self.transfer_efficiency = min(100.0, total_mb * 5.0)
 
             print("✓ Batch async transfer scheduling completed")
@@ -636,9 +683,7 @@ struct AsyncGPUTransferManager:
             self.transfer_queue_size = 0
 
             # Calculate final efficiency metrics
-            total_mb = Float64(self.total_bytes_transferred) / (
-                1024.0 * 1024.0
-            )
+            total_mb = Float64(self.total_bytes_transferred) / (1024.0 * 1024.0)
             self.transfer_efficiency = min(100.0, total_mb * 8.0)
             self.bandwidth_utilization = min(100.0, total_mb * 12.0)
 
@@ -738,11 +783,9 @@ struct AsyncGPUTransferManager:
 
                 if self.active_transfers < self.max_concurrent_transfers:
                     # Create buffer for neural network layer
-                    layer_buffer = (
-                        self.device_context.enqueue_create_buffer[
-                            DType.float64
-                        ](layer_size)
-                    )
+                    layer_buffer = self.device_context.enqueue_create_buffer[
+                        DType.float64
+                    ](layer_size)
 
                     # Initialize with neural network weights/data
                     for j in range(min(layer_size, 1000)):
@@ -1097,111 +1140,6 @@ struct AdvancedGPUMemoryOptimizer:
         print("  - Enhanced memory alignment:", self.memory_alignment, "bytes")
         print("  - Optimized cache line size:", self.cache_line_size, "bytes")
         print("  - Advanced optimization features: ACTIVE")
-
-
-struct GPUTransferManager:
-    """
-    GPU memory transfer manager for optimized data movement.
-
-    This implements comprehensive memory transfer optimization:
-    1. Asynchronous transfer scheduling
-    2. Pinned memory management
-    3. Transfer batching coordination
-    4. Data locality optimization
-    """
-
-    var active_transfers: Int
-    var pinned_memory_pool: Int
-    var transfer_efficiency: Float64
-    var bandwidth_utilization: Float64
-
-    fn __init__(out self):
-        """Initialize GPU transfer manager."""
-        self.active_transfers = 0
-        self.pinned_memory_pool = 512  # MB of pinned memory
-        self.transfer_efficiency = 0.0
-        self.bandwidth_utilization = 0.0
-
-        # TRANSFER MANAGER IMPLEMENTATION PATTERN:
-        # In real implementation, this would initialize MAX engine transfer resources:
-        # import max.device as device
-        #
-        # self.gpu_device = device.get_device(0)
-        # self.transfer_streams = []
-        # for i in range(4):  # Multiple streams for overlapping transfers
-        #     stream = device.create_stream()
-        #     self.transfer_streams.append(stream)
-        #
-        # # Allocate pinned memory pool
-        # self.pinned_pool = device.allocate_pinned_memory_pool(self.pinned_memory_pool * 1024 * 1024)
-
-        print("SIMULATED GPU: Transfer Manager initialized")
-        print(
-            "  - PLACEHOLDER: Pinned memory pool -",
-            self.pinned_memory_pool,
-            "MB",
-        )
-        print("  - PLACEHOLDER: Async transfer streams - 4")
-        print("  - PLACEHOLDER: Transfer optimization enabled")
-
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.active_transfers = other.active_transfers
-        self.pinned_memory_pool = other.pinned_memory_pool
-        self.transfer_efficiency = other.transfer_efficiency
-        self.bandwidth_utilization = other.bandwidth_utilization
-
-    fn schedule_async_transfer(mut self, size_mb: Float64) -> Bool:
-        """Schedule an asynchronous memory transfer."""
-        if self.active_transfers < 4:  # Max 4 concurrent transfers
-            self.active_transfers += 1
-
-            # Calculate transfer efficiency
-            transfer_time = (
-                size_mb / 100.0
-            )  # Simulated transfer rate: 100 MB/s
-            computation_time = size_mb * 0.01  # Simulated computation time
-            self.transfer_efficiency = (
-                computation_time / (transfer_time + computation_time) * 100.0
-            )
-
-            print("Async transfer scheduled:")
-            print("  - Transfer size:", size_mb, "MB")
-            print("  - Transfer efficiency:", self.transfer_efficiency, "%")
-            print("  - Active transfers:", self.active_transfers)
-
-            return True
-        else:
-            print("Transfer queue full, using synchronous transfer")
-            return False
-
-    fn complete_transfer(mut self):
-        """Complete an active transfer."""
-        if self.active_transfers > 0:
-            self.active_transfers -= 1
-
-            # Update bandwidth utilization
-            self.bandwidth_utilization = (
-                75.0 + Float64(self.active_transfers) * 5.0
-            )
-
-            print("Transfer completed:")
-            print("  - Active transfers:", self.active_transfers)
-            print("  - Bandwidth utilization:", self.bandwidth_utilization, "%")
-
-    fn optimize_data_locality(self, access_pattern: String) -> Float64:
-        """Optimize data locality based on access patterns."""
-        if access_pattern == "sequential":
-            print(
-                "Data locality optimization: Sequential access (95% efficiency)"
-            )
-            return 95.0
-        elif access_pattern == "random":
-            print("Data locality optimization: Random access (60% efficiency)")
-            return 60.0
-        else:
-            print("Data locality optimization: Mixed access (80% efficiency)")
-            return 80.0
 
 
 struct GPUTensor:
@@ -1572,7 +1510,6 @@ struct GPUMatrix:
     var gpu_allocated: Bool  # Track if GPU memory is allocated
     var memory_pool: AdvancedGPUMemoryPool  # Advanced memory pool for optimized allocation
     var use_memory_pool: Bool  # Whether to use memory pooling
-    var transfer_manager: GPUTransferManager  # Transfer optimization manager
 
     fn __init__(
         out self, rows: Int, cols: Int, compute_mode: Int = ComputeMode_AUTO
@@ -1601,9 +1538,6 @@ struct GPUMatrix:
         )  # 1024 blocks, 512MB
         self.use_memory_pool = True
 
-        # Initialize transfer manager for memory optimization
-        self.transfer_manager = GPUTransferManager()
-
         # Determine GPU usage based on compute mode
         # In real implementation, this would check actual GPU availability
         self.use_gpu = compute_mode != ComputeMode_CPU_ONLY
@@ -1627,7 +1561,6 @@ struct GPUMatrix:
         self.gpu_allocated = other.gpu_allocated
         self.memory_pool = other.memory_pool
         self.use_memory_pool = other.use_memory_pool
-        self.transfer_manager = other.transfer_manager
 
     fn create_gpu_tensor_from_data(self) raises -> GPUTensor:
         """
@@ -1943,31 +1876,46 @@ struct GPUMatrix:
                 b_buffer = ctx.enqueue_create_buffer[DType.float64](
                     other.rows * other.cols
                 )
-                c_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    result_size
+                c_buffer = ctx.enqueue_create_buffer[DType.float64](result_size)
+
+                # Transfer matrix data to GPU using buffer mapping
+                with a_buffer.map_to_host() as a_host:
+                    for i in range(self.rows):
+                        for j in range(self.cols):
+                            a_host[i * self.cols + j] = self.get(i, j)
+
+                with b_buffer.map_to_host() as b_host:
+                    for i in range(other.rows):
+                        for j in range(other.cols):
+                            b_host[i * other.cols + j] = other.get(i, j)
+
+                # Calculate grid and block dimensions for GPU kernel
+                var block_size = 16  # 16x16 thread blocks
+                var grid_x = (other.cols + block_size - 1) // block_size
+                var grid_y = (self.rows + block_size - 1) // block_size
+
+                # Launch real GPU kernel for matrix multiplication
+                ctx.enqueue_function[gpu_matrix_multiply_kernel](
+                    c_buffer.unsafe_ptr(),
+                    a_buffer.unsafe_ptr(),
+                    b_buffer.unsafe_ptr(),
+                    self.rows,
+                    self.cols,
+                    other.cols,
+                    grid_dim=(grid_x, grid_y),
+                    block_dim=(block_size, block_size),
                 )
-
-                # Transfer matrix data to GPU
-                for i in range(self.rows):
-                    for j in range(self.cols):
-                        _ = a_buffer.enqueue_fill(self.get(i, j))
-
-                for i in range(other.rows):
-                    for j in range(other.cols):
-                        _ = b_buffer.enqueue_fill(other.get(i, j))
-
-                # Perform GPU matrix multiplication
-                # Note: This simulates the GPU kernel execution pattern
-                for i in range(self.rows):
-                    for j in range(other.cols):
-                        var sum = 0.0
-                        for k in range(self.cols):
-                            sum += self.get(i, k) * other.get(k, j)
-                        _ = c_buffer.enqueue_fill(sum)
-                        result.set(i, j, sum)
 
                 # Synchronize GPU operations
                 ctx.synchronize()
+
+                # Copy results back to CPU matrix
+                with c_buffer.map_to_host() as c_host:
+                    for i in range(self.rows):
+                        for j in range(other.cols):
+                            result.set(
+                                i, j, Float64(c_host[i * other.cols + j])
+                            )
 
                 print(
                     "✓ GPU matrix multiplication completed using DeviceContext"
@@ -2217,12 +2165,8 @@ struct GPUMatrix:
                 size = self.rows * self.cols
 
                 # Create optimized GPU buffers for activation processing
-                input_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    size
-                )
-                output_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    size
-                )
+                input_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](size)
                 temp_buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 print(
@@ -2300,9 +2244,7 @@ struct GPUMatrix:
                             self.set(i, j, val * (1.0 / (1.0 + exp(-val))))
                         elif activation == "gelu":
                             x_cubed = val * val * val
-                            inner = 0.7978845608 * (
-                                val + 0.044715 * x_cubed
-                            )
+                            inner = 0.7978845608 * (val + 0.044715 * x_cubed)
                             self.set(i, j, 0.5 * val * (1.0 + tanh(inner)))
         else:
             # Fallback to CPU if GPU memory not allocated
@@ -2391,12 +2333,8 @@ struct GPUMatrix:
             try:
                 ctx = DeviceContext()
                 size = self.rows * self.cols
-                input_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    size
-                )
-                output_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    size
-                )
+                input_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 # GPU GELU processing
                 for i in range(self.rows):

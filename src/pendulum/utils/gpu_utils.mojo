@@ -521,24 +521,57 @@ struct GPUManager:
 
     fn _initialize_gpu_device(mut self) -> Bool:
         """
-        Initialize GPU device for computation using MAX Engine.
+        Initialize GPU device for computation using real MAX Engine DeviceContext.
 
         Returns:
             True if GPU initialization successful, False otherwise
         """
-        # Real MAX Engine GPU initialization
-        # This function will initialize actual GPU device for computation
+        print("Real GPU Device: Initialization starting...")
 
-        # When MAX Engine is available, this will use:
-        # from max.device import get_device
-        # device = get_device(0)
-        # device.initialize()
+        try:
+            # Create real DeviceContext for GPU operations
+            device_context = DeviceContext()
+            print("✓ Real DeviceContext created successfully")
 
-        print("  - GPU device initialization starting")
-        print("  - GPU memory allocation ready")
-        print("  - Compute context prepared")
-        print("  - Device ready for MAX Engine operations")
-        return True
+            # Test GPU memory allocation to verify device functionality
+            test_buffer_size = 1024  # 1KB test allocation
+            test_buffer = device_context.enqueue_create_buffer[DType.float64](
+                test_buffer_size
+            )
+            print(
+                "✓ Real GPU memory allocation test successful (",
+                test_buffer_size,
+                "elements)",
+            )
+
+            # Test GPU memory operations
+            _ = test_buffer.enqueue_fill(42.0)
+            device_context.synchronize()
+            print("✓ Real GPU memory operations verified")
+
+            # Update capabilities with real device information
+            self.capabilities.max_engine_available = True
+            self.capabilities.gpu_available = True
+
+            print("✓ Real GPU device initialization completed")
+            print("  - DeviceContext: Active and ready")
+            print("  - GPU memory: Allocated and tested")
+            print("  - Compute context: Prepared for operations")
+            print("  - Device ready for real MAX Engine operations")
+
+            return True
+
+        except:
+            print("⚠️  Real GPU device initialization failed")
+            print("  - DeviceContext creation failed")
+            print("  - Falling back to CPU simulation")
+
+            # Update capabilities to reflect GPU unavailability
+            self.capabilities.max_engine_available = False
+            self.capabilities.gpu_available = False
+            self.fallback_to_cpu = True
+
+            return False
 
     fn is_gpu_available(self) -> Bool:
         """Check if GPU is available and initialized."""
@@ -564,6 +597,87 @@ struct GPUManager:
         else:
             return "UNKNOWN"
 
+    fn allocate_gpu_buffer(
+        self, size: Int, dtype: DType = DType.float64
+    ) -> Bool:
+        """
+        Allocate GPU buffer using real DeviceContext operations.
+
+        Args:
+            size: Number of elements to allocate.
+            dtype: Data type for the buffer.
+
+        Returns:
+            True if allocation successful, False otherwise.
+        """
+        if not self.is_gpu_available():
+            print("GPU not available for buffer allocation")
+            return False
+
+        try:
+            device_context = DeviceContext()
+
+            # Create buffer with appropriate data type
+            if dtype == DType.float64:
+                _ = device_context.enqueue_create_buffer[DType.float64](size)
+                print(
+                    "✓ Real GPU buffer allocated:", size, "elements of float64"
+                )
+            elif dtype == DType.float32:
+                _ = device_context.enqueue_create_buffer[DType.float32](size)
+                print(
+                    "✓ Real GPU buffer allocated:", size, "elements of float32"
+                )
+            else:
+                print("Unsupported data type for GPU buffer allocation")
+                return False
+
+            device_context.synchronize()
+            return True
+
+        except:
+            print("⚠️  GPU buffer allocation failed, size:", size)
+            return False
+
+    fn test_gpu_memory_bandwidth(self) -> Float64:
+        """
+        Test real GPU memory bandwidth using DeviceContext operations.
+
+        Returns:
+            Memory bandwidth in GB/s, or 0.0 if test fails.
+        """
+        if not self.is_gpu_available():
+            return 0.0
+
+        try:
+            from time import perf_counter_ns as now
+
+            device_context = DeviceContext()
+            test_size = 1024 * 1024  # 1M elements
+
+            # Allocate GPU buffer
+            buffer = device_context.enqueue_create_buffer[DType.float64](
+                test_size
+            )
+
+            # Measure memory fill performance
+            start_time = now()
+            _ = buffer.enqueue_fill(3.14159)
+            device_context.synchronize()
+            end_time = now()
+
+            # Calculate bandwidth
+            time_seconds = Float64(end_time - start_time) / 1e9
+            bytes_transferred = Float64(test_size * 8)  # 8 bytes per float64
+            bandwidth_gbps = (bytes_transferred / time_seconds) / 1e9
+
+            print("✓ Real GPU memory bandwidth test:", bandwidth_gbps, "GB/s")
+            return bandwidth_gbps
+
+        except:
+            print("⚠️  GPU memory bandwidth test failed")
+            return 0.0
+
     fn print_capabilities(self):
         """Print detailed GPU capabilities and status."""
         print("=" * 60)
@@ -579,6 +693,12 @@ struct GPUManager:
         print("Compute Mode:", self.get_compute_mode_string())
         print("Device Initialized:", self.device_initialized)
         print("Using CPU Fallback:", self.fallback_to_cpu)
+
+        # Test real GPU memory bandwidth if available
+        if self.is_gpu_available():
+            bandwidth = self.test_gpu_memory_bandwidth()
+            print("Real GPU Memory Bandwidth:", bandwidth, "GB/s")
+
         print("=" * 60)
 
     fn benchmark_device_performance(mut self) -> Float64:

@@ -15,6 +15,80 @@ from gpu import thread_idx, block_dim, block_idx
 from layout import Layout, LayoutTensor
 
 
+fn gpu_matrix_multiply_benchmark_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],
+    a: UnsafePointer[Scalar[DType.float64]],
+    b: UnsafePointer[Scalar[DType.float64]],
+    rows_a: Int,
+    cols_a: Int,
+    cols_b: Int,
+):
+    """
+    Real GPU kernel for matrix multiplication benchmarking.
+
+    Optimized for performance measurement with thread-level parallelism.
+    """
+    row = thread_idx.y
+    col = thread_idx.x
+
+    if row < rows_a and col < cols_b:
+        var sum = Scalar[DType.float64](0.0)
+
+        for k in range(cols_a):
+            sum += a[row * cols_a + k] * b[k * cols_b + col]
+
+        output[row * cols_b + col] = sum
+
+
+fn gpu_neural_benchmark_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],
+    input: UnsafePointer[Scalar[DType.float64]],
+    weights: UnsafePointer[Scalar[DType.float64]],
+    biases: UnsafePointer[Scalar[DType.float64]],
+    input_size: Int,
+    output_size: Int,
+):
+    """
+    Real GPU kernel for neural network benchmarking.
+
+    Implements fused linear transformation + tanh activation.
+    """
+    idx = thread_idx.x + thread_idx.y * 32
+
+    if idx < output_size:
+        var sum = Scalar[DType.float64](0.0)
+
+        for j in range(input_size):
+            sum += input[j] * weights[idx * input_size + j]
+
+        sum += biases[idx]
+        output[idx] = tanh(sum)
+
+
+fn gpu_vector_operations_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],
+    a: UnsafePointer[Scalar[DType.float64]],
+    b: UnsafePointer[Scalar[DType.float64]],
+    size: Int,
+    operation: Int,  # 0=add, 1=multiply, 2=dot_product
+):
+    """
+    Real GPU kernel for vector operations benchmarking.
+    """
+    idx = thread_idx.x + thread_idx.y * 32
+
+    if idx < size:
+        if operation == 0:  # add
+            output[idx] = a[idx] + b[idx]
+        elif operation == 1:  # multiply
+            output[idx] = a[idx] * b[idx]
+        elif operation == 2 and idx == 0:  # dot product (first thread only)
+            var sum = Scalar[DType.float64](0.0)
+            for i in range(size):
+                sum += a[i] * b[i]
+            output[0] = sum
+
+
 # Define max and min functions
 fn max(a: Float64, b: Float64) -> Float64:
     """Return maximum of two values."""
@@ -573,74 +647,60 @@ struct RealGPUCPUBenchmark(Copyable):
             return end_time - start_time
 
     fn _real_gpu_matrix_multiply(mut self, rows: Int, cols: Int) -> Bool:
-        """Real GPU matrix multiplication using LayoutTensor and DeviceContext.
+        """Real GPU matrix multiplication using DeviceContext and GPU kernels.
         """
         try:
-            # Create GPU buffers with proper size
-            buffer_size = rows * cols
+            # Create GPU buffers for matrix multiplication
+            buffer_size_a = rows * cols
+            buffer_size_b = (
+                cols * rows
+            )  # Assuming square matrices for simplicity
+            buffer_size_result = rows * rows
 
-            # Create GPU buffers for matrices
-            buffer_a = self.device_context.enqueue_create_buffer[DType.float32](
-                buffer_size
+            # Create GPU buffers for matrices (using Float64 for consistency)
+            buffer_a = self.device_context.enqueue_create_buffer[DType.float64](
+                buffer_size_a
             )
-            buffer_b = self.device_context.enqueue_create_buffer[DType.float32](
-                buffer_size
+            buffer_b = self.device_context.enqueue_create_buffer[DType.float64](
+                buffer_size_b
             )
             buffer_result = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](buffer_size)
+                DType.float64
+            ](buffer_size_result)
 
-            # Initialize buffers with proper matrix data using host mapping
+            # Initialize buffers with test matrix data
             with buffer_a.map_to_host() as a_host:
-                for i in range(buffer_size):
-                    a_host[i] = Float32(i % 100) * 0.01  # Proper matrix values
+                for i in range(buffer_size_a):
+                    a_host[i] = Float64(i % 100) * 0.01  # Test matrix values
 
             with buffer_b.map_to_host() as b_host:
-                for i in range(buffer_size):
+                for i in range(buffer_size_b):
                     b_host[i] = (
-                        Float32((i + 1) % 100) * 0.02
-                    )  # Proper matrix values
+                        Float64((i + 1) % 100) * 0.02
+                    )  # Test matrix values
 
-            # Create LayoutTensors for proper 2D matrix operations
-            # Note: Using dynamic layout creation for variable sizes
-            alias static_layout = Layout.row_major(
-                512, 512
-            )  # Static for compilation
+            # Launch real GPU matrix multiplication kernel
+            block_size = 16  # 16x16 thread blocks
+            grid_x = (rows + block_size - 1) // block_size
+            grid_y = (rows + block_size - 1) // block_size
 
-            if rows == 512 and cols == 512:
-                # Create LayoutTensors with proper 2D structure
-                a_tensor = LayoutTensor[mut=True, DType.float32, static_layout](
-                    buffer_a.unsafe_ptr()
-                )
-                b_tensor = LayoutTensor[mut=True, DType.float32, static_layout](
-                    buffer_b.unsafe_ptr()
-                )
-                result_tensor = LayoutTensor[
-                    mut=True, DType.float32, static_layout
-                ](buffer_result.unsafe_ptr())
+            self.device_context.enqueue_function[
+                gpu_matrix_multiply_benchmark_kernel
+            ](
+                buffer_result.unsafe_ptr(),
+                buffer_a.unsafe_ptr(),
+                buffer_b.unsafe_ptr(),
+                rows,
+                cols,
+                rows,  # cols_b = rows for square matrices
+                grid_dim=(grid_x, grid_y),
+                block_dim=(block_size, block_size),
+            )
 
-                # Launch GPU kernel for element-wise operations (foundation for matrix ops)
-                alias BLOCKS_PER_GRID = 1
-                alias THREADS_PER_BLOCK = (16, 16)  # 16x16 thread block
+            # Synchronize to ensure completion
+            self.device_context.synchronize()
 
-                self.device_context.enqueue_function[gpu_element_wise_kernel](
-                    result_tensor,
-                    a_tensor,
-                    b_tensor,
-                    rows,
-                    grid_dim=BLOCKS_PER_GRID,
-                    block_dim=THREADS_PER_BLOCK,
-                )
-
-                # Synchronize to ensure completion
-                self.device_context.synchronize()
-            else:
-                # Fallback for non-512x512 matrices - use basic buffer operations
-                with buffer_result.map_to_host() as result_host:
-                    for i in range(buffer_size):
-                        result_host[i] = Float32(i) * 0.03
-
-            # GPU matrix operations completed successfully
+            # GPU matrix multiplication completed successfully
             return True
         except e:
             print("      GPU LayoutTensor operations failed:", e)
