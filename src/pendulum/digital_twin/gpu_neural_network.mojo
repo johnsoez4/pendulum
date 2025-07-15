@@ -20,6 +20,7 @@ from layout import Layout, LayoutTensor
 
 
 fn gpu_neural_layer_kernel(
+    """TODO: Add function description."""
     output: UnsafePointer[Scalar[DType.float64]],
     input: UnsafePointer[Scalar[DType.float64]],
     weights: UnsafePointer[Scalar[DType.float64]],
@@ -59,6 +60,7 @@ fn gpu_neural_layer_kernel(
 
 
 fn gpu_neural_batch_kernel(
+    """TODO: Add function description."""
     output: UnsafePointer[Scalar[DType.float64]],
     input: UnsafePointer[Scalar[DType.float64]],
     weights: UnsafePointer[Scalar[DType.float64]],
@@ -224,6 +226,7 @@ struct GPUNeuralLayer:
     var use_gpu: Bool
 
     fn __init__(
+        """TODO: Add function description."""
         out self,
         input_size: Int,
         output_size: Int,
@@ -666,6 +669,7 @@ struct GPUPendulumNeuralNetwork:
         return self._apply_physics_constraints(input, final_output)
 
     fn _apply_physics_constraints(
+        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to network predictions."""
@@ -796,6 +800,7 @@ struct GPUPendulumNeuralNetwork:
             return "CPU-only neural network"
 
     fn set_normalization_parameters(
+        """TODO: Add function description."""
         mut self,
         input_means: List[Float64],
         input_stds: List[Float64],
@@ -809,6 +814,7 @@ struct GPUPendulumNeuralNetwork:
         self.output_stds = output_stds
 
     fn forward_batch_optimized(
+        """TODO: Add function description."""
         self, input_batch: List[List[Float64]]
     ) -> List[List[Float64]]:
         """

@@ -16,6 +16,7 @@ from layout import Layout, LayoutTensor
 
 
 fn gpu_matrix_multiply_benchmark_kernel(
+    """TODO: Add function description."""
     output: UnsafePointer[Scalar[DType.float64]],
     a: UnsafePointer[Scalar[DType.float64]],
     b: UnsafePointer[Scalar[DType.float64]],
@@ -41,6 +42,7 @@ fn gpu_matrix_multiply_benchmark_kernel(
 
 
 fn gpu_neural_benchmark_kernel(
+    """TODO: Add function description."""
     output: UnsafePointer[Scalar[DType.float64]],
     input: UnsafePointer[Scalar[DType.float64]],
     weights: UnsafePointer[Scalar[DType.float64]],
@@ -66,6 +68,7 @@ fn gpu_neural_benchmark_kernel(
 
 
 fn gpu_vector_operations_kernel(
+    """TODO: Add function description."""
     output: UnsafePointer[Scalar[DType.float64]],
     a: UnsafePointer[Scalar[DType.float64]],
     b: UnsafePointer[Scalar[DType.float64]],
@@ -108,6 +111,7 @@ fn abs(x: Float64) -> Float64:
 
 # GPU kernel for real element-wise operations (simplified for demonstration)
 fn gpu_element_wise_kernel(
+    """TODO: Add function description."""
     result: LayoutTensor[mut=True, DType.float32, Layout.row_major(512, 512)],
     a: LayoutTensor[mut=True, DType.float32, Layout.row_major(512, 512)],
     b: LayoutTensor[mut=True, DType.float32, Layout.row_major(512, 512)],
@@ -124,6 +128,7 @@ fn gpu_element_wise_kernel(
 
 # GPU kernel with proper tensor indexing and SIMD vector extraction
 fn gpu_neural_network_kernel(
+    """TODO: Add function description."""
     output_buffer: LayoutTensor[
         mut=True, DType.float32, Layout.row_major(1, 3)
     ],
@@ -165,6 +170,7 @@ fn gpu_neural_network_kernel(
 
 # GPU kernel for parallel control optimization (simplified for type compatibility)
 fn gpu_control_optimization_kernel(
+    """TODO: Add function description."""
     control_buffer: LayoutTensor[
         mut=True, DType.float32, Layout.row_major(1, 50)
     ],
@@ -707,6 +713,7 @@ struct RealGPUCPUBenchmark(Copyable):
             return False
 
     fn _create_test_matrix(
+        """TODO: Add function description."""
         self, rows: Int, cols: Int, use_gpu: Bool
     ) -> List[List[Float64]]:
         """Create test matrix for benchmarking."""
@@ -719,6 +726,7 @@ struct RealGPUCPUBenchmark(Copyable):
         return matrix
 
     fn _cpu_matrix_multiply(
+        """TODO: Add function description."""
         self, a: List[List[Float64]], b: List[List[Float64]]
     ) -> List[List[Float64]]:
         """CPU matrix multiplication for benchmarking."""
@@ -738,6 +746,7 @@ struct RealGPUCPUBenchmark(Copyable):
         return result
 
     fn _gpu_matrix_multiply(
+        """TODO: Add function description."""
         self, a: List[List[Float64]], b: List[List[Float64]]
     ) -> List[List[Float64]]:
         """
@@ -792,6 +801,7 @@ struct RealGPUCPUBenchmark(Copyable):
         return output
 
     fn _gpu_neural_network_forward(
+        """TODO: Add function description."""
         mut self, input: List[Float64]
     ) -> List[Float64]:
         """
@@ -855,6 +865,7 @@ struct RealGPUCPUBenchmark(Copyable):
             return self._cpu_neural_network_forward(input)
 
     fn _gpu_neural_network_batch_forward(
+        """TODO: Add function description."""
         mut self, inputs: List[List[Float64]]
     ) -> List[List[Float64]]:
         """

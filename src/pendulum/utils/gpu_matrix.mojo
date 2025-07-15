@@ -39,6 +39,7 @@ alias ComputeMode_HYBRID = 3
 
 
 fn gpu_matrix_multiply_kernel(
+    """TODO: Add function description."""
     output: UnsafePointer[Scalar[DType.float64]],
     a: UnsafePointer[Scalar[DType.float64]],
     b: UnsafePointer[Scalar[DType.float64]],
@@ -71,6 +72,7 @@ fn gpu_matrix_multiply_kernel(
 
 
 fn gpu_element_wise_add_kernel(
+    """TODO: Add function description."""
     output: UnsafePointer[Scalar[DType.float64]],
     a: UnsafePointer[Scalar[DType.float64]],
     b: UnsafePointer[Scalar[DType.float64]],
@@ -524,6 +526,7 @@ struct AsyncGPUTransferManager:
         self.async_operations_enabled = other.async_operations_enabled
 
     fn schedule_async_cpu_to_gpu_transfer(
+        """TODO: Add function description."""
         mut self, data_size: Int
     ) raises -> Bool:
         """Schedule asynchronous CPU to GPU data transfer."""
@@ -569,6 +572,7 @@ struct AsyncGPUTransferManager:
             return False
 
     fn schedule_async_gpu_to_cpu_transfer(
+        """TODO: Add function description."""
         mut self, data_size: Int
     ) raises -> Bool:
         """Schedule asynchronous GPU to CPU data transfer."""
@@ -614,6 +618,7 @@ struct AsyncGPUTransferManager:
             return False
 
     fn schedule_batch_async_transfer(
+        """TODO: Add function description."""
         mut self, batch_sizes: List[Int]
     ) raises -> Int:
         """Schedule batch asynchronous transfers for improved efficiency."""
@@ -760,6 +765,7 @@ struct AsyncGPUTransferManager:
         print("✓ Transfer performance optimization completed")
 
     fn schedule_neural_network_transfer(
+        """TODO: Add function description."""
         mut self, layer_sizes: List[Int]
     ) raises -> Bool:
         """Schedule asynchronous transfers for neural network layers."""
@@ -917,6 +923,7 @@ struct AdvancedGPUMemoryOptimizer:
             return False
 
     fn optimize_cache_access_patterns(
+        """TODO: Add function description."""
         mut self, matrix_rows: Int, matrix_cols: Int
     ) raises -> Bool:
         """Optimize memory access patterns for cache efficiency."""
@@ -975,6 +982,7 @@ struct AdvancedGPUMemoryOptimizer:
             return False
 
     fn optimize_memory_bandwidth(
+        """TODO: Add function description."""
         mut self, transfer_size_mb: Float64
     ) raises -> Bool:
         """Optimize memory bandwidth utilization."""
@@ -1031,6 +1039,7 @@ struct AdvancedGPUMemoryOptimizer:
             return False
 
     fn optimize_neural_network_memory(
+        """TODO: Add function description."""
         mut self, layer_sizes: List[Int]
     ) raises -> Bool:
         """Optimize memory layout for neural network operations."""
@@ -1512,6 +1521,7 @@ struct GPUMatrix:
     var use_memory_pool: Bool  # Whether to use memory pooling
 
     fn __init__(
+        """TODO: Add function description."""
         out self, rows: Int, cols: Int, compute_mode: Int = ComputeMode_AUTO
     ) raises:
         """
@@ -2004,6 +2014,7 @@ struct GPUMatrix:
         return result
 
     fn _gpu_fused_linear_activation(
+        """TODO: Add function description."""
         self, weights: GPUMatrix, bias: List[Float64], activation: String
     ) raises -> GPUMatrix:
         """
@@ -2494,6 +2505,7 @@ struct Matrix:
                 # Linear activation (no change) for output layer
 
     fn to_gpu_matrix(
+        """TODO: Add function description."""
         self, compute_mode: Int = ComputeMode_AUTO
     ) raises -> GPUMatrix:
         """
@@ -2513,6 +2525,7 @@ struct Matrix:
 
 
 fn create_matrix(
+    """TODO: Add function description."""
     rows: Int, cols: Int, use_gpu: Bool = True
 ) raises -> GPUMatrix:
     """

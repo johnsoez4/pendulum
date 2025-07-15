@@ -237,6 +237,7 @@ struct BenchmarkReportGenerator:
         self.report_initialized = other.report_initialized
 
     fn generate_comprehensive_report(
+        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate comprehensive benchmark report."""
@@ -278,6 +279,7 @@ struct BenchmarkReportGenerator:
         return header
 
     fn _generate_executive_summary(
+        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate executive summary."""
@@ -395,6 +397,7 @@ struct BenchmarkReportGenerator:
         return hardware
 
     fn _generate_results_section(
+        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate performance results section."""
@@ -468,6 +471,7 @@ struct BenchmarkReportGenerator:
         return charts
 
     fn _generate_analysis_section(
+        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate analysis and interpretation section."""
@@ -542,6 +546,7 @@ struct BenchmarkReportGenerator:
         return analysis
 
     fn _generate_conclusions_section(
+        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate conclusions and recommendations section."""

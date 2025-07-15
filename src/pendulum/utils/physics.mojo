@@ -53,6 +53,7 @@ struct PendulumState(Copyable, Movable):
 
     @staticmethod
     fn from_data_sample(
+        """TODO: Add function description."""
         la_pos_inches: Float64,
         pend_vel_deg_s: Float64,
         pend_pos_deg: Float64,
@@ -144,6 +145,7 @@ struct PendulumPhysics:
     var gravity: Float64
 
     fn __init__(
+        """TODO: Add function description."""
         out self,
         length: Float64 = PENDULUM_LENGTH,
         pend_mass: Float64 = PENDULUM_MASS,
@@ -158,6 +160,7 @@ struct PendulumPhysics:
         self.gravity = GRAVITY
 
     fn equations_of_motion(
+        """TODO: Add function description."""
         self, state: PendulumState
     ) -> (Float64, Float64, Float64, Float64):
         """
@@ -315,6 +318,7 @@ struct PendulumPhysics:
         return True
 
     fn compute_linearized_model(
+        """TODO: Add function description."""
         self, equilibrium: PendulumState
     ) -> List[List[Float64]]:
         """

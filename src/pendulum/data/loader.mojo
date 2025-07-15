@@ -102,6 +102,7 @@ struct DataSample(Copyable, Movable):
         return True
 
     fn normalize(
+        """TODO: Add function description."""
         self, means: List[Float64], stds: List[Float64]
     ) -> List[Float64]:
         """
@@ -280,6 +281,7 @@ struct PendulumDataLoader(Copyable, Movable):
         return self._statistics
 
     fn create_training_sequences(
+        """TODO: Add function description."""
         self, sequence_length: Int, stride: Int = 1
     ) -> List[List[DataSample]]:
         """
@@ -307,6 +309,7 @@ struct PendulumDataLoader(Copyable, Movable):
         return sequences
 
     fn split_data(
+        """TODO: Add function description."""
         self, train_ratio: Float64 = 0.7, val_ratio: Float64 = 0.15
     ) -> (List[DataSample], List[DataSample], List[DataSample]):
         """

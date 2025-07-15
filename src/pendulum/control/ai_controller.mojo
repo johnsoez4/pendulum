@@ -127,6 +127,7 @@ struct AIController:
             return False
 
     fn compute_control(
+        """TODO: Add function description."""
         mut self, current_state: List[Float64], timestamp: Float64
     ) -> ControlCommand:
         """
@@ -287,6 +288,7 @@ struct AIController:
         return best_voltage
 
     fn _apply_safety_constraints(
+        """TODO: Add function description."""
         self, voltage: Float64, current_state: List[Float64]
     ) -> Float64:
         """Apply safety constraints to control voltage."""
@@ -326,6 +328,7 @@ struct AIController:
         )
 
     fn _update_performance_metrics(
+        """TODO: Add function description."""
         mut self, current_state: List[Float64], command: ControlCommand
     ):
         """Update performance tracking metrics."""

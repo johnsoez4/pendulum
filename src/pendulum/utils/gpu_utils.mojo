@@ -33,6 +33,7 @@ struct GPUDeviceInfo:
     var compute_capability: String
 
     fn __init__(
+        """TODO: Add function description."""
         out self,
         is_valid: Bool,
         name: String,
@@ -598,6 +599,7 @@ struct GPUManager:
             return "UNKNOWN"
 
     fn allocate_gpu_buffer(
+        """TODO: Add function description."""
         self, size: Int, dtype: DType = DType.float64
     ) -> Bool:
         """
