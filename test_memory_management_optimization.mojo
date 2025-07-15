@@ -30,8 +30,8 @@ fn main():
     print("\n1. Testing GPU Hardware for Memory Management...")
     print("-" * 60)
 
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
 
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -50,12 +50,12 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for memory pool management")
 
         # Test memory pool initialization
-        var pool_size = 128
-        var memory_mb = 256
+        pool_size = 128
+        memory_mb = 256
 
         print("Initializing advanced GPU memory pool:")
         print("- Pool size:", pool_size, "blocks")
@@ -64,14 +64,14 @@ fn main():
         # Simulate memory pool operations
         var allocated_blocks = 0
         var available_blocks = pool_size
-        var peak_usage_mb = 0
-        var fragmentation_ratio = 0.0
-        var allocation_efficiency = 1.0
+        peak_usage_mb = 0
+        fragmentation_ratio = 0.0
+        allocation_efficiency = 1.0
 
         # Pre-allocate GPU memory blocks
-        var block_size = 1024 * 1024  # 1MB blocks
+        block_size = 1024 * 1024  # 1MB blocks
         for i in range(min(pool_size, 32)):  # Limit for testing
-            var buffer = ctx.enqueue_create_buffer[DType.float64](block_size)
+            buffer = ctx.enqueue_create_buffer[DType.float64](block_size)
             allocated_blocks += 1
             available_blocks -= 1
 
@@ -88,11 +88,11 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for allocation optimization")
 
         # Test various matrix sizes for memory allocation
-        var test_sizes = List[List[Int]]()
+        test_sizes = List[List[Int]]()
         test_sizes.append(List[Int](64, 64))  # Small matrix
         test_sizes.append(List[Int](128, 128))  # Medium matrix
         test_sizes.append(List[Int](256, 256))  # Large matrix
@@ -101,20 +101,20 @@ fn main():
         print("Testing memory allocation for different matrix sizes:")
 
         for i in range(len(test_sizes)):
-            var rows = test_sizes[i][0]
-            var cols = test_sizes[i][1]
-            var buffer_size = rows * cols
+            rows = test_sizes[i][0]
+            cols = test_sizes[i][1]
+            buffer_size = rows * cols
 
             print("  Test", i + 1, "- Matrix size:", rows, "x", cols)
 
             # Calculate memory usage
-            var memory_mb = (buffer_size * 8) / (
+            memory_mb = (buffer_size * 8) / (
                 1024 * 1024
             )  # 8 bytes per Float64
             print("    - Memory required:", memory_mb, "MB")
 
             # Allocate GPU buffer
-            var buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
+            buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
 
             # Fill buffer with test data
             for j in range(min(buffer_size, 1000)):  # Limit for testing
@@ -134,20 +134,20 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for fragmentation prevention")
 
         # Simulate fragmentation scenario
-        var num_allocations = 20
-        var fragmentation_test_buffers = List[Int]()  # Store buffer sizes
+        num_allocations = 20
+        fragmentation_test_buffers = List[Int]()  # Store buffer sizes
 
         print("Simulating memory fragmentation scenario:")
         print("- Number of allocations:", num_allocations)
 
         # Allocate buffers of varying sizes
         for i in range(num_allocations):
-            var buffer_size = (i + 1) * 1024  # Varying sizes
-            var buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
+            buffer_size = (i + 1) * 1024  # Varying sizes
+            buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
             fragmentation_test_buffers.append(buffer_size)
 
             # Fill with pattern data
@@ -157,7 +157,7 @@ fn main():
         print("✓ Allocated", num_allocations, "buffers of varying sizes")
 
         # Memory defragmentation simulation
-        var defrag_buffer = ctx.enqueue_create_buffer[DType.float64](
+        defrag_buffer = ctx.enqueue_create_buffer[DType.float64](
             1024 * 1024
         )
         print("✓ Memory defragmentation buffer created")
@@ -174,21 +174,21 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for transfer optimization")
 
         # Test asynchronous memory transfers
-        var transfer_sizes = List[Int](1024, 4096, 16384, 65536)
+        transfer_sizes = List[Int](1024, 4096, 16384, 65536)
 
         print("Testing optimized memory transfers:")
 
         for i in range(len(transfer_sizes)):
-            var size = transfer_sizes[i]
+            size = transfer_sizes[i]
             print("  Transfer test", i + 1, "- Size:", size, "elements")
 
             # Create source and destination buffers
-            var src_buffer = ctx.enqueue_create_buffer[DType.float64](size)
-            var dst_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+            src_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+            dst_buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
             # Fill source buffer
             for j in range(min(size, 1000)):
@@ -212,23 +212,23 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for memory monitoring")
 
         # Simulate memory monitoring
-        var monitoring_buffers = List[Int]()
-        var total_allocated_mb = 0
+        monitoring_buffers = List[Int]()
+        total_allocated_mb = 0
 
         print("Real-time memory monitoring simulation:")
 
         # Allocate and monitor memory usage
         for i in range(10):
-            var buffer_size = (i + 1) * 8192
-            var buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
+            buffer_size = (i + 1) * 8192
+            buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
             monitoring_buffers.append(buffer_size)
 
             # Calculate memory usage
-            var memory_mb = Int((buffer_size * 8) / (1024 * 1024))
+            memory_mb = Int((buffer_size * 8) / (1024 * 1024))
             total_allocated_mb += memory_mb
 
             print("  Allocation", i + 1, ":")

@@ -17,8 +17,8 @@ fn test_real_gpu_hardware_detection() -> Bool:
     print("-" * 50)
 
     # Use the verified working MAX Engine API
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
 
     print("GPU Hardware Detection Results:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -58,16 +58,16 @@ fn test_real_gpu_buffer_operations() -> Bool:
     print("-" * 50)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created")
 
         # Create real GPU buffer (based on working vector_addition.mojo)
-        var size = 10
-        var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+        size = 10
+        buffer = ctx.enqueue_create_buffer[DType.float64](size)
         print("✅ Real GPU buffer created for", size, "elements")
 
         # Fill buffer with test data
-        var test_value = 3.14
+        test_value = 3.14
         _ = buffer.enqueue_fill(test_value)
         print("✓ GPU buffer filled with test data")
 
@@ -87,7 +87,7 @@ fn test_real_layout_tensor_operations() -> Bool:
     print("-" * 50)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
 
         # Create layout for 2x2 tensor (based on working examples)
         alias width = 2
@@ -95,7 +95,7 @@ fn test_real_layout_tensor_operations() -> Bool:
         alias layout = Layout.row_major(width, height)
 
         # Create GPU buffer
-        var buffer = ctx.enqueue_create_buffer[DType.float64](width * height)
+        buffer = ctx.enqueue_create_buffer[DType.float64](width * height)
         print("✓ GPU buffer created for 2x2 tensor")
 
         # Create LayoutTensor from buffer
@@ -118,10 +118,10 @@ fn main():
     print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
 
     # Run all real hardware tests
-    var hardware_ok = test_real_gpu_hardware_detection()
-    var context_ok = test_real_device_context_creation()
-    var buffer_ok = test_real_gpu_buffer_operations()
-    var tensor_ok = test_real_layout_tensor_operations()
+    hardware_ok = test_real_gpu_hardware_detection()
+    context_ok = test_real_device_context_creation()
+    buffer_ok = test_real_gpu_buffer_operations()
+    tensor_ok = test_real_layout_tensor_operations()
 
     print("\n" + "=" * 60)
     print("REAL GPU ACCELERATION VERIFICATION RESULTS:")

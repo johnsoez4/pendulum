@@ -32,7 +32,7 @@ fn tanh_approx(x: Float64) -> Float64:
         return -1.0
     else:
         # Simple approximation: tanh(x) ≈ x for small x
-        var x2 = x * x
+        x2 = x * x
         return x * (1.0 - x2 / 3.0 + 2.0 * x2 * x2 / 15.0)
 
 
@@ -71,10 +71,10 @@ struct SimpleNeuralNetwork(Copyable, Movable):
         """Initialize network weights with small random values."""
         # Initialize weights1 (INPUT_DIM x HIDDEN_SIZE)
         for i in range(INPUT_DIM):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(HIDDEN_SIZE):
                 # Simple pseudo-random initialization
-                var val = 0.1 * (
+                val = 0.1 * (
                     Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5
                 )
                 row.append(val)
@@ -86,9 +86,9 @@ struct SimpleNeuralNetwork(Copyable, Movable):
 
         # Initialize weights2 (HIDDEN_SIZE x HIDDEN_SIZE)
         for i in range(HIDDEN_SIZE):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(HIDDEN_SIZE):
-                var val = 0.1 * (
+                val = 0.1 * (
                     Float64((i * 11 + j * 17) % 1000) / 1000.0 - 0.5
                 )
                 row.append(val)
@@ -100,9 +100,9 @@ struct SimpleNeuralNetwork(Copyable, Movable):
 
         # Initialize weights3 (HIDDEN_SIZE x OUTPUT_DIM)
         for i in range(HIDDEN_SIZE):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(OUTPUT_DIM):
-                var val = 0.1 * (
+                val = 0.1 * (
                     Float64((i * 19 + j * 23) % 1000) / 1000.0 - 0.5
                 )
                 row.append(val)
@@ -123,7 +123,7 @@ struct SimpleNeuralNetwork(Copyable, Movable):
             Output vector [next_la_position, next_pend_velocity, next_pend_position].
         """
         # Layer 1: Input to Hidden1
-        var hidden1 = List[Float64]()
+        hidden1 = List[Float64]()
         for j in range(HIDDEN_SIZE):
             var sum = self.biases1[j]
             for i in range(INPUT_DIM):
@@ -132,7 +132,7 @@ struct SimpleNeuralNetwork(Copyable, Movable):
             hidden1.append(tanh_approx(sum))
 
         # Layer 2: Hidden1 to Hidden2
-        var hidden2 = List[Float64]()
+        hidden2 = List[Float64]()
         for j in range(HIDDEN_SIZE):
             var sum = self.biases2[j]
             for i in range(HIDDEN_SIZE):
@@ -140,7 +140,7 @@ struct SimpleNeuralNetwork(Copyable, Movable):
             hidden2.append(tanh_approx(sum))
 
         # Layer 3: Hidden2 to Output
-        var output = List[Float64]()
+        output = List[Float64]()
         for j in range(OUTPUT_DIM):
             var sum = self.biases3[j]
             for i in range(HIDDEN_SIZE):
@@ -155,20 +155,20 @@ struct SimpleNeuralNetwork(Copyable, Movable):
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to predictions."""
-        var constrained = List[Float64]()
+        constrained = List[Float64]()
 
         # Constrain actuator position to [-4, 4] inches
-        var la_pos = max(-4.0, min(4.0, prediction[0]))
+        la_pos = max(-4.0, min(4.0, prediction[0]))
         constrained.append(la_pos)
 
         # Constrain pendulum velocity to [-1000, 1000] deg/s
-        var pend_vel = max(-1000.0, min(1000.0, prediction[1]))
+        pend_vel = max(-1000.0, min(1000.0, prediction[1]))
         constrained.append(pend_vel)
 
         # Handle angle continuity (no sudden jumps > 180 degrees)
-        var current_angle = input[2] if len(input) > 2 else 0.0
+        current_angle = input[2] if len(input) > 2 else 0.0
         var pred_angle = prediction[2]
-        var angle_diff = pred_angle - current_angle
+        angle_diff = pred_angle - current_angle
 
         if abs(angle_diff) > 180.0:
             if angle_diff > 180.0:
@@ -193,25 +193,25 @@ struct SimpleNeuralNetwork(Copyable, Movable):
         Returns:
             Physics loss value.
         """
-        var physics_loss = 0.0
+        physics_loss = 0.0
 
         # Energy conservation check (simplified)
         if len(input) >= 4 and len(prediction) >= 3:
-            var current_vel = input[1]
-            var current_angle = input[2]
-            var pred_vel = prediction[1]
-            var pred_angle = prediction[2]
+            current_vel = input[1]
+            current_angle = input[2]
+            pred_vel = prediction[1]
+            pred_angle = prediction[2]
 
             # Approximate energy calculation
-            var current_energy = 0.5 * current_vel * current_vel + 9.81 * (
+            current_energy = 0.5 * current_vel * current_vel + 9.81 * (
                 1.0 - self.cos_approx(current_angle)
             )
-            var pred_energy = 0.5 * pred_vel * pred_vel + 9.81 * (
+            pred_energy = 0.5 * pred_vel * pred_vel + 9.81 * (
                 1.0 - self.cos_approx(pred_angle)
             )
 
-            var energy_diff = abs(pred_energy - current_energy)
-            var energy_scale = max(abs(current_energy), 1e-6)
+            energy_diff = abs(pred_energy - current_energy)
+            energy_scale = max(abs(current_energy), 1e-6)
             physics_loss += energy_diff / energy_scale
 
         # Constraint violation penalties
@@ -228,9 +228,9 @@ struct SimpleNeuralNetwork(Copyable, Movable):
 
     fn cos_approx(self, angle_deg: Float64) -> Float64:
         """Approximate cosine function for angles in degrees."""
-        var angle_rad = angle_deg * 3.14159 / 180.0
+        angle_rad = angle_deg * 3.14159 / 180.0
         # Taylor series approximation for cos(x)
-        var x2 = angle_rad * angle_rad
+        x2 = angle_rad * angle_rad
         return 1.0 - x2 / 2.0 + x2 * x2 / 24.0
 
 
@@ -240,14 +240,14 @@ struct NetworkTrainer:
     @staticmethod
     fn create_network() -> SimpleNeuralNetwork:
         """Create and initialize a new neural network."""
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
-        var weights3 = List[List[Float64]]()
-        var biases3 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
 
-        var network = SimpleNeuralNetwork(
+        network = SimpleNeuralNetwork(
             weights1, biases1, weights2, biases2, weights3, biases3, False
         )
         network.initialize_weights()
@@ -272,25 +272,25 @@ struct NetworkTrainer:
         Returns:
             Final training loss.
         """
-        var learning_rate = 0.001
-        var best_loss = 1000000.0
+        learning_rate = 0.001
+        best_loss = 1000000.0
 
         for epoch in range(epochs):
-            var total_loss = 0.0
-            var num_samples = min(len(train_inputs), len(train_targets))
+            total_loss = 0.0
+            num_samples = min(len(train_inputs), len(train_targets))
 
             for i in range(num_samples):
                 # Forward pass
-                var prediction = network.forward(train_inputs[i])
+                prediction = network.forward(train_inputs[i])
 
                 # Compute loss (MSE + physics)
-                var mse_loss = NetworkTrainer.compute_mse_loss(
+                mse_loss = NetworkTrainer.compute_mse_loss(
                     prediction, train_targets[i]
                 )
-                var physics_loss = network.compute_physics_loss(
+                physics_loss = network.compute_physics_loss(
                     train_inputs[i], prediction
                 )
-                var sample_loss = mse_loss + 0.1 * physics_loss
+                sample_loss = mse_loss + 0.1 * physics_loss
 
                 total_loss += sample_loss
 
@@ -300,7 +300,7 @@ struct NetworkTrainer:
                     network, train_inputs[i], train_targets[i], learning_rate
                 )
 
-            var avg_loss = (
+            avg_loss = (
                 total_loss / Float64(num_samples) if num_samples > 0 else 1000.0
             )
 
@@ -320,10 +320,10 @@ struct NetworkTrainer:
     ) -> Float64:
         """Compute Mean Squared Error loss."""
         var total_error = 0.0
-        var num_elements = min(len(prediction), len(target))
+        num_elements = min(len(prediction), len(target))
 
         for i in range(num_elements):
-            var error = prediction[i] - target[i]
+            error = prediction[i] - target[i]
             total_error += error * error
 
         return (
@@ -339,14 +339,14 @@ struct NetworkTrainer:
     ):
         """Simplified weight update (placeholder for actual backpropagation)."""
         # This is a simplified update - in practice would use proper gradients
-        var prediction = network.forward(input)
-        var error_scale = 0.001  # Small adjustment factor
+        prediction = network.forward(input)
+        error_scale = 0.001  # Small adjustment factor
 
         # Simple weight perturbation based on error
         for i in range(len(network.weights3)):
             for j in range(len(network.weights3[i])):
                 if j < len(prediction) and j < len(target):
-                    var error = target[j] - prediction[j]
+                    error = target[j] - prediction[j]
                     network.weights3[i][j] += (
                         learning_rate * error_scale * error
                     )
@@ -360,21 +360,21 @@ fn main():
     print("======================================")
 
     # Create network
-    var network = NetworkTrainer.create_network()
+    network = NetworkTrainer.create_network()
     print("Network created with", INPUT_DIM, "inputs,", OUTPUT_DIM, "outputs")
 
     # Create sample training data
-    var train_inputs = List[List[Float64]]()
-    var train_targets = List[List[Float64]]()
+    train_inputs = List[List[Float64]]()
+    train_targets = List[List[Float64]]()
 
     for i in range(50):  # Small dataset for testing
-        var input = List[Float64]()
+        input = List[Float64]()
         input.append(Float64(i) * 0.1)  # la_position
         input.append(Float64(i) * 2.0)  # pend_velocity
         input.append(180.0 - Float64(i))  # pend_position
         input.append(0.1 * Float64(i % 10))  # cmd_volts
 
-        var target = List[Float64]()
+        target = List[Float64]()
         target.append(Float64(i + 1) * 0.1)  # next_la_position
         target.append(Float64(i + 1) * 2.0)  # next_pend_velocity
         target.append(180.0 - Float64(i + 1))  # next_pend_position
@@ -385,7 +385,7 @@ fn main():
     print("Training data prepared:", len(train_inputs), "samples")
 
     # Train network
-    var final_loss = NetworkTrainer.train_network(
+    final_loss = NetworkTrainer.train_network(
         network, train_inputs, train_targets, 100
     )
 
@@ -394,8 +394,8 @@ fn main():
 
     # Test prediction
     if len(train_inputs) > 0:
-        var test_input = train_inputs[0]
-        var prediction = network.forward(test_input)
+        test_input = train_inputs[0]
+        prediction = network.forward(test_input)
 
         print("Test prediction:")
         print(

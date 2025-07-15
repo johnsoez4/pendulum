@@ -32,7 +32,7 @@ fn tanh_approx(x: Float64) -> Float64:
     elif x < -3.0:
         return -1.0
     else:
-        var x2 = x * x
+        x2 = x * x
         return x * (1.0 - x2 / 3.0 + 2.0 * x2 * x2 / 15.0)
 
 
@@ -60,9 +60,9 @@ struct BenchmarkNetwork(Copyable, Movable):
         """Initialize network weights for benchmarking."""
         # Initialize weights1 (INPUT_DIM x HIDDEN_SIZE)
         for i in range(INPUT_DIM):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(HIDDEN_SIZE):
-                var val = 0.1 * (Float64((i * 7 + j * 13) % 100) / 100.0 - 0.5)
+                val = 0.1 * (Float64((i * 7 + j * 13) % 100) / 100.0 - 0.5)
                 row.append(val)
             self.weights1.append(row)
 
@@ -72,9 +72,9 @@ struct BenchmarkNetwork(Copyable, Movable):
 
         # Initialize weights2 (HIDDEN_SIZE x HIDDEN_SIZE)
         for i in range(HIDDEN_SIZE):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(HIDDEN_SIZE):
-                var val = 0.1 * (Float64((i * 11 + j * 17) % 100) / 100.0 - 0.5)
+                val = 0.1 * (Float64((i * 11 + j * 17) % 100) / 100.0 - 0.5)
                 row.append(val)
             self.weights2.append(row)
 
@@ -84,9 +84,9 @@ struct BenchmarkNetwork(Copyable, Movable):
 
         # Initialize weights3 (HIDDEN_SIZE x OUTPUT_DIM)
         for i in range(HIDDEN_SIZE):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(OUTPUT_DIM):
-                var val = 0.1 * (Float64((i * 19 + j * 23) % 100) / 100.0 - 0.5)
+                val = 0.1 * (Float64((i * 19 + j * 23) % 100) / 100.0 - 0.5)
                 row.append(val)
             self.weights3.append(row)
 
@@ -97,7 +97,7 @@ struct BenchmarkNetwork(Copyable, Movable):
     fn forward_optimized(self, input: List[Float64]) -> List[Float64]:
         """Optimized forward pass for performance benchmarking."""
         # Layer 1: Input to Hidden1
-        var hidden1 = List[Float64]()
+        hidden1 = List[Float64]()
         for j in range(HIDDEN_SIZE):
             var sum = self.biases1[j]
             for i in range(INPUT_DIM):
@@ -106,7 +106,7 @@ struct BenchmarkNetwork(Copyable, Movable):
             hidden1.append(tanh_approx(sum))
 
         # Layer 2: Hidden1 to Hidden2
-        var hidden2 = List[Float64]()
+        hidden2 = List[Float64]()
         for j in range(HIDDEN_SIZE):
             var sum = self.biases2[j]
             for i in range(HIDDEN_SIZE):
@@ -114,7 +114,7 @@ struct BenchmarkNetwork(Copyable, Movable):
             hidden2.append(tanh_approx(sum))
 
         # Layer 3: Hidden2 to Output
-        var output = List[Float64]()
+        output = List[Float64]()
         for j in range(OUTPUT_DIM):
             var sum = self.biases3[j]
             for i in range(HIDDEN_SIZE):
@@ -126,7 +126,7 @@ struct BenchmarkNetwork(Copyable, Movable):
 
     fn apply_constraints_fast(self, prediction: List[Float64]) -> List[Float64]:
         """Fast constraint application for performance."""
-        var constrained = List[Float64]()
+        constrained = List[Float64]()
 
         # Actuator position constraint [-4, 4] inches
         constrained.append(max(-4.0, min(4.0, prediction[0])))
@@ -149,20 +149,20 @@ struct PerformanceTests:
         print("Testing inference latency...")
 
         # Create and initialize network
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
-        var weights3 = List[List[Float64]]()
-        var biases3 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
 
-        var network = BenchmarkNetwork(
+        network = BenchmarkNetwork(
             weights1, biases1, weights2, biases2, weights3, biases3
         )
         network.initialize_weights()
 
         # Prepare test input
-        var test_input = List[Float64]()
+        test_input = List[Float64]()
         test_input.append(2.0)  # la_position
         test_input.append(100.0)  # pend_velocity
         test_input.append(180.0)  # pend_position
@@ -173,18 +173,18 @@ struct PerformanceTests:
             var _ = network.forward_optimized(test_input)
 
         # Benchmark inference latency
-        var start_time = now()
+        start_time = now()
 
         for i in range(BENCHMARK_ITERATIONS):
-            var prediction = network.forward_optimized(test_input)
+            prediction = network.forward_optimized(test_input)
             # Ensure prediction is used to prevent optimization
             if len(prediction) != OUTPUT_DIM:
                 print("Error: unexpected output size")
 
-        var end_time = now()
-        var total_time_ns = end_time - start_time
-        var total_time_ms = Float64(total_time_ns) / 1_000_000.0
-        var avg_latency_ms = total_time_ms / Float64(BENCHMARK_ITERATIONS)
+        end_time = now()
+        total_time_ns = end_time - start_time
+        total_time_ms = Float64(total_time_ns) / 1_000_000.0
+        avg_latency_ms = total_time_ms / Float64(BENCHMARK_ITERATIONS)
 
         print("  Iterations:", BENCHMARK_ITERATIONS)
         print("  Total time:", total_time_ms, "ms")
@@ -205,22 +205,22 @@ struct PerformanceTests:
         print("Testing system throughput...")
 
         # Create network
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
-        var weights3 = List[List[Float64]]()
-        var biases3 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
 
-        var network = BenchmarkNetwork(
+        network = BenchmarkNetwork(
             weights1, biases1, weights2, biases2, weights3, biases3
         )
         network.initialize_weights()
 
         # Prepare multiple test inputs
-        var test_inputs = List[List[Float64]]()
+        test_inputs = List[List[Float64]]()
         for i in range(100):
-            var input = List[Float64]()
+            input = List[Float64]()
             input.append(Float64(i % 10) * 0.4 - 2.0)
             input.append(Float64(i % 20) * 10.0 - 100.0)
             input.append(Float64(i % 36) * 10.0)
@@ -228,19 +228,19 @@ struct PerformanceTests:
             test_inputs.append(input)
 
         # Benchmark throughput
-        var start_time = now()
+        start_time = now()
         var predictions_made = 0
 
         for iteration in range(
             BENCHMARK_ITERATIONS // 10
         ):  # Fewer iterations for throughput test
             for i in range(len(test_inputs)):
-                var prediction = network.forward_optimized(test_inputs[i])
+                prediction = network.forward_optimized(test_inputs[i])
                 predictions_made += 1
 
-        var end_time = now()
-        var total_time_s = Float64(end_time - start_time) / 1_000_000_000.0
-        var throughput = Float64(predictions_made) / total_time_s
+        end_time = now()
+        total_time_s = Float64(end_time - start_time) / 1_000_000_000.0
+        throughput = Float64(predictions_made) / total_time_s
 
         print("  Predictions made:", predictions_made)
         print("  Total time:", total_time_s, "seconds")
@@ -261,39 +261,39 @@ struct PerformanceTests:
         print("Testing real-time control loop simulation...")
 
         # Create network
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
-        var weights3 = List[List[Float64]]()
-        var biases3 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
 
-        var network = BenchmarkNetwork(
+        network = BenchmarkNetwork(
             weights1, biases1, weights2, biases2, weights3, biases3
         )
         network.initialize_weights()
 
         # Simulate real-time control loop
-        var control_frequency = 25.0  # 25 Hz
-        var simulation_duration = 1.0  # 1 second
-        var expected_cycles = Int(control_frequency * simulation_duration)
+        control_frequency = 25.0  # 25 Hz
+        simulation_duration = 1.0  # 1 second
+        expected_cycles = Int(control_frequency * simulation_duration)
 
-        var current_state = List[Float64]()
+        current_state = List[Float64]()
         current_state.append(0.0)  # Initial position
         current_state.append(0.0)  # Initial velocity
         current_state.append(180.0)  # Initial angle
         current_state.append(0.0)  # Initial command
 
-        var start_time = now()
-        var cycles_completed = 0
-        var max_latency = 0.0
-        var total_latency = 0.0
+        start_time = now()
+        cycles_completed = 0
+        max_latency = 0.0
+        total_latency = 0.0
 
         for cycle in range(expected_cycles):
-            var cycle_start = now()
+            cycle_start = now()
 
             # Predict next state
-            var prediction = network.forward_optimized(current_state)
+            prediction = network.forward_optimized(current_state)
 
             # Update state (simplified)
             current_state[0] = prediction[0]
@@ -301,8 +301,8 @@ struct PerformanceTests:
             current_state[2] = prediction[2]
             current_state[3] = 0.1 * Float64(cycle % 10)  # Varying command
 
-            var cycle_end = now()
-            var cycle_latency = (
+            cycle_end = now()
+            cycle_latency = (
                 Float64(cycle_end - cycle_start) / 1_000_000.0
             )  # ms
 
@@ -310,12 +310,12 @@ struct PerformanceTests:
             total_latency += cycle_latency
             cycles_completed += 1
 
-        var end_time = now()
-        var total_simulation_time = (
+        end_time = now()
+        total_simulation_time = (
             Float64(end_time - start_time) / 1_000_000_000.0
         )  # seconds
-        var actual_frequency = Float64(cycles_completed) / total_simulation_time
-        var avg_latency = total_latency / Float64(cycles_completed)
+        actual_frequency = Float64(cycles_completed) / total_simulation_time
+        avg_latency = total_latency / Float64(cycles_completed)
 
         print("  Expected cycles:", expected_cycles)
         print("  Completed cycles:", cycles_completed)

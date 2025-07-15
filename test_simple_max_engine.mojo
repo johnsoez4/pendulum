@@ -40,11 +40,11 @@ fn test_max_tensor_import() -> Bool:
         print("✓ Successfully imported max.tensor")
         
         # Try to create a simple tensor spec
-        var shape = List[Int]()
+        shape = List[Int]()
         shape.append(2)
         shape.append(2)
         
-        var spec = TensorSpec(DType.float64, shape)
+        spec = TensorSpec(DType.float64, shape)
         print("✓ TensorSpec created successfully")
         
         return True

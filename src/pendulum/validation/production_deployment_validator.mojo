@@ -134,23 +134,23 @@ struct ProductionDeploymentValidator:
         try:
             print("✓ Validating system stability under continuous operation...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             # Test continuous operation stability
-            var stability_cycles = 100  # Extended operation test
-            var stable_cycles = 0
-            var performance_samples = List[Float64]()
+            stability_cycles = 100  # Extended operation test
+            stable_cycles = 0
+            performance_samples = List[Float64]()
             
             for cycle in range(stability_cycles):
-                var cycle_start = Float64(now()) / 1_000_000_000.0
+                cycle_start = Float64(now()) / 1_000_000_000.0
                 
                 if self.gpu_available:
                     # GPU stability testing
-                    var stability_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
+                    stability_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
                     
                     # Fill buffer with stability test data
                     for i in range(min(1000, 500)):  # Reduced for continuous testing
-                        var stability_value = Float64(cycle * 1000 + i) * 0.0001
+                        stability_value = Float64(cycle * 1000 + i) * 0.0001
                         _ = stability_buffer.enqueue_fill(stability_value)
                     
                     self.device_context.synchronize()
@@ -160,19 +160,19 @@ struct ProductionDeploymentValidator:
                     for i in range(100):
                         cpu_stability_result += Float64(cycle * 100 + i) * 0.001
                 
-                var cycle_end = Float64(now()) / 1_000_000_000.0
-                var cycle_time_ms = (cycle_end - cycle_start) * 1000.0
+                cycle_end = Float64(now()) / 1_000_000_000.0
+                cycle_time_ms = (cycle_end - cycle_start) * 1000.0
                 performance_samples.append(cycle_time_ms)
                 
                 # Check cycle stability (under 50ms for production)
                 if cycle_time_ms < 50.0:
                     stable_cycles += 1
             
-            var end_time = Float64(now()) / 1_000_000_000.0
-            var total_time_ms = (end_time - start_time) * 1000.0
+            end_time = Float64(now()) / 1_000_000_000.0
+            total_time_ms = (end_time - start_time) * 1000.0
             
             # Calculate stability metrics
-            var stability_rate = Float64(stable_cycles) / Float64(stability_cycles) * 100.0
+            stability_rate = Float64(stable_cycles) / Float64(stability_cycles) * 100.0
             result.system_stability = stability_rate >= self.production_targets[0]
             
             # Calculate performance variance
@@ -183,7 +183,7 @@ struct ProductionDeploymentValidator:
             
             var performance_variance = 0.0
             for i in range(len(performance_samples)):
-                var diff = performance_samples[i] - avg_performance
+                diff = performance_samples[i] - avg_performance
                 performance_variance += diff * diff
             performance_variance /= Float64(len(performance_samples))
             
@@ -215,23 +215,23 @@ struct ProductionDeploymentValidator:
         try:
             print("✓ Validating error handling and recovery mechanisms...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             # Test error handling scenarios
-            var error_scenarios = 10
-            var handled_errors = 0
+            error_scenarios = 10
+            handled_errors = 0
             
             for scenario in range(error_scenarios):
-                var scenario_start = Float64(now()) / 1_000_000_000.0
+                scenario_start = Float64(now()) / 1_000_000_000.0
                 
                 try:
                     if self.gpu_available:
                         # Test GPU error handling
-                        var error_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
+                        error_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
                         
                         # Simulate potential error conditions
                         for i in range(min(1000, 500)):
-                            var error_value = Float64(scenario * 1000 + i) * 0.001
+                            error_value = Float64(scenario * 1000 + i) * 0.001
                             _ = error_buffer.enqueue_fill(error_value)
                         
                         self.device_context.synchronize()
@@ -248,18 +248,18 @@ struct ProductionDeploymentValidator:
                     # Error occurred but was caught - this is good error handling
                     handled_errors += 1
                 
-                var scenario_end = Float64(now()) / 1_000_000_000.0
-                var scenario_time_ms = (scenario_end - scenario_start) * 1000.0
+                scenario_end = Float64(now()) / 1_000_000_000.0
+                scenario_time_ms = (scenario_end - scenario_start) * 1000.0
                 
                 # Ensure error handling doesn't take too long
                 if scenario_time_ms > 100.0:  # 100ms timeout
                     print("    Warning: Error handling scenario", scenario + 1, "took", scenario_time_ms, "ms")
             
-            var end_time = Float64(now()) / 1_000_000_000.0
-            var total_time_ms = (end_time - start_time) * 1000.0
+            end_time = Float64(now()) / 1_000_000_000.0
+            total_time_ms = (end_time - start_time) * 1000.0
             
             # Calculate error handling metrics
-            var error_handling_rate = Float64(handled_errors) / Float64(error_scenarios) * 100.0
+            error_handling_rate = Float64(handled_errors) / Float64(error_scenarios) * 100.0
             result.error_handling = error_handling_rate >= self.production_targets[1]
             result.validation_score = error_handling_rate
             result.production_ready = result.error_handling
@@ -287,31 +287,31 @@ struct ProductionDeploymentValidator:
         try:
             print("✓ Validating memory management and leak detection...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             # Test memory allocation and deallocation
-            var memory_cycles = 50
-            var successful_memory_ops = 0
-            var allocated_buffers = List[Int]()  # Track buffer sizes
+            memory_cycles = 50
+            successful_memory_ops = 0
+            allocated_buffers = List[Int]()  # Track buffer sizes
             
             # Allocation phase
             for cycle in range(memory_cycles):
                 try:
                     if self.gpu_available:
                         # Test GPU memory management
-                        var buffer_size = 1000 + cycle * 10  # Varying buffer sizes
-                        var memory_buffer = self.device_context.enqueue_create_buffer[DType.float64](buffer_size)
+                        buffer_size = 1000 + cycle * 10  # Varying buffer sizes
+                        memory_buffer = self.device_context.enqueue_create_buffer[DType.float64](buffer_size)
                         
                         # Fill buffer to ensure allocation
                         for i in range(min(buffer_size, 100)):  # Reduced for memory testing
-                            var memory_value = Float64(cycle * 100 + i) * 0.001
+                            memory_value = Float64(cycle * 100 + i) * 0.001
                             _ = memory_buffer.enqueue_fill(memory_value)
                         
                         allocated_buffers.append(buffer_size)
                         successful_memory_ops += 1
                     else:
                         # Test CPU memory management
-                        var cpu_memory = List[Float64]()
+                        cpu_memory = List[Float64]()
                         for i in range(100):
                             cpu_memory.append(Float64(cycle * 100 + i) * 0.001)
                         successful_memory_ops += 1
@@ -323,11 +323,11 @@ struct ProductionDeploymentValidator:
             if self.gpu_available:
                 self.device_context.synchronize()
             
-            var end_time = Float64(now()) / 1_000_000_000.0
-            var total_time_ms = (end_time - start_time) * 1000.0
+            end_time = Float64(now()) / 1_000_000_000.0
+            total_time_ms = (end_time - start_time) * 1000.0
             
             # Calculate memory management metrics
-            var memory_success_rate = Float64(successful_memory_ops) / Float64(memory_cycles) * 100.0
+            memory_success_rate = Float64(successful_memory_ops) / Float64(memory_cycles) * 100.0
             result.memory_management = memory_success_rate >= self.production_targets[2]
             result.validation_score = memory_success_rate
             result.production_ready = result.memory_management
@@ -356,23 +356,23 @@ struct ProductionDeploymentValidator:
         try:
             print("✓ Validating performance consistency over time...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             # Test performance consistency
-            var performance_samples = 20
-            var performance_times = List[Float64]()
-            var consistent_samples = 0
+            performance_samples = 20
+            performance_times = List[Float64]()
+            consistent_samples = 0
             
             for sample in range(performance_samples):
-                var sample_start = Float64(now()) / 1_000_000_000.0
+                sample_start = Float64(now()) / 1_000_000_000.0
                 
                 if self.gpu_available:
                     # GPU performance testing
-                    var perf_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
+                    perf_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
                     
                     # Fill buffer with performance test data
                     for i in range(min(1000, 500)):  # Reduced for performance testing
-                        var perf_value = Float64(sample * 1000 + i) * 0.001
+                        perf_value = Float64(sample * 1000 + i) * 0.001
                         _ = perf_buffer.enqueue_fill(perf_value)
                     
                     self.device_context.synchronize()
@@ -382,12 +382,12 @@ struct ProductionDeploymentValidator:
                     for i in range(500):
                         cpu_perf_result += Float64(sample * 500 + i) * 0.001
                 
-                var sample_end = Float64(now()) / 1_000_000_000.0
-                var sample_time_ms = (sample_end - sample_start) * 1000.0
+                sample_end = Float64(now()) / 1_000_000_000.0
+                sample_time_ms = (sample_end - sample_start) * 1000.0
                 performance_times.append(sample_time_ms)
             
-            var end_time = Float64(now()) / 1_000_000_000.0
-            var total_time_ms = (end_time - start_time) * 1000.0
+            end_time = Float64(now()) / 1_000_000_000.0
+            total_time_ms = (end_time - start_time) * 1000.0
             
             # Calculate performance consistency metrics
             var avg_time = 0.0
@@ -396,7 +396,7 @@ struct ProductionDeploymentValidator:
             avg_time /= Float64(len(performance_times))
             
             # Check consistency (within 20% of average)
-            var consistency_threshold = avg_time * 0.2
+            consistency_threshold = avg_time * 0.2
             for i in range(len(performance_times)):
                 var time_diff = performance_times[i] - avg_time
                 if time_diff < 0:
@@ -404,7 +404,7 @@ struct ProductionDeploymentValidator:
                 if time_diff <= consistency_threshold:
                     consistent_samples += 1
             
-            var consistency_rate = Float64(consistent_samples) / Float64(performance_samples) * 100.0
+            consistency_rate = Float64(consistent_samples) / Float64(performance_samples) * 100.0
             result.performance_consistency = consistency_rate >= self.production_targets[3]
             result.validation_score = consistency_rate
             result.production_ready = result.performance_consistency
@@ -473,8 +473,8 @@ struct ProductionDeploymentValidator:
             print()
         
         # Calculate overall results
-        var pass_rate = Float64(self.passed_validations) / Float64(self.total_validations) * 100.0
-        var overall_success = self.passed_validations == self.total_validations
+        pass_rate = Float64(self.passed_validations) / Float64(self.total_validations) * 100.0
+        overall_success = self.passed_validations == self.total_validations
         
         print("OVERALL PRODUCTION VALIDATION RESULTS:")
         print("  - Total validations:", self.total_validations)
@@ -503,5 +503,5 @@ fn create_production_validator() raises -> ProductionDeploymentValidator:
 
 fn run_production_deployment_validation() raises -> Bool:
     """Run comprehensive production deployment validation."""
-    var validator = create_production_validator()
+    validator = create_production_validator()
     return validator.run_comprehensive_production_validation()

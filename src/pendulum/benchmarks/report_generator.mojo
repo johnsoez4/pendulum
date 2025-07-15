@@ -120,11 +120,11 @@ struct BenchmarkMetrics(Copyable, Movable):
             self.speedup_factor = 1.0
 
         # Calculate energy efficiency (throughput per watt - simulated)
-        var cpu_power_watts = 65.0  # Typical CPU power
-        var gpu_power_watts = 150.0  # A10 max power
+        cpu_power_watts = 65.0  # Typical CPU power
+        gpu_power_watts = 150.0  # A10 max power
 
-        var cpu_efficiency = self.cpu_throughput / cpu_power_watts
-        var gpu_efficiency = self.gpu_throughput / gpu_power_watts
+        cpu_efficiency = self.cpu_throughput / cpu_power_watts
+        gpu_efficiency = self.gpu_throughput / gpu_power_watts
 
         self.energy_efficiency = (
             gpu_efficiency / cpu_efficiency if cpu_efficiency > 0.0 else 1.0
@@ -166,7 +166,7 @@ struct BenchmarkReportGenerator:
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate comprehensive benchmark report."""
-        var report = String("")
+        report = String("")
 
         # Add report header
         report += self._generate_report_header()
@@ -193,7 +193,7 @@ struct BenchmarkReportGenerator:
 
     fn _generate_report_header(self) -> String:
         """Generate report header."""
-        var header = String("")
+        header = String("")
         header += "=" * 80 + "\n"
         header += "GPU vs CPU PERFORMANCE BENCHMARK REPORT\n"
         header += "Pendulum AI Control System - Phase 3 Implementation\n"
@@ -207,15 +207,15 @@ struct BenchmarkReportGenerator:
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate executive summary."""
-        var summary = String("")
+        summary = String("")
         summary += "EXECUTIVE SUMMARY\n"
         summary += "=" * 40 + "\n\n"
 
         # Calculate overall statistics
-        var total_tests = len(metrics)
-        var avg_speedup = 0.0
-        var max_speedup = 0.0
-        var min_speedup = 1000.0
+        total_tests = len(metrics)
+        var avg_speedup = 0.0  # Needs var - reassigned in loop
+        var max_speedup = 0.0  # Needs var - reassigned in loop
+        var min_speedup = 1000.0  # Needs var - reassigned in loop
 
         for i in range(total_tests):
             avg_speedup += metrics[i].speedup_factor
@@ -261,7 +261,7 @@ struct BenchmarkReportGenerator:
 
     fn _generate_methodology_section(self) -> String:
         """Generate test methodology section."""
-        var methodology = String("")
+        methodology = String("")
         methodology += "TEST METHODOLOGY\n"
         methodology += "=" * 40 + "\n\n"
 
@@ -291,7 +291,7 @@ struct BenchmarkReportGenerator:
 
     fn _generate_hardware_section(self) -> String:
         """Generate hardware specifications section."""
-        var hardware = String("")
+        hardware = String("")
         hardware += "HARDWARE SPECIFICATIONS\n"
         hardware += "=" * 40 + "\n\n"
 
@@ -324,7 +324,7 @@ struct BenchmarkReportGenerator:
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate performance results section."""
-        var results = String("")
+        results = String("")
         results += "PERFORMANCE RESULTS\n"
         results += "=" * 40 + "\n\n"
 
@@ -374,7 +374,7 @@ struct BenchmarkReportGenerator:
 
     fn _generate_ascii_charts(self, metrics: List[BenchmarkMetrics]) -> String:
         """Generate ASCII performance charts."""
-        var charts = String("")
+        charts = String("")
         charts += "PERFORMANCE VISUALIZATION\n"
         charts += "-" * 30 + "\n\n"
 
@@ -397,7 +397,7 @@ struct BenchmarkReportGenerator:
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate analysis and interpretation section."""
-        var analysis = String("")
+        analysis = String("")
         analysis += "ANALYSIS AND INTERPRETATION\n"
         analysis += "=" * 40 + "\n\n"
 
@@ -471,7 +471,7 @@ struct BenchmarkReportGenerator:
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate conclusions and recommendations section."""
-        var conclusions = String("")
+        conclusions = String("")
         conclusions += "CONCLUSIONS AND RECOMMENDATIONS\n"
         conclusions += "=" * 40 + "\n\n"
 
@@ -548,16 +548,16 @@ fn create_benchmark_report(metrics: List[BenchmarkMetrics]) -> String:
     Returns:
         Complete benchmark report as string.
     """
-    var generator = BenchmarkReportGenerator()
+    generator = BenchmarkReportGenerator()
     return generator.generate_comprehensive_report(metrics)
 
 
 fn generate_sample_report() -> String:
     """Generate sample benchmark report with simulated data."""
-    var metrics = List[BenchmarkMetrics]()
+    metrics = List[BenchmarkMetrics]()
 
     # Create sample matrix operations benchmark
-    var matrix_metrics = BenchmarkMetrics("Matrix Operations")
+    matrix_metrics = BenchmarkMetrics("Matrix Operations")
     matrix_metrics.cpu_time_ms = 100.0
     matrix_metrics.gpu_time_ms = 25.0
     matrix_metrics.cpu_throughput = 1000000.0
@@ -568,7 +568,7 @@ fn generate_sample_report() -> String:
     metrics.append(matrix_metrics)
 
     # Create sample neural network benchmark
-    var nn_metrics = BenchmarkMetrics("Neural Network Inference")
+    nn_metrics = BenchmarkMetrics("Neural Network Inference")
     nn_metrics.cpu_time_ms = 50.0
     nn_metrics.gpu_time_ms = 15.0
     nn_metrics.cpu_throughput = 2000.0
@@ -579,7 +579,7 @@ fn generate_sample_report() -> String:
     metrics.append(nn_metrics)
 
     # Create sample control optimization benchmark
-    var control_metrics = BenchmarkMetrics("Control Optimization")
+    control_metrics = BenchmarkMetrics("Control Optimization")
     control_metrics.cpu_time_ms = 200.0
     control_metrics.gpu_time_ms = 80.0
     control_metrics.cpu_throughput = 250.0

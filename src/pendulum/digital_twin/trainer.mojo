@@ -106,12 +106,12 @@ struct AdamOptimizer(Copyable, Movable):
         Returns:
             Updated parameters.
         """
-        var updated = List[Float64]()
+        updated = List[Float64]()
         self.t += 1
 
         # Simple gradient descent for now (Adam state tracking would require more complex state management)
         for i in range(len(parameters)):
-            var new_param = parameters[i] - self.learning_rate * gradients[i]
+            new_param = parameters[i] - self.learning_rate * gradients[i]
             updated.append(new_param)
 
         return updated
@@ -133,7 +133,7 @@ struct TrainingConfig:
     @staticmethod
     fn get_default_config() -> Dict[String, Float64]:
         """Get default training configuration."""
-        var config = Dict[String, Float64]()
+        config = Dict[String, Float64]()
         config["learning_rate"] = LEARNING_RATE
         config["batch_size"] = Float64(BATCH_SIZE)
         config["max_epochs"] = Float64(MAX_EPOCHS)
@@ -163,7 +163,7 @@ struct LossFunctions:
 
         var total_error = 0.0
         for i in range(len(predictions)):
-            var error = predictions[i] - targets[i]
+            error = predictions[i] - targets[i]
             total_error += error * error
 
         return total_error / Float64(len(predictions))
@@ -183,24 +183,24 @@ struct LossFunctions:
             Physics loss value.
         """
         # Energy conservation check (simplified)
-        var energy_violation = 0.0
+        energy_violation = 0.0
 
         if len(current_state) >= 4 and len(predicted_state) >= 3:
             # Extract relevant state variables
-            var current_angle = current_state[2]  # pendulum angle
-            var current_vel = current_state[1]  # pendulum velocity
-            var pred_angle = predicted_state[2]  # predicted angle
-            var pred_vel = predicted_state[1]  # predicted velocity
+            current_angle = current_state[2]  # pendulum angle
+            current_vel = current_state[1]  # pendulum velocity
+            pred_angle = predicted_state[2]  # predicted angle
+            pred_vel = predicted_state[1]  # predicted velocity
 
             # Simple energy conservation check
-            var current_energy = 0.5 * current_vel * current_vel + 9.81 * (
+            current_energy = 0.5 * current_vel * current_vel + 9.81 * (
                 1.0 - LossFunctions.cos_approx(current_angle)
             )
-            var pred_energy = 0.5 * pred_vel * pred_vel + 9.81 * (
+            pred_energy = 0.5 * pred_vel * pred_vel + 9.81 * (
                 1.0 - LossFunctions.cos_approx(pred_angle)
             )
 
-            var denominator = max(abs(current_energy), 1e-6)
+            denominator = max(abs(current_energy), 1e-6)
             energy_violation = abs(pred_energy - current_energy) / denominator
 
         # Constraint violation penalties
@@ -219,9 +219,9 @@ struct LossFunctions:
     @staticmethod
     fn cos_approx(angle_deg: Float64) -> Float64:
         """Approximate cosine function for angles in degrees."""
-        var angle_rad = angle_deg * 3.14159 / 180.0
+        angle_rad = angle_deg * 3.14159 / 180.0
         # Taylor series approximation for cos(x)
-        var x2 = angle_rad * angle_rad
+        x2 = angle_rad * angle_rad
         return 1.0 - x2 / 2.0 + x2 * x2 / 24.0 - x2 * x2 * x2 / 720.0
 
 
@@ -242,12 +242,12 @@ struct DataSplitter:
         Returns:
             Tuple of (training_data, validation_data).
         """
-        var total_size = len(data)
-        var val_size = Int(Float64(total_size) * validation_ratio)
-        var train_size = total_size - val_size
+        total_size = len(data)
+        val_size = Int(Float64(total_size) * validation_ratio)
+        train_size = total_size - val_size
 
-        var train_data = List[List[Float64]]()
-        var val_data = List[List[Float64]]()
+        train_data = List[List[Float64]]()
+        val_data = List[List[Float64]]()
 
         # Simple split (in practice, should be randomized)
         for i in range(train_size):
@@ -279,24 +279,24 @@ struct BatchGenerator:
         Returns:
             List of training batches.
         """
-        var batches = List[TrainingBatch]()
-        var total_samples = len(inputs)
+        batches = List[TrainingBatch]()
+        total_samples = len(inputs)
 
-        var i = 0
+        i = 0
         while i < total_samples:
-            var current_batch_size_f = min(
+            current_batch_size_f = min(
                 Float64(batch_size), Float64(total_samples - i)
             )
-            var current_batch_size = Int(current_batch_size_f)
-            var batch_inputs = List[List[Float64]]()
-            var batch_targets = List[List[Float64]]()
+            current_batch_size = Int(current_batch_size_f)
+            batch_inputs = List[List[Float64]]()
+            batch_targets = List[List[Float64]]()
 
             for j in range(current_batch_size):
                 if i + j < total_samples:
                     batch_inputs.append(inputs[i + j])
                     batch_targets.append(targets[i + j])
 
-            var batch = TrainingBatch(
+            batch = TrainingBatch(
                 batch_inputs, batch_targets, current_batch_size
             )
             batches.append(batch)
@@ -340,12 +340,12 @@ struct PendulumTrainer(Copyable, Movable):
         print("Starting pendulum digital twin training...")
 
         # Split data into training and validation
-        var val_ratio = config.get("validation_split", VALIDATION_SPLIT)
-        var combined_data = List[List[Float64]]()
+        val_ratio = config.get("validation_split", VALIDATION_SPLIT)
+        combined_data = List[List[Float64]]()
 
         # Combine inputs and targets for splitting
         for i in range(len(train_data)):
-            var combined = List[Float64]()
+            combined = List[Float64]()
             for j in range(len(train_data[i])):
                 combined.append(train_data[i][j])
             for j in range(len(target_data[i])):
@@ -357,15 +357,15 @@ struct PendulumTrainer(Copyable, Movable):
         var val_split = split_result[1]
 
         # Extract inputs and targets from split data
-        var train_inputs = List[List[Float64]]()
-        var train_targets = List[List[Float64]]()
-        var val_inputs = List[List[Float64]]()
-        var val_targets = List[List[Float64]]()
+        train_inputs = List[List[Float64]]()
+        train_targets = List[List[Float64]]()
+        val_inputs = List[List[Float64]]()
+        val_targets = List[List[Float64]]()
 
         # Process training split
         for i in range(len(train_split)):
-            var input_vec = List[Float64]()
-            var target_vec = List[Float64]()
+            input_vec = List[Float64]()
+            target_vec = List[Float64]()
 
             # Assume first 4 elements are inputs, rest are targets
             for j in range(4):
@@ -379,8 +379,8 @@ struct PendulumTrainer(Copyable, Movable):
 
         # Process validation split
         for i in range(len(val_split)):
-            var input_vec = List[Float64]()
-            var target_vec = List[Float64]()
+            input_vec = List[Float64]()
+            target_vec = List[Float64]()
 
             for j in range(4):
                 if j < len(val_split[i]):
@@ -392,9 +392,9 @@ struct PendulumTrainer(Copyable, Movable):
             val_targets.append(target_vec)
 
         # Training loop
-        var max_epochs = Int(config.get("max_epochs", Float64(MAX_EPOCHS)))
-        var batch_size = Int(config.get("batch_size", Float64(BATCH_SIZE)))
-        var patience = Int(
+        max_epochs = Int(config.get("max_epochs", Float64(MAX_EPOCHS)))
+        batch_size = Int(config.get("batch_size", Float64(BATCH_SIZE)))
+        patience = Int(
             config.get("early_stop_patience", Float64(EARLY_STOP_PATIENCE))
         )
 
@@ -407,23 +407,23 @@ struct PendulumTrainer(Copyable, Movable):
                 break
 
             # Create training batches
-            var batches = BatchGenerator.create_batches(
+            batches = BatchGenerator.create_batches(
                 train_inputs, train_targets, batch_size
             )
 
             # Training step
-            var epoch_train_loss = self._train_epoch(batches)
+            epoch_train_loss = self._train_epoch(batches)
 
             # Validation step
-            var epoch_val_loss = self._validate_epoch(val_inputs, val_targets)
+            epoch_val_loss = self._validate_epoch(val_inputs, val_targets)
 
             # Physics loss computation
-            var physics_loss = self._compute_physics_loss(
+            physics_loss = self._compute_physics_loss(
                 val_inputs, val_targets
             )
 
             # Record metrics
-            var metrics = TrainingMetrics(
+            metrics = TrainingMetrics(
                 epoch,
                 epoch_train_loss,
                 epoch_val_loss,
@@ -464,7 +464,7 @@ struct PendulumTrainer(Copyable, Movable):
         var total_samples = 0
 
         for i in range(len(batches)):
-            var batch = batches[i]
+            batch = batches[i]
             var batch_loss = self._train_batch(batch)
             total_loss += batch_loss * Float64(batch.size)
             total_samples += batch.size
@@ -479,7 +479,7 @@ struct PendulumTrainer(Copyable, Movable):
         for i in range(batch.size):
             if i < len(batch.inputs) and i < len(batch.targets):
                 # Compute loss for this sample
-                var sample_loss = LossFunctions.mse_loss(
+                sample_loss = LossFunctions.mse_loss(
                     batch.inputs[i], batch.targets[i]
                 )
                 batch_loss += sample_loss
@@ -494,7 +494,7 @@ struct PendulumTrainer(Copyable, Movable):
 
         for i in range(len(val_inputs)):
             if i < len(val_targets):
-                var sample_loss = LossFunctions.mse_loss(
+                sample_loss = LossFunctions.mse_loss(
                     val_inputs[i], val_targets[i]
                 )
                 total_loss += sample_loss
@@ -512,7 +512,7 @@ struct PendulumTrainer(Copyable, Movable):
 
         for i in range(len(inputs)):
             if i < len(targets):
-                var physics_loss = LossFunctions.physics_informed_loss(
+                physics_loss = LossFunctions.physics_informed_loss(
                     inputs[i], targets[i]
                 )
                 total_physics_loss += physics_loss
@@ -560,7 +560,7 @@ struct ModelPersistence:
         """
         # TODO: Implement actual file I/O when Mojo file system is stable
         print("Loading checkpoint from", file_path)
-        var empty_params = List[Float64]()
+        empty_params = List[Float64]()
         return ModelCheckpoint(0, 1000.0, empty_params, 0.0)
 
 
@@ -575,8 +575,8 @@ struct TrainingUtils:
         Returns:
             Configured PendulumTrainer instance.
         """
-        var optimizer = AdamOptimizer(LEARNING_RATE, BETA1, BETA2, EPSILON, 0)
-        var history = List[TrainingMetrics]()
+        optimizer = AdamOptimizer(LEARNING_RATE, BETA1, BETA2, EPSILON, 0)
+        history = List[TrainingMetrics]()
         return PendulumTrainer(optimizer, 1000000.0, 0, history, False)
 
     @staticmethod
@@ -592,21 +592,21 @@ struct TrainingUtils:
         Returns:
             Tuple of (input_sequences, target_sequences).
         """
-        var inputs = List[List[Float64]]()
-        var targets = List[List[Float64]]()
+        inputs = List[List[Float64]]()
+        targets = List[List[Float64]]()
 
         # Create sequences for time-series prediction
         for i in range(len(raw_data) - 1):
             if i + 1 < len(raw_data):
                 # Current state as input
-                var input_vec = List[Float64]()
+                input_vec = List[Float64]()
                 for j in range(
                     min(4, len(raw_data[i]))
                 ):  # Take first 4 elements as input
                     input_vec.append(raw_data[i][j])
 
                 # Next state as target
-                var target_vec = List[Float64]()
+                target_vec = List[Float64]()
                 for j in range(
                     min(3, len(raw_data[i + 1]))
                 ):  # Take first 3 elements as target
@@ -658,12 +658,12 @@ fn main():
     print("============================================")
 
     # Create trainer
-    var trainer = TrainingUtils.create_trainer()
+    trainer = TrainingUtils.create_trainer()
 
     # Create sample training data
-    var sample_data = List[List[Float64]]()
+    sample_data = List[List[Float64]]()
     for i in range(100):
-        var sample = List[Float64]()
+        sample = List[Float64]()
         sample.append(Float64(i) * 0.1)  # actuator position
         sample.append(Float64(i) * 2.0)  # pendulum velocity
         sample.append(180.0 - Float64(i))  # pendulum angle
@@ -672,20 +672,20 @@ fn main():
         sample_data.append(sample)
 
     # Prepare training data
-    var data_prep = TrainingUtils.prepare_training_data(sample_data)
-    var inputs = data_prep[0]
-    var targets = data_prep[1]
+    data_prep = TrainingUtils.prepare_training_data(sample_data)
+    inputs = data_prep[0]
+    targets = data_prep[1]
 
     # Validate data
     if TrainingUtils.validate_training_data(inputs, targets):
         print("Training data validation: PASSED")
 
         # Configure training
-        var config = TrainingConfig.get_default_config()
+        config = TrainingConfig.get_default_config()
         config["max_epochs"] = 50.0  # Reduced for demo
 
         # Train model
-        var success = trainer.train_model(inputs, targets, config)
+        success = trainer.train_model(inputs, targets, config)
 
         if success:
             print("Training completed successfully!")

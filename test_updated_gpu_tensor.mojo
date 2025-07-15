@@ -20,8 +20,8 @@ fn test_real_max_engine_api_imports():
         from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
         print("✓ GPU detection API imported successfully")
         
-        var has_nvidia = has_nvidia_gpu_accelerator()
-        var has_amd = has_amd_gpu_accelerator()
+        has_nvidia = has_nvidia_gpu_accelerator()
+        has_amd = has_amd_gpu_accelerator()
         
         print("- NVIDIA GPU available:", has_nvidia)
         print("- AMD GPU available:", has_amd)

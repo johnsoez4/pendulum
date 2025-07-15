@@ -37,7 +37,7 @@ struct BenchmarkResults(Copyable, Movable):
     
     fn meets_real_time_requirements(self) -> Bool:
         """Check if benchmark meets real-time requirements."""
-        var success_rate = Float64(self.successful_cycles) / Float64(self.total_cycles)
+        success_rate = Float64(self.successful_cycles) / Float64(self.total_cycles)
         return (success_rate > 0.95 and 
                 self.average_cycle_time < TARGET_CYCLE_TIME and
                 self.max_cycle_time < MAX_ACCEPTABLE_LATENCY)
@@ -98,7 +98,7 @@ struct RealTimeBenchmark:
         print("1. MPC Controller Real-Time Benchmark")
         print("-" * 45)
         
-        var mpc_controller = MPCController()
+        mpc_controller = MPCController()
         if not mpc_controller.initialize_mpc():
             print("  ✗ MPC controller initialization failed")
             return RealTimeBenchmark._create_failed_results()
@@ -107,29 +107,29 @@ struct RealTimeBenchmark:
         print("  Running", BENCHMARK_CYCLES, "control cycles...")
         
         # Initialize test state
-        var test_state = List[Float64]()
+        test_state = List[Float64]()
         test_state.append(1.0)    # la_position
         test_state.append(50.0)   # pend_velocity
         test_state.append(15.0)   # pend_angle
         test_state.append(0.0)    # cmd_volts
         
-        var cycle_times = List[Float64]()
-        var successful_cycles = 0
-        var optimization_failures = 0
-        var constraint_violations = 0
+        cycle_times = List[Float64]()
+        successful_cycles = 0
+        optimization_failures = 0
+        constraint_violations = 0
         
-        var start_time = 0.0  # Simplified timing
+        start_time = 0.0  # Simplified timing
         
         for i in range(BENCHMARK_CYCLES):
-            var cycle_start = start_time + Float64(i) * 0.04
-            var cycle_start_ms = cycle_start * 1000.0
+            cycle_start = start_time + Float64(i) * 0.04
+            cycle_start_ms = cycle_start * 1000.0
             
             # Execute MPC control cycle
-            var command = mpc_controller.compute_mpc_control(test_state, cycle_start)
+            command = mpc_controller.compute_mpc_control(test_state, cycle_start)
             
-            var cycle_end = cycle_start + 0.001  # Simplified 1ms computation
-            var cycle_end_ms = cycle_end * 1000.0
-            var cycle_time = cycle_end_ms - cycle_start_ms
+            cycle_end = cycle_start + 0.001  # Simplified 1ms computation
+            cycle_end_ms = cycle_end * 1000.0
+            cycle_time = cycle_end_ms - cycle_start_ms
             
             cycle_times.append(cycle_time)
             
@@ -152,14 +152,14 @@ struct RealTimeBenchmark:
         var min_time = 1000.0
         
         for i in range(len(cycle_times)):
-            var time = cycle_times[i]
+            time = cycle_times[i]
             total_time += time
             max_time = max(max_time, time)
             min_time = min(min_time, time)
         
-        var avg_time = total_time / Float64(len(cycle_times))
-        var timing_violations = BENCHMARK_CYCLES - successful_cycles
-        var real_time_factor = TARGET_CYCLE_TIME / avg_time
+        avg_time = total_time / Float64(len(cycle_times))
+        timing_violations = BENCHMARK_CYCLES - successful_cycles
+        real_time_factor = TARGET_CYCLE_TIME / avg_time
         
         var results = BenchmarkResults(
             BENCHMARK_CYCLES,
@@ -182,7 +182,7 @@ struct RealTimeBenchmark:
         print("2. Enhanced AI Controller Real-Time Benchmark")
         print("-" * 45)
         
-        var enhanced_controller = EnhancedAIController()
+        enhanced_controller = EnhancedAIController()
         if not enhanced_controller.initialize_enhanced_controller():
             print("  ✗ Enhanced controller initialization failed")
             return RealTimeBenchmark._create_failed_results()
@@ -191,10 +191,10 @@ struct RealTimeBenchmark:
         print("  Running", BENCHMARK_CYCLES, "control cycles...")
         
         # Test with varying states to exercise different control modes
-        var test_states = List[List[Float64]]()
+        test_states = List[List[Float64]]()
         
         # Near inverted state
-        var state1 = List[Float64]()
+        state1 = List[Float64]()
         state1.append(0.5)
         state1.append(20.0)
         state1.append(8.0)
@@ -202,7 +202,7 @@ struct RealTimeBenchmark:
         test_states.append(state1)
         
         # Transition state
-        var state2 = List[Float64]()
+        state2 = List[Float64]()
         state2.append(1.5)
         state2.append(100.0)
         state2.append(45.0)
@@ -210,31 +210,31 @@ struct RealTimeBenchmark:
         test_states.append(state2)
         
         # Hanging state
-        var state3 = List[Float64]()
+        state3 = List[Float64]()
         state3.append(0.0)
         state3.append(10.0)
         state3.append(170.0)
         state3.append(0.0)
         test_states.append(state3)
         
-        var cycle_times = List[Float64]()
-        var successful_cycles = 0
-        var optimization_failures = 0
-        var constraint_violations = 0
+        cycle_times = List[Float64]()
+        successful_cycles = 0
+        optimization_failures = 0
+        constraint_violations = 0
         
         for i in range(BENCHMARK_CYCLES):
-            var state_idx = i % len(test_states)
-            var test_state = test_states[state_idx]
+            state_idx = i % len(test_states)
+            test_state = test_states[state_idx]
             
-            var cycle_start = Float64(i) * 0.04
-            var cycle_start_ms = cycle_start * 1000.0
+            cycle_start = Float64(i) * 0.04
+            cycle_start_ms = cycle_start * 1000.0
             
             # Execute enhanced control cycle
-            var command = enhanced_controller.compute_enhanced_control(test_state, cycle_start)
+            command = enhanced_controller.compute_enhanced_control(test_state, cycle_start)
             
-            var cycle_end = cycle_start + 0.002  # Simplified 2ms computation (more complex)
-            var cycle_end_ms = cycle_end * 1000.0
-            var cycle_time = cycle_end_ms - cycle_start_ms
+            cycle_end = cycle_start + 0.002  # Simplified 2ms computation (more complex)
+            cycle_end_ms = cycle_end * 1000.0
+            cycle_time = cycle_end_ms - cycle_start_ms
             
             cycle_times.append(cycle_time)
             
@@ -254,14 +254,14 @@ struct RealTimeBenchmark:
         var min_time = 1000.0
         
         for i in range(len(cycle_times)):
-            var time = cycle_times[i]
+            time = cycle_times[i]
             total_time += time
             max_time = max(max_time, time)
             min_time = min(min_time, time)
         
-        var avg_time = total_time / Float64(len(cycle_times))
-        var timing_violations = BENCHMARK_CYCLES - successful_cycles
-        var real_time_factor = TARGET_CYCLE_TIME / avg_time
+        avg_time = total_time / Float64(len(cycle_times))
+        timing_violations = BENCHMARK_CYCLES - successful_cycles
+        real_time_factor = TARGET_CYCLE_TIME / avg_time
         
         var results = BenchmarkResults(
             BENCHMARK_CYCLES,
@@ -284,7 +284,7 @@ struct RealTimeBenchmark:
         print("3. Integrated Control System Real-Time Benchmark")
         print("-" * 45)
         
-        var integrated_system = IntegratedControlSystem()
+        integrated_system = IntegratedControlSystem()
         if not integrated_system.initialize_system(0.0):
             print("  ✗ Integrated system initialization failed")
             return RealTimeBenchmark._create_failed_results()
@@ -293,7 +293,7 @@ struct RealTimeBenchmark:
         print("  Running", BENCHMARK_CYCLES, "complete control cycles...")
         
         # Initialize with realistic sensor data
-        var initial_state = List[Float64]()
+        initial_state = List[Float64]()
         initial_state.append(0.2)
         initial_state.append(30.0)
         initial_state.append(12.0)
@@ -301,23 +301,23 @@ struct RealTimeBenchmark:
         
         integrated_system.start_control_loop(initial_state, 0.0)
         
-        var cycle_times = List[Float64]()
-        var successful_cycles = 0
-        var optimization_failures = 0
-        var constraint_violations = 0
+        cycle_times = List[Float64]()
+        successful_cycles = 0
+        optimization_failures = 0
+        constraint_violations = 0
         
-        var current_state = initial_state
+        current_state = initial_state
         
         for i in range(BENCHMARK_CYCLES):
-            var cycle_start = Float64(i) * 0.04
-            var cycle_start_ms = cycle_start * 1000.0
+            cycle_start = Float64(i) * 0.04
+            cycle_start_ms = cycle_start * 1000.0
             
             # Execute complete integrated control cycle
-            var command = integrated_system.execute_control_cycle(current_state, cycle_start)
+            command = integrated_system.execute_control_cycle(current_state, cycle_start)
             
-            var cycle_end = cycle_start + 0.003  # Simplified 3ms computation (full system)
-            var cycle_end_ms = cycle_end * 1000.0
-            var cycle_time = cycle_end_ms - cycle_start_ms
+            cycle_end = cycle_start + 0.003  # Simplified 3ms computation (full system)
+            cycle_end_ms = cycle_end * 1000.0
+            cycle_time = cycle_end_ms - cycle_start_ms
             
             cycle_times.append(cycle_time)
             
@@ -340,14 +340,14 @@ struct RealTimeBenchmark:
         var min_time = 1000.0
         
         for i in range(len(cycle_times)):
-            var time = cycle_times[i]
+            time = cycle_times[i]
             total_time += time
             max_time = max(max_time, time)
             min_time = min(min_time, time)
         
-        var avg_time = total_time / Float64(len(cycle_times))
-        var timing_violations = BENCHMARK_CYCLES - successful_cycles
-        var real_time_factor = TARGET_CYCLE_TIME / avg_time
+        avg_time = total_time / Float64(len(cycle_times))
+        timing_violations = BENCHMARK_CYCLES - successful_cycles
+        real_time_factor = TARGET_CYCLE_TIME / avg_time
         
         var results = BenchmarkResults(
             BENCHMARK_CYCLES,
@@ -431,7 +431,7 @@ struct RealTimeBenchmark:
     @staticmethod
     fn _simulate_response(current_state: List[Float64], command: ControlCommand) -> List[Float64]:
         """Simplified system response for benchmark testing."""
-        var new_state = List[Float64]()
+        new_state = List[Float64]()
         new_state.append(current_state[0] + command.voltage * 0.001)  # Position update
         new_state.append(current_state[1] + command.voltage * 0.1)    # Velocity update
         new_state.append(current_state[2] + current_state[1] * 0.04)  # Angle update

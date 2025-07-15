@@ -118,16 +118,16 @@ struct SystemIntegrationTester:
         try:
             print("✓ Testing GPU matrix operations integration...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             if self.gpu_available:
                 # Test real GPU matrix operations
-                var matrix_size = 128
-                var matrix_buffer = self.device_context.enqueue_create_buffer[DType.float64](matrix_size * matrix_size)
+                matrix_size = 128
+                matrix_buffer = self.device_context.enqueue_create_buffer[DType.float64](matrix_size * matrix_size)
                 
                 # Fill matrix with test data
                 for i in range(min(matrix_size * matrix_size, 1000)):
-                    var matrix_value = Float64(i) * 0.001
+                    matrix_value = Float64(i) * 0.001
                     _ = matrix_buffer.enqueue_fill(matrix_value)
                 
                 self.device_context.synchronize()
@@ -145,7 +145,7 @@ struct SystemIntegrationTester:
                     cpu_result += Float64(i) * 0.001
                 result.cpu_fallback_tested = True
             
-            var end_time = Float64(now()) / 1_000_000_000.0
+            end_time = Float64(now()) / 1_000_000_000.0
             result.execution_time_ms = (end_time - start_time) * 1000.0
             
             # Check real-time performance
@@ -175,31 +175,31 @@ struct SystemIntegrationTester:
         try:
             print("✓ Testing GPU neural network integration...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             if self.gpu_available:
                 # Test real GPU neural network operations
-                var batch_size = 32
-                var input_dim = 4
-                var hidden_dim = 8
-                var output_dim = 3
+                batch_size = 32
+                input_dim = 4
+                hidden_dim = 8
+                output_dim = 3
                 
                 # Create GPU buffers for neural network
-                var input_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * input_dim)
-                var hidden_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * hidden_dim)
-                var output_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * output_dim)
+                input_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * input_dim)
+                hidden_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * hidden_dim)
+                output_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * output_dim)
                 
                 # Fill buffers with neural network data
                 for i in range(min(batch_size * input_dim, 1000)):
-                    var input_value = Float64(i) * 0.01
+                    input_value = Float64(i) * 0.01
                     _ = input_buffer.enqueue_fill(input_value)
                 
                 for i in range(min(batch_size * hidden_dim, 1000)):
-                    var hidden_value = Float64(i) * 0.02
+                    hidden_value = Float64(i) * 0.02
                     _ = hidden_buffer.enqueue_fill(hidden_value)
                 
                 for i in range(min(batch_size * output_dim, 1000)):
-                    var output_value = Float64(i) * 0.03
+                    output_value = Float64(i) * 0.03
                     _ = output_buffer.enqueue_fill(output_value)
                 
                 self.device_context.synchronize()
@@ -219,7 +219,7 @@ struct SystemIntegrationTester:
                         cpu_nn_result += Float64(i * j) * 0.001
                 result.cpu_fallback_tested = True
             
-            var end_time = Float64(now()) / 1_000_000_000.0
+            end_time = Float64(now()) / 1_000_000_000.0
             result.execution_time_ms = (end_time - start_time) * 1000.0
             
             # Check real-time performance
@@ -249,18 +249,18 @@ struct SystemIntegrationTester:
         try:
             print("✓ Testing end-to-end pendulum control system...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             # Simulate pendulum control system with GPU acceleration
-            var control_cycles = 25  # 1 second at 25 Hz
-            var successful_cycles = 0
+            control_cycles = 25  # 1 second at 25 Hz
+            successful_cycles = 0
             
             for cycle in range(control_cycles):
-                var cycle_start = Float64(now()) / 1_000_000_000.0
+                cycle_start = Float64(now()) / 1_000_000_000.0
                 
                 if self.gpu_available:
                     # GPU-accelerated control computation
-                    var state_buffer = self.device_context.enqueue_create_buffer[DType.float64](4)  # [pos, vel, angle, cmd]
+                    state_buffer = self.device_context.enqueue_create_buffer[DType.float64](4)  # [pos, vel, angle, cmd]
                     
                     # Fill state buffer
                     _ = state_buffer.enqueue_fill(Float64(cycle) * 0.1)  # position
@@ -269,7 +269,7 @@ struct SystemIntegrationTester:
                     _ = state_buffer.enqueue_fill(Float64(cycle) * 0.4)  # command
                     
                     # GPU control computation
-                    var control_buffer = self.device_context.enqueue_create_buffer[DType.float64](1)
+                    control_buffer = self.device_context.enqueue_create_buffer[DType.float64](1)
                     _ = control_buffer.enqueue_fill(Float64(cycle) * 0.05)  # control output
                     
                     self.device_context.synchronize()
@@ -279,18 +279,18 @@ struct SystemIntegrationTester:
                     var cpu_control_result = Float64(cycle) * 0.05
                     result.cpu_fallback_tested = True
                 
-                var cycle_end = Float64(now()) / 1_000_000_000.0
-                var cycle_time_ms = (cycle_end - cycle_start) * 1000.0
+                cycle_end = Float64(now()) / 1_000_000_000.0
+                cycle_time_ms = (cycle_end - cycle_start) * 1000.0
                 
                 # Check if cycle meets real-time requirements
                 if cycle_time_ms < self.real_time_target_ms:
                     successful_cycles += 1
             
-            var end_time = Float64(now()) / 1_000_000_000.0
+            end_time = Float64(now()) / 1_000_000_000.0
             result.execution_time_ms = (end_time - start_time) * 1000.0
             
             # Calculate performance metrics
-            var cycle_success_rate = Float64(successful_cycles) / Float64(control_cycles) * 100.0
+            cycle_success_rate = Float64(successful_cycles) / Float64(control_cycles) * 100.0
             result.real_time_performance = cycle_success_rate > 95.0  # 95% of cycles must be real-time
             result.performance_score = cycle_success_rate
             result.integration_success = result.real_time_performance
@@ -319,21 +319,21 @@ struct SystemIntegrationTester:
         try:
             print("✓ Testing system stability and CPU fallback...")
             
-            var start_time = Float64(now()) / 1_000_000_000.0
+            start_time = Float64(now()) / 1_000_000_000.0
             
             # Test system stability under load
-            var stability_tests = 10
-            var stable_tests = 0
+            stability_tests = 10
+            stable_tests = 0
             
             for test in range(stability_tests):
-                var test_start = Float64(now()) / 1_000_000_000.0
+                test_start = Float64(now()) / 1_000_000_000.0
                 
                 if self.gpu_available:
                     # Test GPU stability
-                    var stability_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
+                    stability_buffer = self.device_context.enqueue_create_buffer[DType.float64](1000)
                     
                     for i in range(min(1000, 500)):  # Reduced for stability testing
-                        var stability_value = Float64(test * 1000 + i) * 0.0001
+                        stability_value = Float64(test * 1000 + i) * 0.0001
                         _ = stability_buffer.enqueue_fill(stability_value)
                     
                     self.device_context.synchronize()
@@ -345,18 +345,18 @@ struct SystemIntegrationTester:
                     cpu_fallback_result += Float64(test * 100 + i) * 0.001
                 result.cpu_fallback_tested = True
                 
-                var test_end = Float64(now()) / 1_000_000_000.0
-                var test_time_ms = (test_end - test_start) * 1000.0
+                test_end = Float64(now()) / 1_000_000_000.0
+                test_time_ms = (test_end - test_start) * 1000.0
                 
                 # Check if test completed successfully
                 if test_time_ms < 100.0:  # 100ms timeout per test
                     stable_tests += 1
             
-            var end_time = Float64(now()) / 1_000_000_000.0
+            end_time = Float64(now()) / 1_000_000_000.0
             result.execution_time_ms = (end_time - start_time) * 1000.0
             
             # Calculate stability metrics
-            var stability_rate = Float64(stable_tests) / Float64(stability_tests) * 100.0
+            stability_rate = Float64(stable_tests) / Float64(stability_tests) * 100.0
             result.real_time_performance = stability_rate > 90.0  # 90% stability required
             result.performance_score = stability_rate
             result.integration_success = result.real_time_performance and result.cpu_fallback_tested
@@ -424,8 +424,8 @@ struct SystemIntegrationTester:
             print()
         
         # Calculate overall results
-        var pass_rate = Float64(self.passed_tests) / Float64(self.total_tests) * 100.0
-        var overall_success = self.passed_tests == self.total_tests
+        pass_rate = Float64(self.passed_tests) / Float64(self.total_tests) * 100.0
+        overall_success = self.passed_tests == self.total_tests
         
         print("OVERALL INTEGRATION TEST RESULTS:")
         print("  - Total tests:", self.total_tests)
@@ -453,5 +453,5 @@ fn create_system_integration_tester() raises -> SystemIntegrationTester:
 
 fn run_system_integration_tests() raises -> Bool:
     """Run comprehensive system integration testing."""
-    var tester = create_system_integration_tester()
+    tester = create_system_integration_tester()
     return tester.run_comprehensive_integration_tests()

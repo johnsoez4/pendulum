@@ -30,8 +30,8 @@ fn main():
     print("\n1. Testing GPU Hardware for Memory Optimization...")
     print("-" * 60)
 
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
 
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -50,17 +50,17 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for memory optimizer")
 
         # Initialize memory optimizer variables
         var memory_alignment = 128  # 128-byte alignment for optimal coalescing
-        var cache_line_size = 128  # 128-byte cache lines
-        var memory_bandwidth_gb_s = 900.0  # NVIDIA A10 memory bandwidth
-        var coalescing_efficiency = 0.0
-        var cache_hit_ratio = 0.0
-        var memory_throughput = 0.0
-        var optimization_enabled = True
+        cache_line_size = 128  # 128-byte cache lines
+        memory_bandwidth_gb_s = 900.0  # NVIDIA A10 memory bandwidth
+        coalescing_efficiency = 0.0
+        cache_hit_ratio = 0.0
+        memory_throughput = 0.0
+        optimization_enabled = True
 
         print("✓ Advanced GPU Memory Optimizer initialized")
         print("✓ Memory alignment:", memory_alignment, "bytes")
@@ -77,37 +77,37 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for coalescing optimization")
 
         # Test various data sizes for coalescing optimization
-        var coalescing_sizes = List[Int](1000, 4000, 16000, 64000)
-        var memory_alignment = 128
+        coalescing_sizes = List[Int](1000, 4000, 16000, 64000)
+        memory_alignment = 128
 
         print("Testing memory coalescing optimization:")
 
         for i in range(len(coalescing_sizes)):
-            var data_size = coalescing_sizes[i]
+            data_size = coalescing_sizes[i]
             print("  Test", i + 1, "- Data size:", data_size, "elements")
 
             # Calculate optimal alignment
-            var aligned_size = Int(
+            aligned_size = Int(
                 ((data_size + memory_alignment - 1) / memory_alignment)
                 * memory_alignment
             )
 
             # Create aligned GPU buffer
-            var aligned_buffer = ctx.enqueue_create_buffer[DType.float64](
+            aligned_buffer = ctx.enqueue_create_buffer[DType.float64](
                 aligned_size
             )
 
             # Fill buffer with coalesced access pattern
             for j in range(min(aligned_size, 1000)):  # Limit for performance
-                var coalesced_value = Float64(j) * 0.001
+                coalesced_value = Float64(j) * 0.001
                 _ = aligned_buffer.enqueue_fill(coalesced_value)
 
             # Calculate coalescing efficiency
-            var efficiency = Float64(data_size) / Float64(aligned_size) * 100.0
+            efficiency = Float64(data_size) / Float64(aligned_size) * 100.0
 
             print("    ✓ Memory coalescing optimized")
             print("    - Original size:", data_size, "elements")
@@ -126,33 +126,33 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for cache optimization")
 
         # Test cache optimization for different matrix sizes
-        var matrix_configs = List[List[Int]]()
+        matrix_configs = List[List[Int]]()
         matrix_configs.append(List[Int](32, 32))  # Small matrix
         matrix_configs.append(List[Int](64, 64))  # Medium matrix
         matrix_configs.append(List[Int](128, 128))  # Large matrix
 
-        var cache_line_size = 128
+        cache_line_size = 128
 
         print("Testing cache access pattern optimization:")
 
         for i in range(len(matrix_configs)):
-            var matrix_rows = matrix_configs[i][0]
-            var matrix_cols = matrix_configs[i][1]
-            var total_elements = matrix_rows * matrix_cols
+            matrix_rows = matrix_configs[i][0]
+            matrix_cols = matrix_configs[i][1]
+            total_elements = matrix_rows * matrix_cols
 
             print("  Matrix", i + 1, "- Size:", matrix_rows, "x", matrix_cols)
 
             # Create cache-optimized buffer
-            var cache_buffer = ctx.enqueue_create_buffer[DType.float64](
+            cache_buffer = ctx.enqueue_create_buffer[DType.float64](
                 total_elements
             )
 
             # Implement cache-friendly access pattern (row-major with blocking)
-            var block_size = Int(cache_line_size / 8)  # 8 bytes per Float64
+            block_size = Int(cache_line_size / 8)  # 8 bytes per Float64
 
             for block_row in range(0, matrix_rows, block_size):
                 for block_col in range(0, matrix_cols, block_size):
@@ -162,21 +162,21 @@ fn main():
                         for col_offset in range(
                             min(block_size, matrix_cols - block_col)
                         ):
-                            var row = block_row + row_offset
-                            var col = block_col + col_offset
+                            row = block_row + row_offset
+                            col = block_col + col_offset
                             if row < matrix_rows and col < matrix_cols:
                                 var index = row * matrix_cols + col
                                 if index < min(
                                     total_elements, 1000
                                 ):  # Limit for performance
-                                    var cache_value = Float64(
+                                    cache_value = Float64(
                                         row * 0.1 + col * 0.01
                                     )
                                     _ = cache_buffer.enqueue_fill(cache_value)
 
             # Calculate cache hit ratio estimate
-            var cache_blocks = (total_elements + block_size - 1) / block_size
-            var cache_hit_ratio = min(95.0, Float64(cache_blocks) * 0.1)
+            cache_blocks = (total_elements + block_size - 1) / block_size
+            cache_hit_ratio = min(95.0, Float64(cache_blocks) * 0.1)
 
             print("    ✓ Cache access patterns optimized")
             print("    - Block size:", block_size, "elements")
@@ -195,26 +195,26 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for bandwidth optimization")
 
         # Test bandwidth optimization for different transfer sizes
-        var transfer_sizes_mb = List[Float64](1.0, 4.0, 16.0, 64.0)
-        var memory_bandwidth_gb_s = 900.0  # NVIDIA A10 memory bandwidth
+        transfer_sizes_mb = List[Float64](1.0, 4.0, 16.0, 64.0)
+        memory_bandwidth_gb_s = 900.0  # NVIDIA A10 memory bandwidth
 
         print("Testing memory bandwidth optimization:")
 
         for i in range(len(transfer_sizes_mb)):
-            var transfer_size_mb = transfer_sizes_mb[i]
+            transfer_size_mb = transfer_sizes_mb[i]
             print("  Test", i + 1, "- Transfer size:", transfer_size_mb, "MB")
 
             # Calculate optimal transfer size for bandwidth
-            var optimal_transfer_size = Int(
+            optimal_transfer_size = Int(
                 transfer_size_mb * 1024.0 * 1024.0 / 8.0
             )  # Convert to elements
 
             # Create bandwidth-optimized buffer
-            var bandwidth_buffer = ctx.enqueue_create_buffer[DType.float64](
+            bandwidth_buffer = ctx.enqueue_create_buffer[DType.float64](
                 optimal_transfer_size
             )
 
@@ -222,12 +222,12 @@ fn main():
             for j in range(
                 min(optimal_transfer_size, 1000)
             ):  # Limit for performance
-                var stream_value = Float64(j) * 0.0001
+                stream_value = Float64(j) * 0.0001
                 _ = bandwidth_buffer.enqueue_fill(stream_value)
 
             # Calculate memory throughput
-            var theoretical_throughput = memory_bandwidth_gb_s
-            var actual_throughput = min(
+            theoretical_throughput = memory_bandwidth_gb_s
+            actual_throughput = min(
                 theoretical_throughput, transfer_size_mb * 8.0
             )  # Estimate
 
@@ -255,12 +255,12 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for neural network optimization")
 
         # Neural network layer sizes (4→8→8→3 architecture)
-        var layer_sizes = List[Int](32, 64, 64, 24)  # 4×8, 8×8, 8×8, 8×3
-        var memory_alignment = 128
+        layer_sizes = List[Int](32, 64, 64, 24)  # 4×8, 8×8, 8×8, 8×3
+        memory_alignment = 128
         var total_nn_memory = 0
 
         print("Testing neural network memory optimization:")
@@ -268,17 +268,17 @@ fn main():
 
         # Optimize memory layout for each layer
         for i in range(len(layer_sizes)):
-            var layer_size = layer_sizes[i]
+            layer_size = layer_sizes[i]
             total_nn_memory += layer_size
 
             # Calculate optimal alignment for neural network layer
-            var aligned_layer_size = Int(
+            aligned_layer_size = Int(
                 ((layer_size + memory_alignment - 1) / memory_alignment)
                 * memory_alignment
             )
 
             # Create optimized buffer for neural network layer
-            var nn_buffer = ctx.enqueue_create_buffer[DType.float64](
+            nn_buffer = ctx.enqueue_create_buffer[DType.float64](
                 aligned_layer_size
             )
 
@@ -286,7 +286,7 @@ fn main():
             for j in range(
                 min(aligned_layer_size, 500)
             ):  # Limit for performance
-                var nn_value = Float64(i * 0.1 + j * 0.001)
+                nn_value = Float64(i * 0.1 + j * 0.001)
                 _ = nn_buffer.enqueue_fill(nn_value)
 
             print(
@@ -300,8 +300,8 @@ fn main():
             )
 
         # Calculate neural network memory efficiency
-        var nn_memory_mb = Float64(total_nn_memory * 8) / (1024.0 * 1024.0)
-        var nn_efficiency = min(
+        nn_memory_mb = Float64(total_nn_memory * 8) / (1024.0 * 1024.0)
+        nn_efficiency = min(
             100.0, nn_memory_mb * 25.0
         )  # Higher efficiency for NN
 

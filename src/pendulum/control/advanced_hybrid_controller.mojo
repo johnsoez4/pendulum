@@ -64,7 +64,7 @@ struct FusionStrategy(Copyable, Movable):
     
     fn normalize_weights(mut self):
         """Normalize weights to sum to 1.0."""
-        var total = self.mpc_weight + self.rl_weight + self.adaptive_weight
+        total = self.mpc_weight + self.rl_weight + self.adaptive_weight
         if total > 0.0:
             self.mpc_weight /= total
             self.rl_weight /= total
@@ -156,17 +156,17 @@ struct AdvancedHybridController:
             return self._create_safe_command(timestamp)
         
         # Get control commands from all controllers
-        var enhanced_command = self.enhanced_controller.compute_enhanced_control(current_state, timestamp)
-        var rl_command = self.rl_controller.compute_rl_control(current_state, timestamp)
+        enhanced_command = self.enhanced_controller.compute_enhanced_control(current_state, timestamp)
+        rl_command = self.rl_controller.compute_rl_control(current_state, timestamp)
         
         # Update controller confidence based on recent performance
         self._update_controller_confidence(current_state, enhanced_command, rl_command)
         
         # Select optimal fusion strategy
-        var strategy = self._select_fusion_strategy(current_state)
+        strategy = self._select_fusion_strategy(current_state)
         
         # Fuse control commands using selected strategy
-        var fused_command = self._fuse_control_commands(enhanced_command, rl_command, strategy, timestamp)
+        fused_command = self._fuse_control_commands(enhanced_command, rl_command, strategy, timestamp)
         
         # Update performance tracking
         self._update_performance_tracking(current_state, fused_command, timestamp)
@@ -183,7 +183,7 @@ struct AdvancedHybridController:
     fn _create_fusion_strategies(mut self):
         """Create different fusion strategies for various scenarios."""
         # Strategy 1: Balanced fusion (default)
-        var balanced = FusionStrategy(
+        balanced = FusionStrategy(
             "balanced",
             0.4,    # mpc_weight
             0.4,    # rl_weight
@@ -195,7 +195,7 @@ struct AdvancedHybridController:
         self.fusion_strategies.append(balanced)
         
         # Strategy 2: MPC-dominant (for precision control)
-        var mpc_dominant = FusionStrategy(
+        mpc_dominant = FusionStrategy(
             "mpc_dominant",
             0.7,    # mpc_weight
             0.2,    # rl_weight
@@ -207,7 +207,7 @@ struct AdvancedHybridController:
         self.fusion_strategies.append(mpc_dominant)
         
         # Strategy 3: RL-dominant (for learning and adaptation)
-        var rl_dominant = FusionStrategy(
+        rl_dominant = FusionStrategy(
             "rl_dominant",
             0.2,    # mpc_weight
             0.7,    # rl_weight
@@ -219,7 +219,7 @@ struct AdvancedHybridController:
         self.fusion_strategies.append(rl_dominant)
         
         # Strategy 4: Adaptive-dominant (for robustness)
-        var adaptive_dominant = FusionStrategy(
+        adaptive_dominant = FusionStrategy(
             "adaptive_dominant",
             0.3,    # mpc_weight
             0.2,    # rl_weight
@@ -232,23 +232,23 @@ struct AdvancedHybridController:
     
     fn _select_fusion_strategy(self, current_state: List[Float64]) -> FusionStrategy:
         """Select optimal fusion strategy based on current conditions."""
-        var pend_angle = current_state[2]
-        var pend_velocity = current_state[1]
+        pend_angle = current_state[2]
+        pend_velocity = current_state[1]
         
         # Get current performance estimate
-        var current_performance = self._estimate_current_performance()
-        var current_stability = self._estimate_current_stability()
+        current_performance = self._estimate_current_performance()
+        current_stability = self._estimate_current_stability()
         
         # Find best applicable strategy
-        var best_strategy = self.fusion_strategies[0]  # Default to balanced
+        best_strategy = self.fusion_strategies[0]  # Default to balanced
         var best_score = 0.0
         
         for i in range(len(self.fusion_strategies)):
-            var strategy = self.fusion_strategies[i]
+            strategy = self.fusion_strategies[i]
             
             if strategy.is_applicable(current_performance, current_stability):
                 # Score strategy based on confidence and state
-                var score = self._score_strategy(strategy, current_state)
+                score = self._score_strategy(strategy, current_state)
                 
                 if score > best_score:
                     best_score = score
@@ -260,11 +260,11 @@ struct AdvancedHybridController:
                              strategy: FusionStrategy, timestamp: Float64) -> ControlCommand:
         """Fuse control commands using the selected strategy."""
         # Extract control voltages
-        var enhanced_voltage = enhanced_cmd.voltage
-        var rl_voltage = rl_cmd.voltage
+        enhanced_voltage = enhanced_cmd.voltage
+        rl_voltage = rl_cmd.voltage
         
         # Get adaptive component (simplified as enhanced controller's adaptive part)
-        var adaptive_voltage = enhanced_voltage * 0.8  # Simplified adaptive component
+        adaptive_voltage = enhanced_voltage * 0.8  # Simplified adaptive component
         
         # Fuse voltages using strategy weights
         var fused_voltage = (strategy.mpc_weight * enhanced_voltage +
@@ -280,7 +280,7 @@ struct AdvancedHybridController:
             predicted_state = rl_cmd.predicted_state
         
         # Create fused command
-        var fused_command = ControlCommand(
+        fused_command = ControlCommand(
             fused_voltage,
             timestamp,
             "hybrid_" + strategy.strategy_name,
@@ -293,8 +293,8 @@ struct AdvancedHybridController:
     fn _update_controller_confidence(mut self, current_state: List[Float64], 
                                    enhanced_cmd: ControlCommand, rl_cmd: ControlCommand):
         """Update confidence metrics for each controller."""
-        var pend_angle = current_state[2]
-        var abs_angle = abs(pend_angle)
+        pend_angle = current_state[2]
+        abs_angle = abs(pend_angle)
         
         # MPC confidence: High for near-inverted states
         if abs_angle < 15.0:
@@ -305,15 +305,15 @@ struct AdvancedHybridController:
             self.controller_confidence.mpc_confidence = 0.4
         
         # RL confidence: Increases with training episodes
-        var rl_performance = self.rl_controller.get_rl_performance()
+        rl_performance = self.rl_controller.get_rl_performance()
         self.controller_confidence.rl_confidence = min(0.9, rl_performance.3 + 0.1)  # Success rate estimate
         
         # Adaptive confidence: Based on recent performance
-        var recent_performance = self._estimate_current_performance()
+        recent_performance = self._estimate_current_performance()
         self.controller_confidence.adaptive_confidence = recent_performance.success_rate
         
         # Overall fusion confidence
-        var max_conf = max(self.controller_confidence.mpc_confidence,
+        max_conf = max(self.controller_confidence.mpc_confidence,
                           max(self.controller_confidence.rl_confidence,
                              self.controller_confidence.adaptive_confidence))
         self.controller_confidence.fusion_confidence = max_conf
@@ -326,8 +326,8 @@ struct AdvancedHybridController:
     
     fn _score_strategy(self, strategy: FusionStrategy, current_state: List[Float64]) -> Float64:
         """Score a fusion strategy for current conditions."""
-        var pend_angle = current_state[2]
-        var abs_angle = abs(pend_angle)
+        pend_angle = current_state[2]
+        abs_angle = abs(pend_angle)
         
         var score = 0.0
         
@@ -371,8 +371,8 @@ struct AdvancedHybridController:
     fn _update_performance_tracking(mut self, current_state: List[Float64], 
                                   command: ControlCommand, timestamp: Float64):
         """Update performance and stability tracking."""
-        var pend_angle = current_state[2]
-        var abs_angle = abs(pend_angle)
+        pend_angle = current_state[2]
+        abs_angle = abs(pend_angle)
         
         # Update stability tracking
         if abs_angle < 10.0:  # In stable region
@@ -384,8 +384,8 @@ struct AdvancedHybridController:
             self.stability_history.append(0.0)  # Reset stability
         
         # Update performance tracking (simplified)
-        var success_rate = 1.0 if abs_angle < 15.0 else 0.0
-        var current_perf = ControlPerformance(
+        success_rate = 1.0 if abs_angle < 15.0 else 0.0
+        current_perf = ControlPerformance(
             success_rate,
             abs_angle,
             abs(command.voltage),
@@ -398,15 +398,15 @@ struct AdvancedHybridController:
         
         # Keep only recent history
         if len(self.performance_history) > PERFORMANCE_WINDOW:
-            var new_history = List[ControlPerformance]()
+            new_history = List[ControlPerformance]()
             var start_idx = len(self.performance_history) - PERFORMANCE_WINDOW
             for i in range(start_idx, len(self.performance_history)):
                 new_history.append(self.performance_history[i])
             self.performance_history = new_history
         
         if len(self.stability_history) > PERFORMANCE_WINDOW:
-            var new_stability = List[Float64]()
-            var start_idx = len(self.stability_history) - PERFORMANCE_WINDOW
+            new_stability = List[Float64]()
+            start_idx = len(self.stability_history) - PERFORMANCE_WINDOW
             for i in range(start_idx, len(self.stability_history)):
                 new_stability.append(self.stability_history[i])
             self.stability_history = new_stability
@@ -428,7 +428,7 @@ struct AdvancedHybridController:
         
         # Adapt strategy weights based on performance
         for i in range(len(self.fusion_strategies)):
-            var strategy = self.fusion_strategies[i]
+            strategy = self.fusion_strategies[i]
             
             if success_rate > 0.85:  # High performance - favor current approach
                 # Slightly increase weights of successful strategy
@@ -447,7 +447,7 @@ struct AdvancedHybridController:
     
     fn _create_safe_command(self, timestamp: Float64) -> ControlCommand:
         """Create safe command when hybrid controller is not ready."""
-        var safe_predicted_state = List[Float64]()
+        safe_predicted_state = List[Float64]()
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
@@ -468,7 +468,7 @@ struct AdvancedHybridController:
             (success_rate, stability_time, fusion_confidence, current_strategy, meets_targets)
         """
         var success_rate = 0.0
-        var avg_stability = 0.0
+        avg_stability = 0.0
         
         if len(self.performance_history) > 0:
             var total_success = 0.0
@@ -482,7 +482,7 @@ struct AdvancedHybridController:
                 max_stability = max(max_stability, self.stability_history[i])
             avg_stability = max_stability
         
-        var meets_targets = (success_rate >= SUCCESS_TARGET and avg_stability >= STABILITY_TARGET)
+        meets_targets = (success_rate >= SUCCESS_TARGET and avg_stability >= STABILITY_TARGET)
         
         return (success_rate, avg_stability, self.controller_confidence.fusion_confidence, 
                 self.current_strategy, meets_targets)

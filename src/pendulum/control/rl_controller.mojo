@@ -38,7 +38,7 @@ struct RLState(Copyable, Movable):
     
     fn to_vector(self) -> List[Float64]:
         """Convert state to vector for neural network input."""
-        var state_vector = List[Float64]()
+        state_vector = List[Float64]()
         state_vector.append(self.la_position / 4.0)        # Normalize to [-1, 1]
         state_vector.append(self.la_velocity / 100.0)      # Normalize velocity
         state_vector.append(self.pend_angle / 180.0)       # Normalize angle
@@ -110,7 +110,7 @@ struct RLNeuralNetwork:
         
         # Initialize output layer (hidden_dim -> output_dim)
         for i in range(output_dim):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(hidden_dim):
                 row.append((random() - 0.5) * 0.2)
             self.weights3.append(row)
@@ -119,7 +119,7 @@ struct RLNeuralNetwork:
     fn forward(self, input: List[Float64]) -> List[Float64]:
         """Forward pass through the network."""
         # First layer
-        var hidden1 = List[Float64]()
+        hidden1 = List[Float64]()
         for i in range(len(self.weights1)):
             var sum = self.biases1[i]
             for j in range(len(input)):
@@ -127,7 +127,7 @@ struct RLNeuralNetwork:
             hidden1.append(tanh(sum))  # Tanh activation
         
         # Second layer
-        var hidden2 = List[Float64]()
+        hidden2 = List[Float64]()
         for i in range(len(self.weights2)):
             var sum = self.biases2[i]
             for j in range(len(hidden1)):
@@ -135,7 +135,7 @@ struct RLNeuralNetwork:
             hidden2.append(tanh(sum))
         
         # Output layer
-        var output = List[Float64]()
+        output = List[Float64]()
         for i in range(len(self.weights3)):
             var sum = self.biases3[i]
             for j in range(len(hidden2)):
@@ -146,10 +146,10 @@ struct RLNeuralNetwork:
     
     fn update_weights(mut self, input: List[Float64], target: List[Float64]):
         """Update network weights using gradient descent (simplified)."""
-        var current_output = self.forward(input)
+        current_output = self.forward(input)
         
         # Compute output error
-        var output_error = List[Float64]()
+        output_error = List[Float64]()
         for i in range(len(target)):
             output_error.append(target[i] - current_output[i])
         
@@ -230,16 +230,16 @@ struct RLController:
             return self._create_safe_command(timestamp)
         
         # Convert to RL state representation
-        var rl_state = self._convert_to_rl_state(current_state, timestamp)
+        rl_state = self._convert_to_rl_state(current_state, timestamp)
         
         # Select action using epsilon-greedy policy
-        var action = self._select_action(rl_state)
+        action = self._select_action(rl_state)
         
         # Convert action to control voltage
-        var control_voltage = self._action_to_voltage(action)
+        control_voltage = self._action_to_voltage(action)
         
         # Compute reward for current state
-        var reward = self._compute_reward(rl_state, action)
+        reward = self._compute_reward(rl_state, action)
         
         # Store experience if we have a previous state
         if self.episode_count > 0:
@@ -258,9 +258,9 @@ struct RLController:
         self.total_reward += reward
         
         # Create control command
-        var predicted_state = self._predict_next_state(current_state, control_voltage)
+        predicted_state = self._predict_next_state(current_state, control_voltage)
         
-        var command = ControlCommand(
+        command = ControlCommand(
             control_voltage,
             timestamp,
             "rl_control",
@@ -272,9 +272,9 @@ struct RLController:
     
     fn _convert_to_rl_state(self, raw_state: List[Float64], timestamp: Float64) -> RLState:
         """Convert raw state to RL state representation."""
-        var la_position = raw_state[0]
-        var pend_velocity = raw_state[1]
-        var pend_angle = raw_state[2]
+        la_position = raw_state[0]
+        pend_velocity = raw_state[1]
+        pend_angle = raw_state[2]
         
         # Estimate linear actuator velocity (simplified)
         var la_velocity = 0.0
@@ -282,7 +282,7 @@ struct RLController:
             la_velocity = (la_position - self.current_state.la_position) / 0.04  # 25 Hz
         
         # Target is always inverted state
-        var target_angle = 0.0
+        target_angle = 0.0
         
         # Update time in current state region
         var time_in_state = self.current_state.time_in_state
@@ -301,8 +301,8 @@ struct RLController:
             return Int(random() * Float64(RL_ACTION_DIM))
         else:
             # Greedy action (exploitation)
-            var state_vector = state.to_vector()
-            var q_values = self.q_network.forward(state_vector)
+            state_vector = state.to_vector()
+            q_values = self.q_network.forward(state_vector)
             
             # Find action with maximum Q-value
             var best_action = 0
@@ -324,7 +324,7 @@ struct RLController:
         var reward = 0.0
         
         # Primary reward: Being inverted
-        var angle_error = abs(state.pend_angle)
+        angle_error = abs(state.pend_angle)
         if angle_error < 5.0:
             reward += 10.0  # High reward for being very close to inverted
         elif angle_error < 15.0:
@@ -340,7 +340,7 @@ struct RLController:
         reward -= abs(state.pend_velocity) * 0.001
         
         # Control effort penalty: Discourage large control actions
-        var control_voltage = self._action_to_voltage(action)
+        control_voltage = self._action_to_voltage(action)
         reward -= abs(control_voltage) * 0.01
         
         # Position penalty: Stay near center
@@ -354,11 +354,11 @@ struct RLController:
     
     fn _store_experience(mut self, state: RLState, action: Int, reward: Float64):
         """Store experience in replay buffer."""
-        var prev_state_vector = self.current_state.to_vector()
-        var current_state_vector = state.to_vector()
-        var done = state.is_terminal()
+        prev_state_vector = self.current_state.to_vector()
+        current_state_vector = state.to_vector()
+        done = state.is_terminal()
         
-        var experience = RLExperience(
+        experience = RLExperience(
             prev_state_vector,
             action,
             reward,
@@ -371,8 +371,8 @@ struct RLController:
         
         # Remove old experiences if buffer is full
         if len(self.experience_buffer) > RL_MEMORY_SIZE:
-            var new_buffer = List[RLExperience]()
-            var start_idx = len(self.experience_buffer) - RL_MEMORY_SIZE
+            new_buffer = List[RLExperience]()
+            start_idx = len(self.experience_buffer) - RL_MEMORY_SIZE
             for i in range(start_idx, len(self.experience_buffer)):
                 new_buffer.append(self.experience_buffer[i])
             self.experience_buffer = new_buffer
@@ -384,14 +384,14 @@ struct RLController:
         
         # Sample random batch from experience buffer
         for batch_idx in range(min(4, RL_BATCH_SIZE // 8)):  # Simplified training
-            var exp_idx = Int(random() * Float64(len(self.experience_buffer)))
-            var experience = self.experience_buffer[exp_idx]
+            exp_idx = Int(random() * Float64(len(self.experience_buffer)))
+            experience = self.experience_buffer[exp_idx]
             
             if not experience.is_valid():
                 continue
             
             # Compute target Q-value
-            var next_q_values = self.target_network.forward(experience.next_state)
+            next_q_values = self.target_network.forward(experience.next_state)
             var max_next_q = next_q_values[0]
             for i in range(1, len(next_q_values)):
                 max_next_q = max(max_next_q, next_q_values[i])
@@ -401,8 +401,8 @@ struct RLController:
                 target_q += RL_DISCOUNT_FACTOR * max_next_q
             
             # Create target vector
-            var current_q_values = self.q_network.forward(experience.state)
-            var target_vector = current_q_values
+            current_q_values = self.q_network.forward(experience.state)
+            target_vector = current_q_values
             target_vector[experience.action] = target_q
             
             # Update network
@@ -415,7 +415,7 @@ struct RLController:
     
     fn _predict_next_state(self, current_state: List[Float64], control_voltage: Float64) -> List[Float64]:
         """Predict next state using simplified dynamics."""
-        var next_state = List[Float64]()
+        next_state = List[Float64]()
         
         # Simplified prediction
         next_state.append(current_state[0] + control_voltage * 0.01)  # Position
@@ -426,7 +426,7 @@ struct RLController:
     
     fn _create_safe_command(self, timestamp: Float64) -> ControlCommand:
         """Create safe command when RL controller is not ready."""
-        var safe_predicted_state = List[Float64]()
+        safe_predicted_state = List[Float64]()
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
@@ -468,7 +468,7 @@ struct RLController:
             avg_reward = sum_reward / Float64(len(self.performance_history))
         
         # Estimate success rate based on recent performance
-        var success_rate_estimate = max(0.0, min(1.0, (avg_reward + 100.0) / 200.0))
+        success_rate_estimate = max(0.0, min(1.0, (avg_reward + 100.0) / 200.0))
         
         return (avg_reward, self.exploration_rate, self.episode_count, success_rate_estimate)
     

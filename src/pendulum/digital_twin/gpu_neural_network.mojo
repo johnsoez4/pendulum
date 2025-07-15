@@ -118,7 +118,7 @@ struct GPUMatrix:
         # In real implementation, this would use GPU parallel operations
         for i in range(self.rows):
             for j in range(self.cols):
-                var val = self.get(i, j)
+                val = self.get(i, j)
                 if activation == "tanh":
                     self.set(i, j, tanh(val))
                 elif activation == "relu":
@@ -161,12 +161,12 @@ struct GPUNeuralLayer:
 
     fn _initialize_weights(mut self):
         """Initialize weights using Xavier initialization."""
-        var scale = sqrt(2.0 / Float64(self.input_size + self.output_size))
+        scale = sqrt(2.0 / Float64(self.input_size + self.output_size))
 
         for i in range(self.input_size):
             for j in range(self.output_size):
                 # Simple pseudo-random initialization
-                var val = scale * (
+                val = scale * (
                     Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5
                 )
                 self.weights.set(i, j, val)
@@ -195,32 +195,32 @@ struct GPUNeuralLayer:
 
             # Advanced GPU neural network layer using DeviceContext
             try:
-                var ctx = DeviceContext()
+                ctx = DeviceContext()
                 print("✓ DeviceContext created for advanced neural layer")
 
                 # GPU memory optimization: pre-allocate buffers
-                var input_size = input.rows * input.cols
-                var weights_size = self.weights.rows * self.weights.cols
-                var output_size = input.rows * self.output_size
+                input_size = input.rows * input.cols
+                weights_size = self.weights.rows * self.weights.cols
+                output_size = input.rows * self.output_size
 
                 # Create optimized GPU buffers
-                var input_buffer = ctx.enqueue_create_buffer[DType.float64](
+                input_buffer = ctx.enqueue_create_buffer[DType.float64](
                     input_size
                 )
-                var weights_buffer = ctx.enqueue_create_buffer[DType.float64](
+                weights_buffer = ctx.enqueue_create_buffer[DType.float64](
                     weights_size
                 )
-                var output_buffer = ctx.enqueue_create_buffer[DType.float64](
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](
                     output_size
                 )
-                var bias_buffer = ctx.enqueue_create_buffer[DType.float64](
+                bias_buffer = ctx.enqueue_create_buffer[DType.float64](
                     self.output_size
                 )
 
                 print("✓ GPU memory buffers allocated and optimized")
 
                 # Use real GPU matrix operations with DeviceContext
-                var output = input.multiply(
+                output = input.multiply(
                     self.weights
                 )  # Real GPU matrix multiplication
                 output.add_bias(self.biases)  # Real GPU bias addition
@@ -245,7 +245,7 @@ struct GPUNeuralLayer:
                 return output
         else:
             # CPU fallback
-            var output = input.multiply(self.weights)
+            output = input.multiply(self.weights)
             output.add_bias(self.biases)
             output.apply_activation(self.activation)
             return output
@@ -257,18 +257,18 @@ struct GPUNeuralLayer:
         This enables efficient processing of multiple pendulum states
         simultaneously on GPU for improved throughput.
         """
-        var outputs = List[GPUMatrix]()
+        outputs = List[GPUMatrix]()
 
         if self.use_gpu and len(inputs) > 1:
             print("GPU batch processing:", len(inputs), "inputs through layer")
 
             try:
-                var ctx = DeviceContext()
+                ctx = DeviceContext()
                 print("✓ DeviceContext created for batch processing")
 
                 # Process all inputs in batch on GPU
                 for i in range(len(inputs)):
-                    var output = self.forward(inputs[i])
+                    output = self.forward(inputs[i])
                     outputs.append(output)
 
                 # Batch synchronization
@@ -286,7 +286,7 @@ struct GPUNeuralLayer:
         else:
             # Sequential processing for single input or CPU mode
             for i in range(len(inputs)):
-                var output = self.forward(inputs[i])
+                output = self.forward(inputs[i])
                 outputs.append(output)
 
         return outputs
@@ -321,7 +321,7 @@ struct GPUNeuralLayer:
             # return GPUMatrix.from_tensor(activated)
 
             # Use GPU matrix operations with memory management
-            var output = input.multiply(self.weights)
+            output = input.multiply(self.weights)
             output.add_bias(self.biases)
             output.apply_activation(self.activation)
             return output
@@ -358,8 +358,8 @@ struct GPUPendulumNeuralNetwork:
         # Real GPU hardware detection
         var actual_gpu_available = False
         if use_gpu:
-            var has_nvidia = has_nvidia_gpu_accelerator()
-            var has_amd = has_amd_gpu_accelerator()
+            has_nvidia = has_nvidia_gpu_accelerator()
+            has_amd = has_amd_gpu_accelerator()
 
             if has_nvidia:
                 print(
@@ -411,11 +411,11 @@ struct GPUPendulumNeuralNetwork:
 
     fn normalize_input(self, input: List[Float64]) -> List[Float64]:
         """Normalize input using stored statistics."""
-        var normalized = List[Float64]()
+        normalized = List[Float64]()
 
         for i in range(len(input)):
             if i < len(self.input_means):
-                var val = (input[i] - self.input_means[i]) / self.input_stds[i]
+                val = (input[i] - self.input_means[i]) / self.input_stds[i]
                 normalized.append(val)
             else:
                 normalized.append(input[i])
@@ -424,11 +424,11 @@ struct GPUPendulumNeuralNetwork:
 
     fn denormalize_output(self, output: List[Float64]) -> List[Float64]:
         """Denormalize output using stored statistics."""
-        var denormalized = List[Float64]()
+        denormalized = List[Float64]()
 
         for i in range(len(output)):
             if i < len(self.output_means):
-                var val = output[i] * self.output_stds[i] + self.output_means[i]
+                val = output[i] * self.output_stds[i] + self.output_means[i]
                 denormalized.append(val)
             else:
                 denormalized.append(output[i])
@@ -459,17 +459,17 @@ struct GPUPendulumNeuralNetwork:
             print("✓ Using compatible GPU with DeviceContext operations")
 
         # Normalize input
-        var normalized_input = self.normalize_input(input)
+        normalized_input = self.normalize_input(input)
 
         # Convert to GPU matrix format and verify GPU availability
-        var current_output = GPUMatrix(1, len(normalized_input), self.use_gpu)
+        current_output = GPUMatrix(1, len(normalized_input), self.use_gpu)
         for i in range(len(normalized_input)):
             current_output.set(0, i, normalized_input[i])
 
         # Advanced GPU-accelerated forward pass through individual layers
         if self.use_gpu:
             try:
-                var ctx = DeviceContext()
+                ctx = DeviceContext()
                 print(
                     "✓ Advanced DeviceContext created for neural network"
                     " inference"
@@ -519,12 +519,12 @@ struct GPUPendulumNeuralNetwork:
             current_output = self.output_layer.forward(current_output)
 
         # Extract output
-        var raw_output = List[Float64]()
+        raw_output = List[Float64]()
         for i in range(MODEL_OUTPUT_DIM):
             raw_output.append(current_output.get(0, i))
 
         # Denormalize output
-        var final_output = self.denormalize_output(raw_output)
+        final_output = self.denormalize_output(raw_output)
 
         # Apply physics constraints
         return self._apply_physics_constraints(input, final_output)
@@ -533,29 +533,29 @@ struct GPUPendulumNeuralNetwork:
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to network predictions."""
-        var constrained = List[Float64]()
+        constrained = List[Float64]()
 
         # Extract current state
-        var current_la_pos = input[0]
-        var current_pend_vel = input[1]
-        var current_pend_pos = input[2]
-        var current_cmd_volts = input[3]
+        current_la_pos = input[0]
+        current_pend_vel = input[1]
+        current_pend_pos = input[2]
+        current_cmd_volts = input[3]
 
         # Extract predictions
-        var pred_la_pos = prediction[0]
-        var pred_pend_vel = prediction[1]
-        var pred_pend_pos = prediction[2]
+        pred_la_pos = prediction[0]
+        pred_pend_vel = prediction[1]
+        pred_pend_pos = prediction[2]
 
         # Apply actuator position constraints
-        var constrained_la_pos = max(-4.0, min(4.0, pred_la_pos))
+        constrained_la_pos = max(-4.0, min(4.0, pred_la_pos))
         constrained.append(constrained_la_pos)
 
         # Apply velocity constraints
-        var constrained_pend_vel = max(-1000.0, min(1000.0, pred_pend_vel))
+        constrained_pend_vel = max(-1000.0, min(1000.0, pred_pend_vel))
         constrained.append(constrained_pend_vel)
 
         # Apply angle continuity (no sudden jumps)
-        var angle_diff = pred_pend_pos - current_pend_pos
+        angle_diff = pred_pend_pos - current_pend_pos
         if abs(angle_diff) > 180.0:
             # Handle angle wrapping
             if angle_diff > 180.0:
@@ -578,11 +578,11 @@ struct GPUPendulumNeuralNetwork:
         print("-" * 50)
 
         # Test input (typical pendulum state)
-        var test_input = List[Float64](1.0, 0.5, 0.2, 0.1)
+        test_input = List[Float64](1.0, 0.5, 0.2, 0.1)
 
         if self.use_gpu:
             try:
-                var ctx = DeviceContext()
+                ctx = DeviceContext()
                 print(
                     "✓ GPU benchmark starting with",
                     num_iterations,
@@ -617,29 +617,29 @@ struct GPUPendulumNeuralNetwork:
             print("Optimizing GPU memory for neural network...")
 
             try:
-                var ctx = DeviceContext()
+                ctx = DeviceContext()
 
                 # Pre-allocate GPU memory for all layers
                 print("✓ Pre-allocating GPU memory buffers")
 
                 # Layer 1 memory optimization
-                var layer1_input_size = MODEL_INPUT_DIM
-                var layer1_output_size = MODEL_HIDDEN_SIZE
-                var layer1_buffer = ctx.enqueue_create_buffer[DType.float64](
+                layer1_input_size = MODEL_INPUT_DIM
+                layer1_output_size = MODEL_HIDDEN_SIZE
+                layer1_buffer = ctx.enqueue_create_buffer[DType.float64](
                     layer1_input_size * layer1_output_size
                 )
 
                 # Layer 2 memory optimization
-                var layer2_input_size = MODEL_HIDDEN_SIZE
-                var layer2_output_size = MODEL_HIDDEN_SIZE
-                var layer2_buffer = ctx.enqueue_create_buffer[DType.float64](
+                layer2_input_size = MODEL_HIDDEN_SIZE
+                layer2_output_size = MODEL_HIDDEN_SIZE
+                layer2_buffer = ctx.enqueue_create_buffer[DType.float64](
                     layer2_input_size * layer2_output_size
                 )
 
                 # Output layer memory optimization
-                var output_input_size = MODEL_HIDDEN_SIZE
-                var output_output_size = MODEL_OUTPUT_DIM
-                var output_buffer = ctx.enqueue_create_buffer[DType.float64](
+                output_input_size = MODEL_HIDDEN_SIZE
+                output_output_size = MODEL_OUTPUT_DIM
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](
                     output_input_size * output_output_size
                 )
 
@@ -684,7 +684,7 @@ struct GPUPendulumNeuralNetwork:
         3. Minimize memory transfers with batch operations
         4. Optimize memory bandwidth utilization
         """
-        var output_batch = List[List[Float64]]()
+        output_batch = List[List[Float64]]()
 
         if self.use_gpu and len(input_batch) > 1:
             print("SIMULATED GPU: Optimized batch processing")
@@ -705,7 +705,7 @@ struct GPUPendulumNeuralNetwork:
         else:
             # Process individually for small batches or CPU mode
             for i in range(len(input_batch)):
-                var output = self.forward(input_batch[i])
+                output = self.forward(input_batch[i])
                 output_batch.append(output)
 
         return output_batch

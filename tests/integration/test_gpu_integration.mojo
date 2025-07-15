@@ -79,7 +79,7 @@ struct GPUMatrix:
         """Apply activation function with GPU acceleration."""
         for i in range(self.rows):
             for j in range(self.cols):
-                var val = self.get(i, j)
+                val = self.get(i, j)
                 if activation == "tanh":
                     self.set(i, j, tanh(val))
                 elif activation == "relu":
@@ -127,22 +127,22 @@ struct GPUNeuralNetwork:
         
         for i in range(self.hidden_size):
             for j in range(self.output_size):
-                var val = Float64((i + j) % 10) * 0.1
+                val = Float64((i + j) % 10) * 0.1
                 self.weights2.set(i, j, val)
     
     fn forward(self, input: List[Float64]) -> List[Float64]:
         """Forward pass through the network."""
         # Convert input to matrix
-        var input_matrix = GPUMatrix(1, len(input), self.use_gpu)
+        input_matrix = GPUMatrix(1, len(input), self.use_gpu)
         for i in range(len(input)):
             input_matrix.set(0, i, input[i])
         
         # First layer
-        var hidden = input_matrix.multiply(self.weights1)
+        hidden = input_matrix.multiply(self.weights1)
         hidden.apply_activation("tanh")
         
         # Second layer
-        var output = hidden.multiply(self.weights2)
+        output = hidden.multiply(self.weights2)
         
         # Extract output
         var result = List[Float64]()
@@ -163,8 +163,8 @@ fn test_gpu_matrix_integration():
     print("Testing GPU matrix integration...")
     
     # Test GPU matrix creation and operations
-    var gpu_matrix_a = GPUMatrix(3, 3, True)
-    var gpu_matrix_b = GPUMatrix(3, 3, True)
+    gpu_matrix_a = GPUMatrix(3, 3, True)
+    gpu_matrix_b = GPUMatrix(3, 3, True)
     
     # Set test values
     for i in range(3):
@@ -185,22 +185,22 @@ fn test_gpu_neural_network_integration():
     print("Testing GPU neural network integration...")
     
     # Create GPU and CPU networks for comparison
-    var gpu_network = GPUNeuralNetwork(4, 8, 3, True)
-    var cpu_network = GPUNeuralNetwork(4, 8, 3, False)
+    gpu_network = GPUNeuralNetwork(4, 8, 3, True)
+    cpu_network = GPUNeuralNetwork(4, 8, 3, False)
     
     print("Networks created:")
     print("  GPU network:", gpu_network.get_compute_info())
     print("  CPU network:", cpu_network.get_compute_info())
     
     # Test forward pass
-    var test_input = List[Float64]()
+    test_input = List[Float64]()
     test_input.append(1.0)
     test_input.append(2.0)
     test_input.append(3.0)
     test_input.append(4.0)
     
-    var gpu_output = gpu_network.forward(test_input)
-    var cpu_output = cpu_network.forward(test_input)
+    gpu_output = gpu_network.forward(test_input)
+    cpu_output = cpu_network.forward(test_input)
     
     print("Forward pass completed:")
     print("  GPU output size:", len(gpu_output))
@@ -213,19 +213,19 @@ fn test_compute_mode_switching():
     print("Testing compute mode switching...")
     
     # Test different compute modes
-    var modes = List[Bool]()
+    modes = List[Bool]()
     modes.append(True)   # GPU mode
     modes.append(False)  # CPU mode
     
     for i in range(len(modes)):
-        var use_gpu = modes[i]
-        var network = GPUNeuralNetwork(2, 4, 2, use_gpu)
+        use_gpu = modes[i]
+        network = GPUNeuralNetwork(2, 4, 2, use_gpu)
         
-        var input = List[Float64]()
+        input = List[Float64]()
         input.append(0.5)
         input.append(1.5)
         
-        var output = network.forward(input)
+        output = network.forward(input)
         
         print("Mode:", "GPU" if use_gpu else "CPU", "- Output:", output[0], output[1])
 
@@ -233,14 +233,14 @@ fn test_performance_comparison():
     """Test performance comparison between GPU and CPU."""
     print("Testing performance comparison...")
     
-    var iterations = 10
+    iterations = 10
     
     # GPU performance test
     print("Running GPU performance test...")
-    var gpu_network = GPUNeuralNetwork(4, 16, 4, True)
+    gpu_network = GPUNeuralNetwork(4, 16, 4, True)
     
     for i in range(iterations):
-        var input = List[Float64]()
+        input = List[Float64]()
         input.append(Float64(i) * 0.1)
         input.append(Float64(i) * 0.2)
         input.append(Float64(i) * 0.3)
@@ -252,10 +252,10 @@ fn test_performance_comparison():
     
     # CPU performance test
     print("Running CPU performance test...")
-    var cpu_network = GPUNeuralNetwork(4, 16, 4, False)
+    cpu_network = GPUNeuralNetwork(4, 16, 4, False)
     
     for i in range(iterations):
-        var input = List[Float64]()
+        input = List[Float64]()
         input.append(Float64(i) * 0.1)
         input.append(Float64(i) * 0.2)
         input.append(Float64(i) * 0.3)
@@ -271,16 +271,16 @@ fn test_error_handling_and_fallback():
     print("Testing error handling and fallback...")
     
     # Test graceful fallback to CPU
-    var network_auto = GPUNeuralNetwork(3, 6, 2, True)  # Try GPU first
-    var network_cpu = GPUNeuralNetwork(3, 6, 2, False)  # Force CPU
+    network_auto = GPUNeuralNetwork(3, 6, 2, True)  # Try GPU first
+    network_cpu = GPUNeuralNetwork(3, 6, 2, False)  # Force CPU
     
-    var test_input = List[Float64]()
+    test_input = List[Float64]()
     test_input.append(1.0)
     test_input.append(0.5)
     test_input.append(-0.5)
     
-    var auto_output = network_auto.forward(test_input)
-    var cpu_output = network_cpu.forward(test_input)
+    auto_output = network_auto.forward(test_input)
+    cpu_output = network_cpu.forward(test_input)
     
     print("Fallback test completed:")
     print("  Auto mode output:", auto_output[0])

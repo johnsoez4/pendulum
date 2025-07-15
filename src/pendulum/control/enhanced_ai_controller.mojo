@@ -52,7 +52,7 @@ struct AdaptiveGains(Copyable, Movable):
     
     fn adapt_gains(mut self, performance: ControlPerformance, error_signal: Float64):
         """Adapt gains based on performance feedback."""
-        var adaptation = self.learning_rate * error_signal
+        adaptation = self.learning_rate * error_signal
         
         # Adapt stabilization gains
         if abs(error_signal) > 2.0:  # Large error, increase gains
@@ -183,12 +183,12 @@ struct EnhancedAIController:
     
     fn _determine_enhanced_control_mode(self, current_state: List[Float64]) -> String:
         """Determine optimal control mode based on state and performance."""
-        var pend_angle = current_state[2]
-        var pend_velocity = current_state[1]
-        var la_position = current_state[0]
+        pend_angle = current_state[2]
+        pend_velocity = current_state[1]
+        la_position = current_state[0]
         
-        var abs_angle = abs(pend_angle)
-        var abs_velocity = abs(pend_velocity)
+        abs_angle = abs(pend_angle)
+        abs_velocity = abs(pend_velocity)
         
         # Check if near inverted and should use MPC stabilization
         if abs_angle < 15.0 and abs_velocity < 100.0:
@@ -215,18 +215,18 @@ struct EnhancedAIController:
         self.mpc_controller.set_mpc_target(0.0, 0.0, 0.0)
         
         # Compute MPC control
-        var mpc_command = self.mpc_controller.compute_mpc_control(current_state, timestamp)
+        mpc_command = self.mpc_controller.compute_mpc_control(current_state, timestamp)
         
         # Enhance with adaptive gains
         var enhanced_voltage = mpc_command.voltage
         
         # Apply adaptive gain adjustment
-        var angle_error = abs(current_state[2] - 0.0)  # Error from inverted
+        angle_error = abs(current_state[2] - 0.0)  # Error from inverted
         if angle_error > 2.0:
             enhanced_voltage *= (1.0 + self.adaptive_gains.kp_stabilize / 15.0)  # Boost for large errors
         
         # Create enhanced command
-        var enhanced_command = ControlCommand(
+        enhanced_command = ControlCommand(
             enhanced_voltage,
             timestamp,
             "mpc_stabilize",
@@ -240,11 +240,11 @@ struct EnhancedAIController:
         """MPC control for achieving inversion from arbitrary states."""
         # Set MPC target to inverted state with trajectory planning
         var target_angle = 0.0
-        var target_position = 0.0
-        var target_velocity = 0.0
+        target_position = 0.0
+        target_velocity = 0.0
         
         # Adjust target based on current state for smooth transition
-        var current_angle = current_state[2]
+        current_angle = current_state[2]
         if abs(current_angle) > 30.0:
             # Intermediate target for large angle errors
             target_angle = current_angle * 0.5  # Move halfway toward inverted
@@ -252,16 +252,16 @@ struct EnhancedAIController:
         self.mpc_controller.set_mpc_target(target_angle, target_position, target_velocity)
         
         # Compute MPC control with enhanced prediction horizon
-        var mpc_command = self.mpc_controller.compute_mpc_control(current_state, timestamp)
+        mpc_command = self.mpc_controller.compute_mpc_control(current_state, timestamp)
         
         # Enhance control with velocity feedforward
-        var velocity_feedforward = current_state[1] * 0.01  # Small velocity compensation
+        velocity_feedforward = current_state[1] * 0.01  # Small velocity compensation
         var enhanced_voltage = mpc_command.voltage + velocity_feedforward
         
         # Apply constraints
         enhanced_voltage = max(-10.0, min(10.0, enhanced_voltage))
         
-        var enhanced_command = ControlCommand(
+        enhanced_command = ControlCommand(
             enhanced_voltage,
             timestamp,
             "mpc_invert",
@@ -273,20 +273,20 @@ struct EnhancedAIController:
     
     fn _adaptive_swing_up_control(mut self, current_state: List[Float64], timestamp: Float64) -> ControlCommand:
         """Enhanced swing-up control with adaptive energy management."""
-        var la_position = current_state[0]
-        var pend_velocity = current_state[1]
-        var pend_angle = current_state[2]
+        la_position = current_state[0]
+        pend_velocity = current_state[1]
+        pend_angle = current_state[2]
         
         # Enhanced energy-based control with adaptive gains
         var target_energy = 2.0  # Energy needed for inversion
-        var current_energy = 0.5 * pend_velocity * pend_velocity * 0.001  # Simplified kinetic energy
+        current_energy = 0.5 * pend_velocity * pend_velocity * 0.001  # Simplified kinetic energy
         
-        var energy_error = target_energy - current_energy
-        var position_error = 0.0 - la_position  # Keep cart centered
+        energy_error = target_energy - current_energy
+        position_error = 0.0 - la_position  # Keep cart centered
         
         # Adaptive energy pumping with learned gains
-        var energy_control = self.adaptive_gains.ke_swing_up * energy_error * sin(pend_angle * 3.14159 / 180.0)
-        var position_control = self.adaptive_gains.kp_position * position_error
+        energy_control = self.adaptive_gains.ke_swing_up * energy_error * sin(pend_angle * 3.14159 / 180.0)
+        position_control = self.adaptive_gains.kp_position * position_error
         
         var control_voltage = energy_control + position_control
         
@@ -294,9 +294,9 @@ struct EnhancedAIController:
         control_voltage = max(-8.0, min(8.0, control_voltage))  # Slightly reduced for swing-up
         
         # Predict next state using base controller's digital twin
-        var predicted_state = self.base_controller.digital_twin.forward(current_state)
+        predicted_state = self.base_controller.digital_twin.forward(current_state)
         
-        var command = ControlCommand(
+        command = ControlCommand(
             control_voltage,
             timestamp,
             "adaptive_swing_up",
@@ -309,8 +309,8 @@ struct EnhancedAIController:
     fn _hybrid_control(mut self, current_state: List[Float64], timestamp: Float64) -> ControlCommand:
         """Hybrid control combining MPC and classical control."""
         # Get both MPC and classical control commands
-        var mpc_command = self.mpc_controller.compute_mpc_control(current_state, timestamp)
-        var classical_command = self.base_controller.compute_control(current_state, timestamp)
+        mpc_command = self.mpc_controller.compute_mpc_control(current_state, timestamp)
+        classical_command = self.base_controller.compute_control(current_state, timestamp)
         
         # Blend controls based on performance and state
         var mpc_weight = 0.7  # Default MPC weight
@@ -325,10 +325,10 @@ struct EnhancedAIController:
             classical_weight = 0.6
         
         # Blend control voltages
-        var blended_voltage = mpc_weight * mpc_command.voltage + classical_weight * classical_command.voltage
+        blended_voltage = mpc_weight * mpc_command.voltage + classical_weight * classical_command.voltage
         
         # Use MPC prediction as it's more sophisticated
-        var hybrid_command = ControlCommand(
+        hybrid_command = ControlCommand(
             blended_voltage,
             timestamp,
             "hybrid_control",
@@ -340,8 +340,8 @@ struct EnhancedAIController:
     
     fn _update_enhanced_performance(mut self, current_state: List[Float64], command: ControlCommand, timestamp: Float64):
         """Update enhanced performance metrics and adapt gains."""
-        var pend_angle = current_state[2]
-        var angle_error = abs(pend_angle)
+        pend_angle = current_state[2]
+        angle_error = abs(pend_angle)
         
         # Update error history
         self.error_history.append(angle_error)
@@ -349,14 +349,14 @@ struct EnhancedAIController:
         # Calculate recent performance
         if len(self.error_history) > PERFORMANCE_WINDOW:
             # Remove old entries
-            var new_history = List[Float64]()
-            var start_idx = len(self.error_history) - PERFORMANCE_WINDOW
+            new_history = List[Float64]()
+            start_idx = len(self.error_history) - PERFORMANCE_WINDOW
             for i in range(start_idx, len(self.error_history)):
                 new_history.append(self.error_history[i])
             self.error_history = new_history
         
         # Update performance metrics
-        var recent_errors = self.error_history
+        recent_errors = self.error_history
         if len(recent_errors) > 0:
             var sum_error = 0.0
             var success_count = 0.0
@@ -375,7 +375,7 @@ struct EnhancedAIController:
     
     fn _create_safe_command(self, timestamp: Float64) -> ControlCommand:
         """Create safe command when enhanced controller is not ready."""
-        var safe_predicted_state = List[Float64]()
+        safe_predicted_state = List[Float64]()
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)

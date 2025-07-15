@@ -53,7 +53,7 @@ struct TrainingDemo:
         print("=" * 50)
         print("Optimizing control parameters for maximum performance...")
         
-        var optimizer = ParameterOptimizer()
+        optimizer = ParameterOptimizer()
         
         if not optimizer.initialize_optimizer():
             print("Failed to initialize parameter optimizer")
@@ -94,7 +94,7 @@ struct TrainingDemo:
         print("=" * 50)
         print("Training control algorithms with optimized parameters...")
         
-        var trainer = ControlTrainer()
+        trainer = ControlTrainer()
         
         if not trainer.initialize_trainer():
             print("Failed to initialize control trainer")
@@ -135,7 +135,7 @@ struct TrainingDemo:
         print("=" * 50)
         print("Evaluating trained control system performance...")
         
-        var evaluator = PerformanceEvaluator()
+        evaluator = PerformanceEvaluator()
         
         if not evaluator.initialize_evaluator():
             print("Failed to initialize performance evaluator")
@@ -148,7 +148,7 @@ struct TrainingDemo:
         print()
         
         # Run evaluation
-        var performance_metrics = evaluator.evaluate_control_performance(trained_parameters)
+        performance_metrics = evaluator.evaluate_control_performance(trained_parameters)
         
         print("Performance Evaluation Summary:")
         print("-" * 30)
@@ -178,10 +178,10 @@ struct TrainingDemo:
         print()
         
         # Validate against Phase 2 Task 3 requirements
-        var success_rate_target = performance_metrics.inversion_success_rate >= 0.70
-        var stability_time_target = performance_metrics.average_stability_time >= 15.0
-        var robustness_target = performance_metrics.robustness_score >= 0.60
-        var safety_target = performance_metrics.safety_compliance >= 0.95
+        success_rate_target = performance_metrics.inversion_success_rate >= 0.70
+        stability_time_target = performance_metrics.average_stability_time >= 15.0
+        robustness_target = performance_metrics.robustness_score >= 0.60
+        safety_target = performance_metrics.safety_compliance >= 0.95
         
         print("Phase 2 Task 3 Target Validation:")
         print("-" * 40)
@@ -195,7 +195,7 @@ struct TrainingDemo:
               "(" + str(performance_metrics.safety_compliance * 100.0) + "%)")
         print()
         
-        var all_targets_met = (success_rate_target and stability_time_target and 
+        all_targets_met = (success_rate_target and stability_time_target and 
                               robustness_target and safety_target)
         
         print("Overall Task 3 Achievement:")
@@ -277,7 +277,7 @@ struct TrainingDemo:
     @staticmethod
     fn _create_default_optimization_result() -> OptimizationResult:
         """Create default optimization result for error cases."""
-        var default_params = ParameterSet(
+        default_params = ParameterSet(
             100.0, 10.0, 1.0, 0.1, 0.5, 10, 5,  # MPC parameters
             15.0, 2.0, 0.5, 1.0, 0.1,            # Adaptive gains
             15.0, 100.0, 90.0, 150.0,            # Control thresholds
@@ -291,7 +291,7 @@ struct TrainingDemo:
     @staticmethod
     fn _create_default_training_result() -> TrainingResults:
         """Create default training result for error cases."""
-        var default_params = ParameterSet(
+        default_params = ParameterSet(
             100.0, 10.0, 1.0, 0.1, 0.5, 10, 5,  # MPC parameters
             15.0, 2.0, 0.5, 1.0, 0.1,            # Adaptive gains
             15.0, 100.0, 90.0, 150.0,            # Control thresholds

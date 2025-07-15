@@ -27,8 +27,8 @@ fn main():
     print("\n1. Testing GPU Hardware for Acceleration Validation...")
     print("-" * 60)
     
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -46,17 +46,17 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for GPU execution validation")
         
         # Initialize validator variables
-        var gpu_available = has_nvidia or has_amd
-        var validation_enabled = True
-        var total_gpu_operations = 0
-        var successful_gpu_operations = 0
-        var gpu_memory_allocated_mb = 0.0
-        var gpu_utilization_percent = 0.0
-        var hardware_acceleration_verified = False
+        gpu_available = has_nvidia or has_amd
+        validation_enabled = True
+        total_gpu_operations = 0
+        successful_gpu_operations = 0
+        gpu_memory_allocated_mb = 0.0
+        gpu_utilization_percent = 0.0
+        hardware_acceleration_verified = False
         
         print("✓ GPU Execution Validator initialized")
         print("✓ GPU Hardware Available:", gpu_available)
@@ -74,26 +74,26 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for execution validation")
         
         # Test GPU execution validation for different operations
-        var operations = List[String]()
+        operations = List[String]()
         operations.append("Matrix Operations")
         operations.append("Neural Network")
         operations.append("Memory Operations")
         operations.append("Tensor Operations")
         
-        var data_sizes = List[Int](1024, 512, 2048, 256)
-        var total_operations = 0
-        var successful_operations = 0
-        var total_memory_mb = 0.0
+        data_sizes = List[Int](1024, 512, 2048, 256)
+        total_operations = 0
+        successful_operations = 0
+        total_memory_mb = 0.0
         
         print("Testing GPU execution validation for multiple operations...")
         
         for i in range(len(operations)):
-            var operation_name = operations[i]
-            var data_size = data_sizes[i]
+            operation_name = operations[i]
+            data_size = data_sizes[i]
             
             print("  Operation", i + 1, "- Validating:", operation_name)
             
@@ -102,18 +102,18 @@ fn main():
                 total_operations += 1
                 
                 # Create GPU buffer to verify GPU execution
-                var gpu_buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
+                gpu_buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
                 
                 # Fill buffer with test data to verify GPU memory access
                 for j in range(min(data_size, 1000)):  # Limit for performance
-                    var test_value = Float64(j) * 0.001
+                    test_value = Float64(j) * 0.001
                     _ = gpu_buffer.enqueue_fill(test_value)
                 
                 # Synchronize to ensure GPU execution completion
                 ctx.synchronize()
                 
                 # Update GPU memory tracking
-                var memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+                memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
                 total_memory_mb += memory_mb
                 
                 # Track successful operation
@@ -146,29 +146,29 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for memory usage validation")
         
         # Test GPU memory allocation patterns
-        var memory_test_sizes = List[Int](1024, 4096, 16384, 65536)
-        var total_allocated_memory = 0.0
-        var expected_memory = 10.0  # Expected 10MB total
+        memory_test_sizes = List[Int](1024, 4096, 16384, 65536)
+        total_allocated_memory = 0.0
+        expected_memory = 10.0  # Expected 10MB total
         
         print("Testing GPU memory usage validation...")
         
         for i in range(len(memory_test_sizes)):
-            var memory_size = memory_test_sizes[i]
-            var memory_mb = Float64(memory_size * 8) / (1024.0 * 1024.0)
+            memory_size = memory_test_sizes[i]
+            memory_mb = Float64(memory_size * 8) / (1024.0 * 1024.0)
             
             print("  Memory test", i + 1, "- Size:", memory_size, "elements (", memory_mb, "MB)")
             
             if has_nvidia or has_amd:
                 # Allocate GPU memory
-                var memory_buffer = ctx.enqueue_create_buffer[DType.float64](memory_size)
+                memory_buffer = ctx.enqueue_create_buffer[DType.float64](memory_size)
                 
                 # Fill buffer to verify memory access
                 for j in range(min(memory_size, 1000)):
-                    var memory_value = Float64(j) * 0.001
+                    memory_value = Float64(j) * 0.001
                     _ = memory_buffer.enqueue_fill(memory_value)
                 
                 ctx.synchronize()
@@ -186,7 +186,7 @@ fn main():
             memory_efficiency = min(100.0, (total_allocated_memory / expected_memory) * 100.0)
         
         # Validate memory allocation patterns
-        var memory_valid = total_allocated_memory > 0.0
+        memory_valid = total_allocated_memory > 0.0
         
         print("  ✓ GPU memory validation completed")
         print("    - Total GPU memory allocated:", total_allocated_memory, "MB")
@@ -203,49 +203,49 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for performance monitoring")
         
         # Test GPU performance monitoring for different operations
-        var perf_operations = List[String]()
+        perf_operations = List[String]()
         perf_operations.append("Matrix Operations")
         perf_operations.append("Neural Network")
         perf_operations.append("Memory Operations")
         
-        var perf_data_sizes = List[Int](1024, 512, 2048)
-        var total_execution_time_ms = 0.0
-        var total_memory_bandwidth_gb_s = 0.0
-        var performance_samples = 0
+        perf_data_sizes = List[Int](1024, 512, 2048)
+        total_execution_time_ms = 0.0
+        total_memory_bandwidth_gb_s = 0.0
+        performance_samples = 0
         
         print("Testing GPU performance monitoring...")
         
         for i in range(len(perf_operations)):
-            var operation_name = perf_operations[i]
-            var data_size = perf_data_sizes[i]
+            operation_name = perf_operations[i]
+            data_size = perf_data_sizes[i]
             
             print("  Performance test", i + 1, "- Monitoring:", operation_name)
             
             if has_nvidia or has_amd:
                 # Start performance timing
                 ctx.synchronize()
-                var start_time = Float64(now()) / 1_000_000_000.0  # Convert to seconds
+                start_time = Float64(now()) / 1_000_000_000.0  # Convert to seconds
                 
                 # Create and execute GPU operation
-                var perf_buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
+                perf_buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
                 
                 # Perform GPU operations
                 for j in range(min(data_size, 1000)):  # Limit for performance
-                    var operation_value = Float64(j) * 0.001
+                    operation_value = Float64(j) * 0.001
                     _ = perf_buffer.enqueue_fill(operation_value)
                 
                 # End performance timing
                 ctx.synchronize()
-                var end_time = Float64(now()) / 1_000_000_000.0
-                var execution_time_ms = (end_time - start_time) * 1000.0
+                end_time = Float64(now()) / 1_000_000_000.0
+                execution_time_ms = (end_time - start_time) * 1000.0
                 
                 # Calculate performance metrics
-                var memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
-                var memory_bandwidth_gb_s = memory_mb / (execution_time_ms / 1000.0) / 1024.0
+                memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+                memory_bandwidth_gb_s = memory_mb / (execution_time_ms / 1000.0) / 1024.0
                 
                 # Update monitoring statistics
                 total_execution_time_ms += execution_time_ms
@@ -261,8 +261,8 @@ fn main():
         
         # Calculate average performance metrics
         if performance_samples > 0:
-            var avg_execution_time = total_execution_time_ms / Float64(performance_samples)
-            var avg_memory_bandwidth = total_memory_bandwidth_gb_s / Float64(performance_samples)
+            avg_execution_time = total_execution_time_ms / Float64(performance_samples)
+            avg_memory_bandwidth = total_memory_bandwidth_gb_s / Float64(performance_samples)
             
             print("  ✓ GPU performance monitoring completed")
             print("    - Performance samples:", performance_samples)
@@ -293,13 +293,13 @@ fn main():
         print("✓ Validating hardware acceleration effectiveness...")
         
         # Simulate validation results from previous tests
-        var gpu_available = has_nvidia or has_amd
-        var memory_valid = True  # From memory validation test
-        var operations_valid = True  # From execution validation test
-        var utilization_valid = True  # From performance monitoring
+        gpu_available = has_nvidia or has_amd
+        memory_valid = True  # From memory validation test
+        operations_valid = True  # From execution validation test
+        utilization_valid = True  # From performance monitoring
         
         # Overall hardware acceleration validation
-        var hardware_acceleration_verified = gpu_available and memory_valid and operations_valid and utilization_valid
+        hardware_acceleration_verified = gpu_available and memory_valid and operations_valid and utilization_valid
         
         print("  ✓ Hardware acceleration validation completed")
         print("    - GPU hardware available:", gpu_available)

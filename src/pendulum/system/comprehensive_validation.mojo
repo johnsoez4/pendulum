@@ -55,7 +55,7 @@ struct ValidationResults(Copyable, Movable):
     
     fn calculate_validation_grade(mut self):
         """Calculate overall validation grade."""
-        var score = (self.overall_success_rate + 
+        score = (self.overall_success_rate + 
                     min(1.0, self.average_stability_time / 30.0) +
                     self.robustness_score + 
                     self.reliability_score + 
@@ -147,31 +147,31 @@ struct ComprehensiveValidation:
         # Phase 1: Performance Validation
         print("PHASE 1: PERFORMANCE VALIDATION")
         print("-" * 40)
-        var performance_passed = self._run_performance_validation(system)
+        performance_passed = self._run_performance_validation(system)
         print()
         
         # Phase 2: Stress Testing
         print("PHASE 2: STRESS TESTING")
         print("-" * 40)
-        var stress_passed = self._run_stress_testing(system)
+        stress_passed = self._run_stress_testing(system)
         print()
         
         # Phase 3: Robustness Analysis
         print("PHASE 3: ROBUSTNESS ANALYSIS")
         print("-" * 40)
-        var robustness_score = self._run_robustness_analysis(system)
+        robustness_score = self._run_robustness_analysis(system)
         print()
         
         # Phase 4: Reliability Testing
         print("PHASE 4: RELIABILITY TESTING")
         print("-" * 40)
-        var reliability_score = self._run_reliability_testing(system)
+        reliability_score = self._run_reliability_testing(system)
         print()
         
         # Phase 5: Production Verification
         print("PHASE 5: PRODUCTION VERIFICATION")
         print("-" * 40)
-        var production_ready = self._run_production_verification(system)
+        production_ready = self._run_production_verification(system)
         print()
         
         # Compile final results
@@ -187,13 +187,13 @@ struct ComprehensiveValidation:
         """Run comprehensive performance validation."""
         print("Testing system performance across all validation scenarios...")
         
-        var total_scenarios = len(self.validation_scenarios)
-        var passed_scenarios = 0
-        var total_success_rate = 0.0
-        var total_stability_time = 0.0
+        total_scenarios = len(self.validation_scenarios)
+        passed_scenarios = 0
+        total_success_rate = 0.0
+        total_stability_time = 0.0
         
         for i in range(total_scenarios):
-            var scenario = self.validation_scenarios[i]
+            scenario = self.validation_scenarios[i]
             
             print("  Scenario", i + 1, ":", scenario.scenario_name)
             print("    Difficulty level:", scenario.difficulty_level)
@@ -225,8 +225,8 @@ struct ComprehensiveValidation:
         for i in range(total_scenarios):
             total_weight += self.validation_scenarios[i].get_scenario_weight()
         
-        var avg_success_rate = total_success_rate / total_weight
-        var avg_stability_time = total_stability_time / total_weight
+        avg_success_rate = total_success_rate / total_weight
+        avg_stability_time = total_stability_time / total_weight
         
         print("Performance Validation Summary:")
         print("  Scenarios passed:", passed_scenarios, "/", total_scenarios)
@@ -239,7 +239,7 @@ struct ComprehensiveValidation:
         self.validation_results.overall_success_rate = avg_success_rate
         self.validation_results.average_stability_time = avg_stability_time
         
-        var performance_passed = (Float64(passed_scenarios) / Float64(total_scenarios) >= 0.80)
+        performance_passed = (Float64(passed_scenarios) / Float64(total_scenarios) >= 0.80)
         print("  Performance validation:", "✓ PASSED" if performance_passed else "✗ FAILED")
         
         return performance_passed
@@ -248,17 +248,17 @@ struct ComprehensiveValidation:
         """Run stress testing under extreme conditions."""
         print("Running stress tests under extreme operating conditions...")
         
-        var stress_tests = List[String]()
+        stress_tests = List[String]()
         stress_tests.append("Maximum velocity stress test")
         stress_tests.append("Position limit stress test")
         stress_tests.append("Rapid state change stress test")
         stress_tests.append("Continuous operation stress test")
         stress_tests.append("Parameter variation stress test")
         
-        var passed_stress_tests = 0
+        passed_stress_tests = 0
         
         for i in range(len(stress_tests)):
-            var test_name = stress_tests[i]
+            test_name = stress_tests[i]
             print("  Running:", test_name)
             
             var stress_result = self._run_single_stress_test(i, system)
@@ -272,7 +272,7 @@ struct ComprehensiveValidation:
             else:
                 print("    Result: ✗ FAILED")
         
-        var stress_passed = (passed_stress_tests >= 4)  # At least 4/5 must pass
+        stress_passed = (passed_stress_tests >= 4)  # At least 4/5 must pass
         print("Stress Testing Summary:")
         print("  Tests passed:", passed_stress_tests, "/", len(stress_tests))
         print("  Stress testing:", "✓ PASSED" if stress_passed else "✗ FAILED")
@@ -284,12 +284,12 @@ struct ComprehensiveValidation:
         """Run robustness analysis with parameter variations."""
         print("Analyzing system robustness across parameter variations...")
         
-        var robustness_tests = ROBUSTNESS_TEST_VARIATIONS
-        var successful_tests = 0
+        robustness_tests = ROBUSTNESS_TEST_VARIATIONS
+        successful_tests = 0
         
         for i in range(robustness_tests):
             # Create parameter variation (±20% variation)
-            var variation_factor = 0.8 + 0.4 * Float64(i) / Float64(robustness_tests)
+            variation_factor = 0.8 + 0.4 * Float64(i) / Float64(robustness_tests)
             
             # Test with parameter variation
             var robustness_result = self._test_parameter_variation(variation_factor, system)
@@ -320,7 +320,7 @@ struct ComprehensiveValidation:
         
         for i in range(reliability_cycles):
             # Simulate reliability test cycle
-            var cycle_success = self._test_reliability_cycle(i, system)
+            cycle_success = self._test_reliability_cycle(i, system)
             self.reliability_metrics.append(cycle_success)
             
             if cycle_success >= 0.80:
@@ -343,11 +343,11 @@ struct ComprehensiveValidation:
         print("Verifying production deployment readiness...")
         
         # Get system status
-        var system_status = system.get_system_status()
-        var production_ready = system_status.0
-        var success_rate = system_status.1
-        var stability_time = system_status.2
-        var overall_score = system_status.3
+        system_status = system.get_system_status()
+        production_ready = system_status.0
+        success_rate = system_status.1
+        stability_time = system_status.2
+        overall_score = system_status.3
         
         print("  Production readiness check:")
         print("    System initialized:", "✓" if production_ready else "✗")
@@ -355,7 +355,7 @@ struct ComprehensiveValidation:
         print("    Stability target (>30s):", "✓" if stability_time >= 30.0 else "✗")
         print("    Overall score (>90%):", "✓" if overall_score >= 0.90 else "✗")
         
-        var production_verified = (production_ready and success_rate >= 0.90 and 
+        production_verified = (production_ready and success_rate >= 0.90 and 
                                  stability_time >= 30.0 and overall_score >= 0.90)
         
         print("Production Verification Summary:")
@@ -372,13 +372,13 @@ struct ComprehensiveValidation:
             (success_rate, stability_time, performance_score)
         """
         # Simplified performance testing (would involve actual system testing in practice)
-        var base_success = 0.92  # Advanced system performance
-        var base_stability = 35.0
-        var base_performance = 0.90
+        base_success = 0.92  # Advanced system performance
+        base_stability = 35.0
+        base_performance = 0.90
         
         # Adjust based on scenario difficulty
-        var difficulty_factor = 1.0 - Float64(scenario.difficulty_level - 1) * 0.05
-        var stress_factor = 1.0 - Float64(scenario.stress_level - 1) * 0.03
+        difficulty_factor = 1.0 - Float64(scenario.difficulty_level - 1) * 0.05
+        stress_factor = 1.0 - Float64(scenario.stress_level - 1) * 0.03
         
         var success_rate = base_success * difficulty_factor * stress_factor
         var stability_time = base_stability * difficulty_factor
@@ -395,69 +395,69 @@ struct ComprehensiveValidation:
         """Run a single stress test."""
         # Simplified stress testing
         var base_performance = 0.85
-        var stress_factor = 0.9 - Float64(test_id) * 0.05  # Increasing stress
+        stress_factor = 0.9 - Float64(test_id) * 0.05  # Increasing stress
         
         return max(0.0, min(1.0, base_performance * stress_factor))
     
     fn _test_parameter_variation(self, variation_factor: Float64, system: CompleteSystemIntegration) -> Float64:
         """Test system with parameter variation."""
         # Simplified parameter variation testing
-        var base_performance = 0.88
-        var variation_impact = abs(variation_factor - 1.0) * 0.5
+        base_performance = 0.88
+        variation_impact = abs(variation_factor - 1.0) * 0.5
         
         return max(0.0, min(1.0, base_performance - variation_impact))
     
     fn _test_reliability_cycle(self, cycle_id: Int, system: CompleteSystemIntegration) -> Float64:
         """Test a single reliability cycle."""
         # Simplified reliability testing
-        var base_reliability = 0.95
-        var degradation = Float64(cycle_id) * 0.001  # Slight degradation over time
+        base_reliability = 0.95
+        degradation = Float64(cycle_id) * 0.001  # Slight degradation over time
         
         return max(0.0, min(1.0, base_reliability - degradation))
     
     fn _create_validation_scenarios(mut self):
         """Create comprehensive validation scenarios."""
         # Scenario 1: Precision control near inverted
-        var scenario1_conditions = List[List[Float64]]()
+        scenario1_conditions = List[List[Float64]]()
         for i in range(5):
-            var condition = List[Float64]()
+            condition = List[Float64]()
             condition.append(Float64(i - 2) * 0.2)  # Position
             condition.append(Float64(i - 2) * 10.0) # Velocity
             condition.append(Float64(i - 2) * 3.0)  # Angle ±6°
             condition.append(0.0)
             scenario1_conditions.append(condition)
         
-        var scenario1 = ValidationScenario(
+        scenario1 = ValidationScenario(
             1, "Precision Control", scenario1_conditions, 30.0, 0.95, 25.0, 2, 1
         )
         self.validation_scenarios.append(scenario1)
         
         # Scenario 2: Large angle recovery
-        var scenario2_conditions = List[List[Float64]]()
+        scenario2_conditions = List[List[Float64]]()
         for i in range(8):
-            var condition = List[Float64]()
+            condition = List[Float64]()
             condition.append(Float64(i - 4) * 0.3)
             condition.append(Float64(i - 4) * 20.0)
             condition.append(90.0 + Float64(i) * 11.25)  # 90° to 168.75°
             condition.append(0.0)
             scenario2_conditions.append(condition)
         
-        var scenario2 = ValidationScenario(
+        scenario2 = ValidationScenario(
             2, "Large Angle Recovery", scenario2_conditions, 45.0, 0.85, 20.0, 4, 2
         )
         self.validation_scenarios.append(scenario2)
         
         # Scenario 3: High velocity handling
-        var scenario3_conditions = List[List[Float64]]()
+        scenario3_conditions = List[List[Float64]]()
         for i in range(6):
-            var condition = List[Float64]()
+            condition = List[Float64]()
             condition.append(Float64(i - 3) * 0.4)
             condition.append(Float64(i - 3) * 100.0)  # High velocities
             condition.append(Float64(i - 3) * 15.0)
             condition.append(0.0)
             scenario3_conditions.append(condition)
         
-        var scenario3 = ValidationScenario(
+        scenario3 = ValidationScenario(
             3, "High Velocity Handling", scenario3_conditions, 25.0, 0.80, 15.0, 3, 2
         )
         self.validation_scenarios.append(scenario3)

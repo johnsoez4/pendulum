@@ -22,8 +22,8 @@ fn main():
     print("\n1. Testing Real GPU Detection...")
     print("-" * 40)
     
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Detection Results:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -41,7 +41,7 @@ fn main():
     print("-" * 40)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✅ DeviceContext created successfully")
         print("✓ Ready for real GPU operations")
     except:
@@ -52,8 +52,8 @@ fn main():
     print("-" * 40)
     
     try:
-        var ctx = DeviceContext()
-        var buffer = ctx.enqueue_create_buffer[DType.float64](100)
+        ctx = DeviceContext()
+        buffer = ctx.enqueue_create_buffer[DType.float64](100)
         print("✅ GPU buffer created successfully")
         
         _ = buffer.enqueue_fill(42.0)

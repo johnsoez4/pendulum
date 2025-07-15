@@ -145,17 +145,17 @@ struct IntegratedControlSystem:
         self.system_status.uptime_seconds = timestamp - self.system_start_time
         
         # Step 1: State Estimation
-        var filtered_state = self.state_estimator.estimate_state(raw_sensor_data, timestamp)
+        filtered_state = self.state_estimator.estimate_state(raw_sensor_data, timestamp)
         
         # Convert filtered state to control input format
-        var control_input = List[Float64]()
+        control_input = List[Float64]()
         control_input.append(filtered_state.la_position)
         control_input.append(filtered_state.pend_velocity)
         control_input.append(filtered_state.pend_angle)
         control_input.append(raw_sensor_data[3] if len(raw_sensor_data) > 3 else 0.0)
         
         # Step 2: AI Control Computation
-        var control_command = self.ai_controller.compute_control(control_input, timestamp)
+        control_command = self.ai_controller.compute_control(control_input, timestamp)
         
         # Step 3: Safety Monitoring
         var safety_status = self.safety_monitor.check_safety(control_input, control_command)
@@ -181,7 +181,7 @@ struct IntegratedControlSystem:
     
     fn _create_safe_command(self, timestamp: Float64) -> ControlCommand:
         """Create safe default command when system is not active."""
-        var safe_predicted_state = List[Float64]()
+        safe_predicted_state = List[Float64]()
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
@@ -197,7 +197,7 @@ struct IntegratedControlSystem:
     fn _update_performance_metrics(mut self, state: FilteredState, command: ControlCommand, timestamp: Float64):
         """Update system performance metrics."""
         # Check if pendulum is inverted
-        var is_inverted = abs(state.pend_angle) < 10.0  # Within 10 degrees of inverted
+        is_inverted = abs(state.pend_angle) < 10.0  # Within 10 degrees of inverted
         
         if is_inverted:
             self.system_status.current_inversion_time += (timestamp - self.last_control_time)
@@ -217,8 +217,8 @@ struct IntegratedControlSystem:
         
         # Keep only recent history
         if len(self.performance_history) > 1000:  # Last 40 seconds at 25 Hz
-            var new_history = List[Float64]()
-            var start_idx = len(self.performance_history) - 1000
+            new_history = List[Float64]()
+            start_idx = len(self.performance_history) - 1000
             for i in range(start_idx, len(self.performance_history)):
                 new_history.append(self.performance_history[i])
             self.performance_history = new_history
@@ -249,7 +249,7 @@ struct IntegratedControlSystem:
         Returns:
             (success_rate, current_inversion_time, uptime, total_cycles)
         """
-        var success_rate = self.system_status.get_success_rate()
+        success_rate = self.system_status.get_success_rate()
         return (
             success_rate,
             self.system_status.current_inversion_time,
@@ -264,9 +264,9 @@ struct IntegratedControlSystem:
         Returns:
             (ai_controller_status, safety_monitor_status, state_estimator_status)
         """
-        var ai_status = "operational" if self.ai_controller.initialized else "not_initialized"
+        ai_status = "operational" if self.ai_controller.initialized else "not_initialized"
         var safety_status = self.system_status.safety_status
-        var estimator_status = "operational"  # Simplified
+        estimator_status = "operational"  # Simplified
         
         return (ai_status, safety_status, estimator_status)
     

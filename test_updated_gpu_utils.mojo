@@ -18,8 +18,8 @@ fn test_real_gpu_detection():
     print("-" * 50)
     
     # Use the verified working MAX Engine API
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Hardware Detection Results:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -43,7 +43,7 @@ fn test_device_context_creation():
     print("-" * 50)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✅ DeviceContext created successfully")
         print("✓ Ready for GPU buffer operations")
         print("✓ Ready for GPU kernel execution")
@@ -58,15 +58,15 @@ fn test_gpu_buffer_creation():
     print("-" * 50)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         
         # Create GPU buffer for test data
-        var size = 100
-        var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+        size = 100
+        buffer = ctx.enqueue_create_buffer[DType.float64](size)
         print("✅ GPU buffer created for", size, "elements")
         
         # Fill buffer with test data
-        var test_value = 42.0
+        test_value = 42.0
         _ = buffer.enqueue_fill(test_value)
         print("✓ GPU buffer filled with test data")
         
@@ -85,7 +85,7 @@ fn test_layout_tensor_creation():
     print("-" * 50)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         
         # Create layout for matrix operations
         alias width = 4
@@ -93,11 +93,11 @@ fn test_layout_tensor_creation():
         alias layout = Layout.row_major(width, height)
         
         # Create GPU buffer
-        var buffer = ctx.enqueue_create_buffer[DType.float64](width * height)
+        buffer = ctx.enqueue_create_buffer[DType.float64](width * height)
         print("✓ GPU buffer created for", width, "x", height, "matrix")
         
         # Create LayoutTensor
-        var tensor = LayoutTensor[DType.float64, layout](buffer)
+        tensor = LayoutTensor[DType.float64, layout](buffer)
         print("✅ LayoutTensor created successfully")
         print("✓ Ready for matrix operations on GPU")
         
@@ -116,10 +116,10 @@ fn main():
     print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
     
     # Run all tests
-    var detection_ok = test_real_gpu_detection()
-    var context_ok = test_device_context_creation()
-    var buffer_ok = test_gpu_buffer_creation()
-    var tensor_ok = test_layout_tensor_creation()
+    detection_ok = test_real_gpu_detection()
+    context_ok = test_device_context_creation()
+    buffer_ok = test_gpu_buffer_creation()
+    tensor_ok = test_layout_tensor_creation()
     
     print("\n" + "=" * 60)
     print("UPDATED GPU UTILITIES TEST RESULTS:")

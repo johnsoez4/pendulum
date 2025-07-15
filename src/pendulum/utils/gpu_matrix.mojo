@@ -84,18 +84,14 @@ struct RealGPUMemoryManager:
         """Allocate real GPU buffer using DeviceContext."""
         try:
             # Real GPU memory allocation
-            var _ = self.device_context.enqueue_create_buffer[DType.float64](
-                size
-            )
+            _ = self.device_context.enqueue_create_buffer[DType.float64](size)
 
             # Track allocation
             self.allocated_buffers.append(size)
             self.allocation_count += 1
 
             # Calculate memory usage
-            var memory_mb = Int(
-                (size * 8) / (1024 * 1024)
-            )  # 8 bytes per Float64
+            memory_mb = Int((size * 8) / (1024 * 1024))  # 8 bytes per Float64
             self.total_allocated_mb += memory_mb
 
             if self.total_allocated_mb > self.peak_usage_mb:
@@ -128,7 +124,7 @@ struct RealGPUMemoryManager:
         self.deallocation_count += 1
 
         # Update memory tracking
-        var memory_mb = Int((size * 8) / (1024 * 1024))
+        memory_mb = Int((size * 8) / (1024 * 1024))
         self.total_allocated_mb -= memory_mb
 
         # Update efficiency
@@ -177,11 +173,11 @@ struct RealGPUMemoryManager:
 
     fn allocate_matrix_buffer(mut self, rows: Int, cols: Int) raises -> Bool:
         """Allocate GPU buffer specifically for matrix operations."""
-        var buffer_size = rows * cols
+        buffer_size = rows * cols
 
         try:
             # Real GPU matrix buffer allocation
-            var matrix_buffer = self.device_context.enqueue_create_buffer[
+            matrix_buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](buffer_size)
 
@@ -194,7 +190,7 @@ struct RealGPUMemoryManager:
             self.allocation_count += 1
 
             # Calculate memory usage
-            var memory_mb = Int((buffer_size * 8) / (1024 * 1024))
+            memory_mb = Int((buffer_size * 8) / (1024 * 1024))
             self.total_allocated_mb += memory_mb
 
             if self.total_allocated_mb > self.peak_usage_mb:
@@ -220,14 +216,14 @@ struct RealGPUMemoryManager:
 
     fn batch_allocate_buffers(mut self, sizes: List[Int]) raises -> Int:
         """Batch allocate multiple GPU buffers for efficiency."""
-        var successful_allocations = 0
+        successful_allocations = 0
 
         try:
             print("✓ Starting batch GPU buffer allocation...")
             print("  - Number of buffers:", len(sizes))
 
             for i in range(len(sizes)):
-                var size = sizes[i]
+                size = sizes[i]
                 var _ = self.device_context.enqueue_create_buffer[
                     DType.float64
                 ](size)
@@ -238,7 +234,7 @@ struct RealGPUMemoryManager:
                 successful_allocations += 1
 
                 # Calculate memory
-                var memory_mb = Int((size * 8) / (1024 * 1024))
+                memory_mb = Int((size * 8) / (1024 * 1024))
                 self.total_allocated_mb += memory_mb
 
                 print(
@@ -300,11 +296,11 @@ struct AdvancedGPUMemoryPool:
 
         # Real GPU memory pool initialization using DeviceContext
         try:
-            var ctx = DeviceContext()
+            ctx = DeviceContext()
             print("✓ Advanced GPU Memory Pool initializing with DeviceContext")
 
             # Pre-allocate GPU memory blocks for optimal performance
-            var block_size = 1024 * 1024  # 1MB blocks
+            block_size = 1024 * 1024  # 1MB blocks
             for _ in range(min(pool_size, 64)):  # Limit initial allocation
                 var _ = ctx.enqueue_create_buffer[DType.float64](block_size)
                 # Note: In production, we'd store these buffers for reuse
@@ -341,7 +337,7 @@ struct AdvancedGPUMemoryPool:
             self.available_blocks -= 1
 
             # Calculate memory usage for monitoring
-            var block_size_mb = Int(
+            block_size_mb = Int(
                 (rows * cols * 8) / (1024 * 1024)
             )  # 8 bytes per Float64
             if block_size_mb > self.peak_usage_mb:
@@ -353,9 +349,9 @@ struct AdvancedGPUMemoryPool:
             )
 
             # Real GPU memory allocation using DeviceContext
-            var ctx = DeviceContext()
-            var buffer_size = rows * cols
-            var buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
+            ctx = DeviceContext()
+            buffer_size = rows * cols
+            buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
             ctx.synchronize()
 
             print(
@@ -398,7 +394,7 @@ struct AdvancedGPUMemoryPool:
     fn optimize_memory_layout(mut self) raises:
         """Optimize GPU memory layout to reduce fragmentation."""
         try:
-            var ctx = DeviceContext()
+            ctx = DeviceContext()
             print("✓ Optimizing GPU memory layout...")
 
             # Memory defragmentation simulation
@@ -493,7 +489,7 @@ struct AsyncGPUTransferManager:
 
         try:
             # Real asynchronous CPU to GPU transfer
-            var buffer = self.device_context.enqueue_create_buffer[
+            buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](data_size)
 
@@ -506,7 +502,7 @@ struct AsyncGPUTransferManager:
             self.total_bytes_transferred += data_size * 8  # 8 bytes per Float64
 
             # Calculate transfer efficiency
-            var transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+            transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
             self.transfer_efficiency = min(
                 100.0, transfer_mb * 10.0
             )  # Simulated efficiency
@@ -538,7 +534,7 @@ struct AsyncGPUTransferManager:
 
         try:
             # Real asynchronous GPU to CPU transfer
-            var buffer = self.device_context.enqueue_create_buffer[
+            buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](data_size)
 
@@ -551,7 +547,7 @@ struct AsyncGPUTransferManager:
             self.total_bytes_transferred += data_size * 8
 
             # Calculate bandwidth utilization
-            var transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+            transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
             self.bandwidth_utilization = min(
                 100.0, transfer_mb * 15.0
             )  # Simulated utilization
@@ -572,7 +568,7 @@ struct AsyncGPUTransferManager:
         mut self, batch_sizes: List[Int]
     ) raises -> Int:
         """Schedule batch asynchronous transfers for improved efficiency."""
-        var successful_transfers = 0
+        successful_transfers = 0
 
         if not self.async_operations_enabled:
             print("⚠️  Async operations disabled")
@@ -583,11 +579,11 @@ struct AsyncGPUTransferManager:
             print("  - Batch size:", len(batch_sizes), "transfers")
 
             for i in range(len(batch_sizes)):
-                var size = batch_sizes[i]
+                size = batch_sizes[i]
 
                 if self.active_transfers < self.max_concurrent_transfers:
                     # Schedule individual transfer
-                    var buffer = self.device_context.enqueue_create_buffer[
+                    buffer = self.device_context.enqueue_create_buffer[
                         DType.float64
                     ](size)
 
@@ -609,7 +605,7 @@ struct AsyncGPUTransferManager:
                     self.transfer_queue_size += 1
 
             # Update efficiency metrics
-            var total_mb = Float64(self.total_bytes_transferred) / (
+            total_mb = Float64(self.total_bytes_transferred) / (
                 1024.0 * 1024.0
             )
             self.transfer_efficiency = min(100.0, total_mb * 5.0)
@@ -640,7 +636,7 @@ struct AsyncGPUTransferManager:
             self.transfer_queue_size = 0
 
             # Calculate final efficiency metrics
-            var total_mb = Float64(self.total_bytes_transferred) / (
+            total_mb = Float64(self.total_bytes_transferred) / (
                 1024.0 * 1024.0
             )
             self.transfer_efficiency = min(100.0, total_mb * 8.0)
@@ -665,7 +661,7 @@ struct AsyncGPUTransferManager:
 
     fn get_transfer_statistics(self):
         """Print comprehensive transfer statistics."""
-        var total_mb = Float64(self.total_bytes_transferred) / (1024.0 * 1024.0)
+        total_mb = Float64(self.total_bytes_transferred) / (1024.0 * 1024.0)
 
         print("Asynchronous GPU Transfer Statistics:")
         print("  - Async operations enabled:", self.async_operations_enabled)
@@ -698,7 +694,7 @@ struct AsyncGPUTransferManager:
                 self.max_concurrent_transfers,
             )
         elif self.transfer_efficiency < 40.0:
-            var new_value = self.max_concurrent_transfers - 1
+            new_value = self.max_concurrent_transfers - 1
             if new_value > 2:
                 self.max_concurrent_transfers = new_value
             else:
@@ -738,11 +734,11 @@ struct AsyncGPUTransferManager:
 
             # Schedule transfers for each layer
             for i in range(len(layer_sizes)):
-                var layer_size = layer_sizes[i]
+                layer_size = layer_sizes[i]
 
                 if self.active_transfers < self.max_concurrent_transfers:
                     # Create buffer for neural network layer
-                    var layer_buffer = (
+                    layer_buffer = (
                         self.device_context.enqueue_create_buffer[
                             DType.float64
                         ](layer_size)
@@ -750,7 +746,7 @@ struct AsyncGPUTransferManager:
 
                     # Initialize with neural network weights/data
                     for j in range(min(layer_size, 1000)):
-                        var weight_value = Float64(
+                        weight_value = Float64(
                             i * 0.1 + j * 0.001
                         )  # Simulated weights
                         _ = layer_buffer.enqueue_fill(weight_value)
@@ -770,7 +766,7 @@ struct AsyncGPUTransferManager:
                     self.transfer_queue_size += 1
 
             # Update neural network transfer efficiency
-            var nn_mb = Float64(total_elements * 8) / (1024.0 * 1024.0)
+            nn_mb = Float64(total_elements * 8) / (1024.0 * 1024.0)
             self.transfer_efficiency = min(
                 100.0, nn_mb * 20.0
             )  # Higher efficiency for NN
@@ -844,7 +840,7 @@ struct AdvancedGPUMemoryOptimizer:
             print("✓ Optimizing memory coalescing for", data_size, "elements")
 
             # Calculate optimal alignment
-            var aligned_size = Int(
+            aligned_size = Int(
                 (
                     (data_size + self.memory_alignment - 1)
                     / self.memory_alignment
@@ -853,17 +849,17 @@ struct AdvancedGPUMemoryOptimizer:
             )
 
             # Create aligned GPU buffer
-            var aligned_buffer = self.device_context.enqueue_create_buffer[
+            aligned_buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](aligned_size)
 
             # Fill buffer with coalesced access pattern
             for i in range(min(aligned_size, 1000)):  # Limit for performance
-                var coalesced_value = Float64(i) * 0.001
+                coalesced_value = Float64(i) * 0.001
                 _ = aligned_buffer.enqueue_fill(coalesced_value)
 
             # Calculate coalescing efficiency
-            var efficiency = Float64(data_size) / Float64(aligned_size) * 100.0
+            efficiency = Float64(data_size) / Float64(aligned_size) * 100.0
             self.coalescing_efficiency = efficiency
 
             print("  ✓ Memory coalescing optimized")
@@ -892,15 +888,15 @@ struct AdvancedGPUMemoryOptimizer:
                 matrix_cols,
             )
 
-            var total_elements = matrix_rows * matrix_cols
+            total_elements = matrix_rows * matrix_cols
 
             # Create cache-optimized buffer
-            var cache_buffer = self.device_context.enqueue_create_buffer[
+            cache_buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](total_elements)
 
             # Implement cache-friendly access pattern (row-major with blocking)
-            var block_size = self.cache_line_size / 8  # 8 bytes per Float64
+            block_size = self.cache_line_size / 8  # 8 bytes per Float64
 
             for block_row in range(0, matrix_rows, block_size):
                 for block_col in range(0, matrix_cols, block_size):
@@ -908,20 +904,20 @@ struct AdvancedGPUMemoryOptimizer:
                         for j in range(
                             min(block_size, matrix_cols - block_col)
                         ):
-                            var row = block_row + i
-                            var col = block_col + j
+                            row = block_row + i
+                            col = block_col + j
                             if row < matrix_rows and col < matrix_cols:
                                 var index = row * matrix_cols + col
                                 if index < min(
                                     total_elements, 1000
                                 ):  # Limit for performance
-                                    var cache_value = Float64(
+                                    cache_value = Float64(
                                         row * 0.1 + col * 0.01
                                     )
                                     _ = cache_buffer.enqueue_fill(cache_value)
 
             # Calculate cache hit ratio estimate
-            var cache_blocks = (total_elements + block_size - 1) / block_size
+            cache_blocks = (total_elements + block_size - 1) / block_size
             self.cache_hit_ratio = min(95.0, Float64(cache_blocks) * 0.1)
 
             print("  ✓ Cache access patterns optimized")
@@ -950,12 +946,12 @@ struct AdvancedGPUMemoryOptimizer:
             )
 
             # Calculate optimal transfer size for bandwidth
-            var optimal_transfer_size = Int(
+            optimal_transfer_size = Int(
                 transfer_size_mb * 1024.0 * 1024.0 / 8.0
             )  # Convert to elements
 
             # Create bandwidth-optimized buffer
-            var bandwidth_buffer = self.device_context.enqueue_create_buffer[
+            bandwidth_buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](optimal_transfer_size)
 
@@ -963,12 +959,12 @@ struct AdvancedGPUMemoryOptimizer:
             for i in range(
                 min(optimal_transfer_size, 1000)
             ):  # Limit for performance
-                var stream_value = Float64(i) * 0.0001
+                stream_value = Float64(i) * 0.0001
                 _ = bandwidth_buffer.enqueue_fill(stream_value)
 
             # Calculate memory throughput
-            var theoretical_throughput = self.memory_bandwidth_gb_s
-            var actual_throughput = min(
+            theoretical_throughput = self.memory_bandwidth_gb_s
+            actual_throughput = min(
                 theoretical_throughput, transfer_size_mb * 8.0
             )  # Estimate
             self.memory_throughput = actual_throughput
@@ -1006,11 +1002,11 @@ struct AdvancedGPUMemoryOptimizer:
 
             # Optimize memory layout for each layer
             for i in range(len(layer_sizes)):
-                var layer_size = layer_sizes[i]
+                layer_size = layer_sizes[i]
                 total_nn_memory += layer_size
 
                 # Calculate optimal alignment for neural network layer
-                var aligned_layer_size = Int(
+                aligned_layer_size = Int(
                     (
                         (layer_size + self.memory_alignment - 1)
                         / self.memory_alignment
@@ -1019,7 +1015,7 @@ struct AdvancedGPUMemoryOptimizer:
                 )
 
                 # Create optimized buffer for neural network layer
-                var nn_buffer = self.device_context.enqueue_create_buffer[
+                nn_buffer = self.device_context.enqueue_create_buffer[
                     DType.float64
                 ](aligned_layer_size)
 
@@ -1027,7 +1023,7 @@ struct AdvancedGPUMemoryOptimizer:
                 for j in range(
                     min(aligned_layer_size, 500)
                 ):  # Limit for performance
-                    var nn_value = Float64(i * 0.1 + j * 0.001)
+                    nn_value = Float64(i * 0.1 + j * 0.001)
                     _ = nn_buffer.enqueue_fill(nn_value)
 
                 print(
@@ -1041,8 +1037,8 @@ struct AdvancedGPUMemoryOptimizer:
                 )
 
             # Calculate neural network memory efficiency
-            var nn_memory_mb = Float64(total_nn_memory * 8) / (1024.0 * 1024.0)
-            var nn_efficiency = min(
+            nn_memory_mb = Float64(total_nn_memory * 8) / (1024.0 * 1024.0)
+            nn_efficiency = min(
                 100.0, nn_memory_mb * 25.0
             )  # Higher efficiency for NN
 
@@ -1084,7 +1080,7 @@ struct AdvancedGPUMemoryOptimizer:
         print("  - Memory throughput:", self.memory_throughput, "GB/s")
 
         # Calculate overall optimization score
-        var optimization_score = (
+        optimization_score = (
             self.coalescing_efficiency
             + self.cache_hit_ratio
             + (self.memory_throughput / self.memory_bandwidth_gb_s * 100.0)
@@ -1161,10 +1157,10 @@ struct GPUTransferManager:
             self.active_transfers += 1
 
             # Calculate transfer efficiency
-            var transfer_time = (
+            transfer_time = (
                 size_mb / 100.0
             )  # Simulated transfer rate: 100 MB/s
-            var computation_time = size_mb * 0.01  # Simulated computation time
+            computation_time = size_mb * 0.01  # Simulated computation time
             self.transfer_efficiency = (
                 computation_time / (transfer_time + computation_time) * 100.0
             )
@@ -1250,8 +1246,8 @@ struct GPUTensor:
         # Environment: Mojo 25.5.0, MAX Engine 25.5.0
 
         # Verify GPU availability using real MAX Engine API
-        var has_nvidia = has_nvidia_gpu_accelerator()
-        var has_amd = has_amd_gpu_accelerator()
+        has_nvidia = has_nvidia_gpu_accelerator()
+        has_amd = has_amd_gpu_accelerator()
 
         if has_nvidia:
             print("✓ NVIDIA GPU detected and available for acceleration")
@@ -1302,12 +1298,12 @@ struct GPUTensor:
         # Use real MAX Engine DeviceContext for GPU operations
         # Based on working vector_addition.mojo example
         try:
-            var ctx = DeviceContext()
+            ctx = DeviceContext()
             print("✓ DeviceContext created successfully")
 
             # Create GPU buffer for tensor data
-            var size = self.get_total_elements()
-            var gpu_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+            size = self.get_total_elements()
+            gpu_buffer = ctx.enqueue_create_buffer[DType.float64](size)
             print("✓ GPU buffer created for", size, "elements")
 
             # Fill buffer with tensor data
@@ -1449,12 +1445,12 @@ struct GPUTensor:
 
             # Real GPU kernel execution using DeviceContext
             try:
-                var ctx = DeviceContext()
-                var size = self.get_total_elements()
+                ctx = DeviceContext()
+                size = self.get_total_elements()
 
                 # Create GPU buffers for operands and result
-                var lhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
-                var rhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                lhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                rhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
                 var result_buffer = ctx.enqueue_create_buffer[DType.float64](
                     size
                 )
@@ -1517,12 +1513,12 @@ struct GPUTensor:
 
             # Real GPU kernel execution using DeviceContext
             try:
-                var ctx = DeviceContext()
-                var size = self.get_total_elements()
+                ctx = DeviceContext()
+                size = self.get_total_elements()
 
                 # Create GPU buffers for operands and result
-                var lhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
-                var rhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                lhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                rhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
                 var result_buffer = ctx.enqueue_create_buffer[DType.float64](
                     size
                 )
@@ -1594,7 +1590,7 @@ struct GPUMatrix:
         self.cpu_data = List[Float64]()
 
         # Initialize real GPU tensor with MAX Engine
-        var tensor_shape = List[Int]()
+        tensor_shape = List[Int]()
         tensor_shape.append(rows)
         tensor_shape.append(cols)
         self.gpu_tensor = GPUTensor(tensor_shape, device_id=0)
@@ -1640,11 +1636,11 @@ struct GPUMatrix:
         Returns:
             GPUTensor initialized with matrix data.
         """
-        var tensor_shape = List[Int]()
+        tensor_shape = List[Int]()
         tensor_shape.append(self.rows)
         tensor_shape.append(self.cols)
 
-        var tensor = GPUTensor(tensor_shape, device_id=0)
+        tensor = GPUTensor(tensor_shape, device_id=0)
 
         # Copy matrix data to tensor
         if tensor.from_list(self.cpu_data):
@@ -1662,7 +1658,7 @@ struct GPUMatrix:
             tensor: GPU tensor to copy data from.
         """
         # Ensure tensor data is available on CPU
-        var tensor_copy = tensor
+        tensor_copy = tensor
         _ = tensor_copy.to_cpu()
 
         # Copy tensor data to matrix
@@ -1937,17 +1933,17 @@ struct GPUMatrix:
 
             # Real GPU matrix multiplication using DeviceContext
             try:
-                var ctx = DeviceContext()
+                ctx = DeviceContext()
                 var result_size = self.rows * other.cols
 
                 # Create GPU buffers for matrices
-                var a_buffer = ctx.enqueue_create_buffer[DType.float64](
+                a_buffer = ctx.enqueue_create_buffer[DType.float64](
                     self.rows * self.cols
                 )
-                var b_buffer = ctx.enqueue_create_buffer[DType.float64](
+                b_buffer = ctx.enqueue_create_buffer[DType.float64](
                     other.rows * other.cols
                 )
-                var c_buffer = ctx.enqueue_create_buffer[DType.float64](
+                c_buffer = ctx.enqueue_create_buffer[DType.float64](
                     result_size
                 )
 
@@ -2185,7 +2181,7 @@ struct GPUMatrix:
         """CPU-based activation function."""
         for i in range(self.rows):
             for j in range(self.cols):
-                var val = self.get(i, j)
+                val = self.get(i, j)
                 if activation == "tanh":
                     self.set(i, j, tanh(val))
                 elif activation == "relu":
@@ -2217,17 +2213,17 @@ struct GPUMatrix:
 
             # Advanced GPU activation function using DeviceContext
             try:
-                var ctx = DeviceContext()
-                var size = self.rows * self.cols
+                ctx = DeviceContext()
+                size = self.rows * self.cols
 
                 # Create optimized GPU buffers for activation processing
-                var input_buffer = ctx.enqueue_create_buffer[DType.float64](
+                input_buffer = ctx.enqueue_create_buffer[DType.float64](
                     size
                 )
-                var output_buffer = ctx.enqueue_create_buffer[DType.float64](
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](
                     size
                 )
-                var temp_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                temp_buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 print(
                     "✓ Advanced GPU buffers allocated for activation processing"
@@ -2241,7 +2237,7 @@ struct GPUMatrix:
                 # Advanced GPU activation function processing
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
+                        val = self.get(i, j)
                         var activated_val: Float64
 
                         # Comprehensive activation function support
@@ -2261,8 +2257,8 @@ struct GPUMatrix:
                             activated_val = val * (1.0 / (1.0 + exp(-val)))
                         elif activation == "gelu":
                             # Approximate GELU: 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
-                            var x_cubed = val * val * val
-                            var inner = 0.7978845608 * (
+                            x_cubed = val * val * val
+                            inner = 0.7978845608 * (
                                 val + 0.044715 * x_cubed
                             )  # sqrt(2/π) ≈ 0.7978845608
                             activated_val = 0.5 * val * (1.0 + tanh(inner))
@@ -2287,7 +2283,7 @@ struct GPUMatrix:
                 # CPU fallback with comprehensive activation support
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
+                        val = self.get(i, j)
                         if activation == "tanh":
                             self.set(i, j, tanh(val))
                         elif activation == "relu":
@@ -2303,8 +2299,8 @@ struct GPUMatrix:
                         elif activation == "swish":
                             self.set(i, j, val * (1.0 / (1.0 + exp(-val))))
                         elif activation == "gelu":
-                            var x_cubed = val * val * val
-                            var inner = 0.7978845608 * (
+                            x_cubed = val * val * val
+                            inner = 0.7978845608 * (
                                 val + 0.044715 * x_cubed
                             )
                             self.set(i, j, 0.5 * val * (1.0 + tanh(inner)))
@@ -2317,15 +2313,15 @@ struct GPUMatrix:
         if self.gpu_allocated:
             print("Specialized GPU ReLU activation")
             try:
-                var ctx = DeviceContext()
-                var size = self.rows * self.cols
-                var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                ctx = DeviceContext()
+                size = self.rows * self.cols
+                buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 # GPU ReLU processing
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
-                        var relu_val = max(0.0, val)
+                        val = self.get(i, j)
+                        relu_val = max(0.0, val)
                         _ = buffer.enqueue_fill(relu_val)
                         self.set(i, j, relu_val)
 
@@ -2342,15 +2338,15 @@ struct GPUMatrix:
         if self.gpu_allocated:
             print("Specialized GPU tanh activation")
             try:
-                var ctx = DeviceContext()
-                var size = self.rows * self.cols
-                var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                ctx = DeviceContext()
+                size = self.rows * self.cols
+                buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 # GPU tanh processing
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
-                        var tanh_val = tanh(val)
+                        val = self.get(i, j)
+                        tanh_val = tanh(val)
                         _ = buffer.enqueue_fill(tanh_val)
                         self.set(i, j, tanh_val)
 
@@ -2367,15 +2363,15 @@ struct GPUMatrix:
         if self.gpu_allocated:
             print("Specialized GPU sigmoid activation")
             try:
-                var ctx = DeviceContext()
-                var size = self.rows * self.cols
-                var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                ctx = DeviceContext()
+                size = self.rows * self.cols
+                buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 # GPU sigmoid processing
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
-                        var sigmoid_val = 1.0 / (1.0 + exp(-val))
+                        val = self.get(i, j)
+                        sigmoid_val = 1.0 / (1.0 + exp(-val))
                         _ = buffer.enqueue_fill(sigmoid_val)
                         self.set(i, j, sigmoid_val)
 
@@ -2393,23 +2389,23 @@ struct GPUMatrix:
         if self.gpu_allocated:
             print("Specialized GPU GELU activation")
             try:
-                var ctx = DeviceContext()
-                var size = self.rows * self.cols
-                var input_buffer = ctx.enqueue_create_buffer[DType.float64](
+                ctx = DeviceContext()
+                size = self.rows * self.cols
+                input_buffer = ctx.enqueue_create_buffer[DType.float64](
                     size
                 )
-                var output_buffer = ctx.enqueue_create_buffer[DType.float64](
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](
                     size
                 )
 
                 # GPU GELU processing
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
+                        val = self.get(i, j)
                         # GELU: 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
-                        var x_cubed = val * val * val
-                        var inner = 0.7978845608 * (val + 0.044715 * x_cubed)
-                        var gelu_val = 0.5 * val * (1.0 + tanh(inner))
+                        x_cubed = val * val * val
+                        inner = 0.7978845608 * (val + 0.044715 * x_cubed)
+                        gelu_val = 0.5 * val * (1.0 + tanh(inner))
                         _ = input_buffer.enqueue_fill(val)
                         _ = output_buffer.enqueue_fill(gelu_val)
                         self.set(i, j, gelu_val)
@@ -2427,15 +2423,15 @@ struct GPUMatrix:
         if self.gpu_allocated:
             print("Specialized GPU Swish activation")
             try:
-                var ctx = DeviceContext()
-                var size = self.rows * self.cols
-                var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                ctx = DeviceContext()
+                size = self.rows * self.cols
+                buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 # GPU Swish processing
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
-                        var swish_val = val * (1.0 / (1.0 + exp(-val)))
+                        val = self.get(i, j)
+                        swish_val = val * (1.0 / (1.0 + exp(-val)))
                         _ = buffer.enqueue_fill(swish_val)
                         self.set(i, j, swish_val)
 
@@ -2452,15 +2448,15 @@ struct GPUMatrix:
         if self.gpu_allocated:
             print("Specialized GPU Leaky ReLU activation")
             try:
-                var ctx = DeviceContext()
-                var size = self.rows * self.cols
-                var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                ctx = DeviceContext()
+                size = self.rows * self.cols
+                buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 # GPU Leaky ReLU processing
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        var val = self.get(i, j)
-                        var leaky_relu_val = val if val > 0.0 else alpha * val
+                        val = self.get(i, j)
+                        leaky_relu_val = val if val > 0.0 else alpha * val
                         _ = buffer.enqueue_fill(leaky_relu_val)
                         self.set(i, j, leaky_relu_val)
 
@@ -2479,7 +2475,7 @@ struct GPUMatrix:
         Returns:
             CPU Matrix with same data.
         """
-        var cpu_matrix = Matrix(self.rows, self.cols)
+        cpu_matrix = Matrix(self.rows, self.cols)
         for i in range(self.rows):
             for j in range(self.cols):
                 cpu_matrix.set(i, j, self.get(i, j))
@@ -2550,7 +2546,7 @@ struct Matrix:
         """Apply activation function element-wise."""
         for i in range(self.rows):
             for j in range(self.cols):
-                var val = self.get(i, j)
+                val = self.get(i, j)
                 if activation == "tanh":
                     self.set(i, j, tanh(val))
                 elif activation == "relu":
@@ -2571,7 +2567,7 @@ struct Matrix:
         Returns:
             GPU matrix with same data.
         """
-        var gpu_matrix = GPUMatrix(self.rows, self.cols, compute_mode)
+        gpu_matrix = GPUMatrix(self.rows, self.cols, compute_mode)
         for i in range(self.rows):
             for j in range(self.cols):
                 gpu_matrix.set(i, j, self.get(i, j))
@@ -2592,7 +2588,7 @@ fn create_matrix(
     Returns:
         Matrix instance.
     """
-    var compute_mode = ComputeMode_AUTO if use_gpu else ComputeMode_CPU_ONLY
+    compute_mode = ComputeMode_AUTO if use_gpu else ComputeMode_CPU_ONLY
     return GPUMatrix(rows, cols, compute_mode)
 
 

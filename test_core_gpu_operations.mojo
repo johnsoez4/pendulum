@@ -21,9 +21,9 @@ fn test_gpu_tensor_operations():
     print("-" * 50)
     
     # Create test tensors
-    var shape = List[Int](2, 3)  # 2x3 tensor
-    var tensor1 = GPUTensor(shape, 0)
-    var tensor2 = GPUTensor(shape, 0)
+    shape = List[Int](2, 3)  # 2x3 tensor
+    tensor1 = GPUTensor(shape, 0)
+    tensor2 = GPUTensor(shape, 0)
     
     # Initialize with test data
     tensor1.data.append(1.0)
@@ -42,8 +42,8 @@ fn test_gpu_tensor_operations():
     
     # Transfer to GPU
     print("Transferring tensors to GPU...")
-    var gpu_success1 = tensor1.to_gpu()
-    var gpu_success2 = tensor2.to_gpu()
+    gpu_success1 = tensor1.to_gpu()
+    gpu_success2 = tensor2.to_gpu()
     
     if gpu_success1 and gpu_success2:
         print("✓ Tensors successfully transferred to GPU")
@@ -69,8 +69,8 @@ fn test_gpu_matrix_operations():
     print("-" * 50)
     
     # Create test matrices
-    var matrix1 = GPUMatrix(2, 3, 1)  # 2x3 matrix, GPU mode
-    var matrix2 = GPUMatrix(3, 2, 1)  # 3x2 matrix, GPU mode
+    matrix1 = GPUMatrix(2, 3, 1)  # 2x3 matrix, GPU mode
+    matrix2 = GPUMatrix(3, 2, 1)  # 3x2 matrix, GPU mode
     
     # Initialize matrix1 with test data
     matrix1.set(0, 0, 1.0)
@@ -114,7 +114,7 @@ fn test_gpu_activation_functions():
     print("-" * 50)
     
     # Create test matrix
-    var matrix = GPUMatrix(2, 2, 1)  # 2x2 matrix, GPU mode
+    matrix = GPUMatrix(2, 2, 1)  # 2x2 matrix, GPU mode
     
     # Initialize with test data
     matrix.set(0, 0, -1.0)
@@ -128,7 +128,7 @@ fn test_gpu_activation_functions():
     
     # Test tanh activation
     print("\nTesting GPU tanh activation...")
-    var tanh_matrix = GPUMatrix(2, 2, 1)
+    tanh_matrix = GPUMatrix(2, 2, 1)
     tanh_matrix.set(0, 0, -1.0)
     tanh_matrix.set(0, 1, 0.0)
     tanh_matrix.set(1, 0, 1.0)
@@ -138,7 +138,7 @@ fn test_gpu_activation_functions():
     
     # Test ReLU activation
     print("\nTesting GPU ReLU activation...")
-    var relu_matrix = GPUMatrix(2, 2, 1)
+    relu_matrix = GPUMatrix(2, 2, 1)
     relu_matrix.set(0, 0, -1.0)
     relu_matrix.set(0, 1, 0.0)
     relu_matrix.set(1, 0, 1.0)
@@ -148,7 +148,7 @@ fn test_gpu_activation_functions():
     
     # Test sigmoid activation
     print("\nTesting GPU sigmoid activation...")
-    var sigmoid_matrix = GPUMatrix(2, 2, 1)
+    sigmoid_matrix = GPUMatrix(2, 2, 1)
     sigmoid_matrix.set(0, 0, -1.0)
     sigmoid_matrix.set(0, 1, 0.0)
     sigmoid_matrix.set(1, 0, 1.0)
@@ -168,8 +168,8 @@ fn main():
     print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
     
     # Check GPU availability
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("\nGPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -180,9 +180,9 @@ fn main():
         return
     
     # Run all tests
-    var tensor_ok = test_gpu_tensor_operations()
-    var matrix_ok = test_gpu_matrix_operations()
-    var activation_ok = test_gpu_activation_functions()
+    tensor_ok = test_gpu_tensor_operations()
+    matrix_ok = test_gpu_matrix_operations()
+    activation_ok = test_gpu_activation_functions()
     
     print("\n" + "=" * 60)
     print("CORE GPU OPERATIONS TEST RESULTS:")

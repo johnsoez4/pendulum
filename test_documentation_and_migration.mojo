@@ -25,8 +25,8 @@ fn main():
     print("\n1. Testing GPU Hardware Detection for Documentation...")
     print("-" * 60)
     
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -44,16 +44,16 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created - validates Real GPU Implementation Guide")
         
         # Test components documented in implementation guide
-        var gpu_available = has_nvidia or has_amd
-        var foundation_setup = True
-        var core_operations = True
-        var memory_management = True
-        var performance_validation = True
-        var integration_ready = True
+        gpu_available = has_nvidia or has_amd
+        foundation_setup = True
+        core_operations = True
+        memory_management = True
+        performance_validation = True
+        integration_ready = True
         
         print("✓ Real GPU Implementation Guide components:")
         print("  - MAX Engine Foundation Setup:", foundation_setup)
@@ -90,21 +90,21 @@ fn main():
         
         # Step 2: GPU detection migration
         print("  2. GPU Detection Migration:")
-        var gpu_detected = has_nvidia or has_amd
+        gpu_detected = has_nvidia or has_amd
         print("     - Real GPU detection:", gpu_detected)
         print("     ✓ GPU detection migration documented")
         
         # Step 3: DeviceContext migration
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("  3. DeviceContext Migration:")
         print("     - DeviceContext initialization: SUCCESS")
         print("     ✓ DeviceContext migration documented")
         
         # Step 4: GPU operations migration
         print("  4. GPU Operations Migration:")
-        var test_buffer = ctx.enqueue_create_buffer[DType.float64](100)
+        test_buffer = ctx.enqueue_create_buffer[DType.float64](100)
         for i in range(100):
-            var test_value = Float64(i) * 0.001
+            test_value = Float64(i) * 0.001
             _ = test_buffer.enqueue_fill(test_value)
         ctx.synchronize()
         print("     - Real GPU operations: SUCCESS")
@@ -112,14 +112,14 @@ fn main():
         
         # Step 5: Performance measurement migration
         print("  5. Performance Measurement Migration:")
-        var start_time = Float64(now()) / 1_000_000_000.0
-        var perf_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
+        start_time = Float64(now()) / 1_000_000_000.0
+        perf_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
         for i in range(1000):
-            var perf_value = Float64(i) * 0.001
+            perf_value = Float64(i) * 0.001
             _ = perf_buffer.enqueue_fill(perf_value)
         ctx.synchronize()
-        var end_time = Float64(now()) / 1_000_000_000.0
-        var execution_time = (end_time - start_time) * 1000.0
+        end_time = Float64(now()) / 1_000_000_000.0
+        execution_time = (end_time - start_time) * 1000.0
         print("     - Real performance measurement:", execution_time, "ms")
         print("     ✓ Performance measurement migration documented")
         
@@ -140,20 +140,20 @@ fn main():
         
         # GPU Detection APIs
         print("  1. GPU Detection APIs:")
-        var nvidia_api = has_nvidia_gpu_accelerator()
-        var amd_api = has_amd_gpu_accelerator()
+        nvidia_api = has_nvidia_gpu_accelerator()
+        amd_api = has_amd_gpu_accelerator()
         print("     - has_nvidia_gpu_accelerator():", nvidia_api)
         print("     - has_amd_gpu_accelerator():", amd_api)
         print("     ✓ GPU detection APIs documented")
         
         # DeviceContext APIs
         print("  2. DeviceContext APIs:")
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("     - DeviceContext(): SUCCESS")
-        var api_buffer = ctx.enqueue_create_buffer[DType.float64](500)
+        api_buffer = ctx.enqueue_create_buffer[DType.float64](500)
         print("     - enqueue_create_buffer(): SUCCESS")
         for i in range(500):
-            var api_value = Float64(i) * 0.001
+            api_value = Float64(i) * 0.001
             _ = api_buffer.enqueue_fill(api_value)
         print("     - enqueue_fill(): SUCCESS")
         ctx.synchronize()
@@ -162,23 +162,23 @@ fn main():
         
         # Performance Benchmarking APIs
         print("  3. Performance Benchmarking APIs:")
-        var bench_start = Float64(now()) / 1_000_000_000.0
-        var bench_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
+        bench_start = Float64(now()) / 1_000_000_000.0
+        bench_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
         for i in range(1000):
-            var bench_value = Float64(i) * 0.001
+            bench_value = Float64(i) * 0.001
             _ = bench_buffer.enqueue_fill(bench_value)
         ctx.synchronize()
-        var bench_end = Float64(now()) / 1_000_000_000.0
-        var bench_time = (bench_end - bench_start) * 1000.0
+        bench_end = Float64(now()) / 1_000_000_000.0
+        bench_time = (bench_end - bench_start) * 1000.0
         print("     - Benchmark execution time:", bench_time, "ms")
         print("     ✓ Performance benchmarking APIs documented")
         
         # Memory Management APIs
         print("  4. Memory Management APIs:")
-        var memory_buffers = List[Int]()
+        memory_buffers = List[Int]()
         for i in range(3):
-            var buffer_size = 500 + i * 250
-            var memory_buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
+            buffer_size = 500 + i * 250
+            memory_buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
             memory_buffers.append(buffer_size)
         ctx.synchronize()
         print("     - Memory allocation APIs: SUCCESS")
@@ -202,7 +202,7 @@ fn main():
         
         # Issue 1: GPU Detection
         print("  1. GPU Detection Troubleshooting:")
-        var gpu_detected = has_nvidia or has_amd
+        gpu_detected = has_nvidia or has_amd
         if gpu_detected:
             print("     - GPU detection: SUCCESS")
             print("     ✓ GPU detection troubleshooting documented")
@@ -213,7 +213,7 @@ fn main():
         # Issue 2: DeviceContext Initialization
         print("  2. DeviceContext Troubleshooting:")
         try:
-            var trouble_ctx = DeviceContext()
+            trouble_ctx = DeviceContext()
             print("     - DeviceContext initialization: SUCCESS")
             print("     ✓ DeviceContext troubleshooting documented")
         except:
@@ -224,7 +224,7 @@ fn main():
         print("  3. Buffer Allocation Troubleshooting:")
         try:
             var ctx = DeviceContext()
-            var trouble_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
+            trouble_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
             print("     - Buffer allocation: SUCCESS")
             print("     ✓ Buffer allocation troubleshooting documented")
         except:
@@ -233,15 +233,15 @@ fn main():
         
         # Issue 4: Performance Optimization
         print("  4. Performance Optimization Troubleshooting:")
-        var ctx = DeviceContext()
-        var opt_start = Float64(now()) / 1_000_000_000.0
-        var opt_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
+        ctx = DeviceContext()
+        opt_start = Float64(now()) / 1_000_000_000.0
+        opt_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
         for i in range(1000):
-            var opt_value = Float64(i) * 0.001
+            opt_value = Float64(i) * 0.001
             _ = opt_buffer.enqueue_fill(opt_value)
         ctx.synchronize()
-        var opt_end = Float64(now()) / 1_000_000_000.0
-        var opt_time = (opt_end - opt_start) * 1000.0
+        opt_end = Float64(now()) / 1_000_000_000.0
+        opt_time = (opt_end - opt_start) * 1000.0
         print("     - Performance optimization time:", opt_time, "ms")
         print("     ✓ Performance optimization troubleshooting documented")
         
@@ -249,8 +249,8 @@ fn main():
         print("  5. Error Handling Troubleshooting:")
         var error_handled = False
         try:
-            var ctx = DeviceContext()
-            var error_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
+            ctx = DeviceContext()
+            error_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
             ctx.synchronize()
             error_handled = True
         except:
@@ -305,7 +305,7 @@ fn main():
         print("     - Performance optimization: DOCUMENTED")
         print("     ✓ Troubleshooting guide complete")
         
-        var documentation_complete = True
+        documentation_complete = True
         print("  Overall documentation completeness:", documentation_complete)
         
         print("✅ Documentation Completeness Verification: SUCCESS")
@@ -324,11 +324,11 @@ fn main():
         print("Documentation Integration Test:")
         
         # Test documented APIs work as described
-        var ctx = DeviceContext()
-        var integration_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
+        ctx = DeviceContext()
+        integration_buffer = ctx.enqueue_create_buffer[DType.float64](1000)
         
         for i in range(1000):
-            var integration_value = Float64(i) * 0.001
+            integration_value = Float64(i) * 0.001
             _ = integration_buffer.enqueue_fill(integration_value)
         
         ctx.synchronize()

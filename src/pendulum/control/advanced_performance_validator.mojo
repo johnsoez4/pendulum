@@ -40,8 +40,8 @@ struct ControllerResults(Copyable, Movable):
     
     fn get_performance_improvement(self, baseline_success: Float64, baseline_stability: Float64) -> (Float64, Float64):
         """Calculate performance improvement over baseline."""
-        var success_improvement = (self.success_rate - baseline_success) / baseline_success * 100.0
-        var stability_improvement = (self.average_stability_time - baseline_stability) / baseline_stability * 100.0
+        success_improvement = (self.success_rate - baseline_success) / baseline_success * 100.0
+        stability_improvement = (self.average_stability_time - baseline_stability) / baseline_stability * 100.0
         return (success_improvement, stability_improvement)
     
     fn get_performance_grade(self) -> String:
@@ -178,17 +178,17 @@ struct AdvancedPerformanceValidator:
         """Validate enhanced MPC controller performance."""
         print("  Testing enhanced MPC with optimized parameters...")
         
-        var total_success = 0.0
-        var total_stability = 0.0
-        var max_stability = 0.0
-        var total_settling = 0.0
-        var total_effort = 0.0
-        var total_computation = 0.0
-        var episodes_completed = 0
+        total_success = 0.0
+        total_stability = 0.0
+        max_stability = 0.0
+        total_settling = 0.0
+        total_effort = 0.0
+        total_computation = 0.0
+        episodes_completed = 0
         
         # Test across all scenarios
         for scenario_idx in range(len(self.validation_scenarios)):
-            var scenario = self.validation_scenarios[scenario_idx]
+            scenario = self.validation_scenarios[scenario_idx]
             
             print("    Scenario:", scenario.scenario_name)
             
@@ -211,10 +211,10 @@ struct AdvancedPerformanceValidator:
         var avg_computation = total_computation / scenario_count
         
         # Calculate robustness (simplified)
-        var robustness = min(1.0, avg_success + 0.1)
+        robustness = min(1.0, avg_success + 0.1)
         
         # Check target achievement
-        var targets_met = (avg_success >= TARGET_SUCCESS_RATE and avg_stability >= TARGET_STABILITY_TIME)
+        targets_met = (avg_success >= TARGET_SUCCESS_RATE and avg_stability >= TARGET_STABILITY_TIME)
         
         var results = ControllerResults(
             "Enhanced MPC",
@@ -237,19 +237,19 @@ struct AdvancedPerformanceValidator:
         print("  Testing RL controller with deep Q-network...")
         
         # Simplified RL validation (would involve actual training in practice)
-        var rl_success = 0.85      # Estimated RL performance
-        var rl_stability = 25.0    # Estimated stability time
-        var rl_max_stability = 45.0
-        var rl_settling = 12.0
-        var rl_effort = 7.5
-        var rl_computation = 5.0   # Higher due to neural network
-        var rl_robustness = 0.80
+        rl_success = 0.85      # Estimated RL performance
+        rl_stability = 25.0    # Estimated stability time
+        rl_max_stability = 45.0
+        rl_settling = 12.0
+        rl_effort = 7.5
+        rl_computation = 5.0   # Higher due to neural network
+        rl_robustness = 0.80
         
         # Simulate episode completion
-        var episodes_completed = VALIDATION_EPISODES
+        episodes_completed = VALIDATION_EPISODES
         
         # Check target achievement
-        var targets_met = (rl_success >= TARGET_SUCCESS_RATE and rl_stability >= TARGET_STABILITY_TIME)
+        targets_met = (rl_success >= TARGET_SUCCESS_RATE and rl_stability >= TARGET_STABILITY_TIME)
         
         var results = ControllerResults(
             "RL Controller",
@@ -272,19 +272,19 @@ struct AdvancedPerformanceValidator:
         print("  Testing advanced hybrid controller with intelligent fusion...")
         
         # Simulate hybrid controller performance (best of all approaches)
-        var hybrid_success = 0.92     # Superior performance through fusion
-        var hybrid_stability = 35.0   # Extended stability through optimization
-        var hybrid_max_stability = 55.0
-        var hybrid_settling = 6.0     # Faster settling through intelligent switching
-        var hybrid_effort = 5.5       # Optimized control effort
-        var hybrid_computation = 8.0  # Higher due to fusion complexity
-        var hybrid_robustness = 0.88  # High robustness through multiple strategies
+        hybrid_success = 0.92     # Superior performance through fusion
+        hybrid_stability = 35.0   # Extended stability through optimization
+        hybrid_max_stability = 55.0
+        hybrid_settling = 6.0     # Faster settling through intelligent switching
+        hybrid_effort = 5.5       # Optimized control effort
+        hybrid_computation = 8.0  # Higher due to fusion complexity
+        hybrid_robustness = 0.88  # High robustness through multiple strategies
         
         # Simulate episode completion
-        var episodes_completed = VALIDATION_EPISODES
+        episodes_completed = VALIDATION_EPISODES
         
         # Check target achievement
-        var targets_met = (hybrid_success >= TARGET_SUCCESS_RATE and hybrid_stability >= TARGET_STABILITY_TIME)
+        targets_met = (hybrid_success >= TARGET_SUCCESS_RATE and hybrid_stability >= TARGET_STABILITY_TIME)
         
         var results = ControllerResults(
             "Advanced Hybrid",
@@ -311,15 +311,15 @@ struct AdvancedPerformanceValidator:
             (success_rate, avg_stability, max_stability, avg_settling, avg_effort, avg_computation)
         """
         var success_count = 0.0
-        var total_stability = 0.0
-        var max_stability = 0.0
-        var total_settling = 0.0
-        var total_effort = 0.0
-        var total_computation = 0.0
+        total_stability = 0.0
+        max_stability = 0.0
+        total_settling = 0.0
+        total_effort = 0.0
+        total_computation = 0.0
         
         # Test each initial state in the scenario
         for state_idx in range(len(scenario.initial_states)):
-            var initial_state = scenario.initial_states[state_idx]
+            initial_state = scenario.initial_states[state_idx]
             
             # Simulate controller performance (simplified)
             var result = self._simulate_controller_performance(controller_type, initial_state, parameters)
@@ -351,14 +351,14 @@ struct AdvancedPerformanceValidator:
         Returns:
             (success_rate, stability_time, settling_time, control_effort, computation_time)
         """
-        var initial_angle = initial_state[2]
-        var initial_velocity = initial_state[1]
+        initial_angle = initial_state[2]
+        initial_velocity = initial_state[1]
         
         # Base performance estimation
         var base_success = 0.7
         var base_stability = 15.0
         var base_settling = 8.0
-        var base_effort = 6.0
+        base_effort = 6.0
         var base_computation = 2.0
         
         # Adjust based on controller type
@@ -384,8 +384,8 @@ struct AdvancedPerformanceValidator:
             base_computation += 6.0
         
         # Adjust based on initial conditions
-        var angle_factor = 1.0 - abs(initial_angle) / 180.0
-        var velocity_factor = 1.0 - abs(initial_velocity) / 1000.0
+        angle_factor = 1.0 - abs(initial_angle) / 180.0
+        velocity_factor = 1.0 - abs(initial_velocity) / 1000.0
         
         var success_rate = base_success * angle_factor * velocity_factor
         var stability_time = base_stability * angle_factor
@@ -405,16 +405,16 @@ struct AdvancedPerformanceValidator:
     fn _create_validation_scenarios(mut self):
         """Create comprehensive validation scenarios."""
         # Scenario 1: Near inverted precision control
-        var scenario1_states = List[List[Float64]]()
+        scenario1_states = List[List[Float64]]()
         for i in range(15):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 7) * 0.3)   # Position variation
             state.append(Float64(i - 7) * 15.0)  # Velocity variation
             state.append(Float64(i - 7) * 2.0)   # Angle variation ±14°
             state.append(0.0)
             scenario1_states.append(state)
         
-        var scenario1 = ValidationScenario(
+        scenario1 = ValidationScenario(
             "Precision Control",
             scenario1_states,
             2,      # Medium difficulty
@@ -425,16 +425,16 @@ struct AdvancedPerformanceValidator:
         self.validation_scenarios.append(scenario1)
         
         # Scenario 2: Large angle recovery
-        var scenario2_states = List[List[Float64]]()
+        scenario2_states = List[List[Float64]]()
         for i in range(20):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 10) * 0.2)
             state.append(Float64(i - 10) * 25.0)
             state.append(60.0 + Float64(i) * 6.0)  # 60° to 174°
             state.append(0.0)
             scenario2_states.append(state)
         
-        var scenario2 = ValidationScenario(
+        scenario2 = ValidationScenario(
             "Large Angle Recovery",
             scenario2_states,
             4,      # Very hard difficulty
@@ -445,16 +445,16 @@ struct AdvancedPerformanceValidator:
         self.validation_scenarios.append(scenario2)
         
         # Scenario 3: Robustness test
-        var scenario3_states = List[List[Float64]]()
+        scenario3_states = List[List[Float64]]()
         for i in range(25):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 12) * 0.25)
             state.append(Float64(i - 12) * 35.0)
             state.append(Float64(i) * 7.2)  # 0° to 172.8°
             state.append(0.0)
             scenario3_states.append(state)
         
-        var scenario3 = ValidationScenario(
+        scenario3 = ValidationScenario(
             "Robustness Test",
             scenario3_states,
             5,      # Extreme difficulty
@@ -535,8 +535,8 @@ struct AdvancedPerformanceValidator:
         """
         var best_controller = "None"
         var best_success = 0.0
-        var best_stability = 0.0
-        var targets_achieved = False
+        best_stability = 0.0
+        targets_achieved = False
         
         for i in range(len(self.controller_results)):
             var results = self.controller_results[i]

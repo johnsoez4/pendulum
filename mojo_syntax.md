@@ -17,9 +17,10 @@ This file serves as the centralized guide for Mojo language best practices and s
 11. [Documentation Standards](#documentation-standards)
 12. [Code Formatting](#code-formatting)
 13. [Testing Patterns](#testing-patterns)
-14. [GPU Simulation Labeling](#gpu-simulation-labeling)
-15. [Common Patterns & Idioms](#common-patterns--idioms)
-16. [Compliance Checklist](#compliance-checklist)
+14. [Performance Benchmarking](#performance-benchmarking)
+15. [GPU Simulation Labeling](#gpu-simulation-labeling)
+16. [Common Patterns & Idioms](#common-patterns--idioms)
+17. [Compliance Checklist](#compliance-checklist)
 
 ---
 
@@ -381,6 +382,14 @@ fn process_data(borrowed data: String, mut result: List[Int], owned context: Pro
 alias SUCCESS_CODE = 0
 alias MAX_RESOURCES = 1024
 alias ResourceId = Int32
+
+# Use _ for unused variables and loop indices
+for _ in range(num_iterations):  # Loop index not used
+    process_data()
+
+_ = ctx.enqueue_create_buffer[DType.float64](size)  # Buffer not stored
+for i in range(len(items)):  # i is used for indexing
+    process_item(items[i])
 ```
 
 ### ❌ **Deprecated Patterns to Avoid**
@@ -398,6 +407,11 @@ fn old_function(inout data: List[Int]):  # DEPRECATED
 
 # DON'T: Use var when direct assignment is clearer
 var resource_id = 12345  # Prefer: resource_id = 12345
+
+# DON'T: Keep unused variables that generate warnings
+for i in range(num_iterations):  # Warning: 'i' never used
+    process_data()
+var buffer = ctx.enqueue_create_buffer[DType.float64](size)  # Warning: 'buffer' never used
 ```
 
 ### 📋 **Variable Declaration Rules**
@@ -407,7 +421,8 @@ var resource_id = 12345  # Prefer: resource_id = 12345
 3. **Use `alias`** for compile-time constants and type aliases
 4. **Use appropriate parameter conventions**: `borrowed` (default), `mut`, `owned`
 5. **Avoid `var`** for simple assignments where the value won't be modified
-6. **Remember**: All runtime variables in Mojo are mutable by default
+6. **Use `_` for unused variables** to avoid compiler warnings (e.g., `for _ in range(n):`, `_ = unused_result`)
+7. **Remember**: All runtime variables in Mojo are mutable by default
 
 **Note**: The `let` keyword was completely removed from Mojo in version 24.4 (June 2024).
 
@@ -994,6 +1009,262 @@ fn test_basic_functionality() raises:
 ```
 
 **Related Files**: `tests/test_utils.mojo`, `tests/test_mojo_threading.mojo`, `tests/run_all_tests.mojo`
+
+---
+
+## 📊 Performance Benchmarking
+
+### ✅ **Official Benchmark Module Patterns**
+
+Mojo provides an official `benchmark` module for accurate performance measurement. Use these patterns for consistent benchmarking:
+
+```mojo
+from benchmark import Bench, Bencher, BenchId, BenchConfig, Unit
+from memory import UnsafePointer
+from gpu.host import DeviceContext
+
+alias dtype = DType.float32
+
+@parameter
+@always_inline
+fn benchmark_cpu_implementation(mut bencher: Bencher) raises:
+    """Benchmark CPU implementation using official benchmark module."""
+    # Pre-allocate memory outside benchmark loop
+    var input_data = UnsafePointer[Scalar[dtype]].alloc(SIZE * SIZE)
+    var output_data = UnsafePointer[Scalar[dtype]].alloc(SIZE * SIZE)
+
+    # Initialize input data once
+    for i in range(SIZE * SIZE):
+        input_data[i] = Scalar[dtype](i)
+
+    @parameter
+    @always_inline
+    fn run_cpu_benchmark():
+        # Reset output data
+        for i in range(SIZE * SIZE):
+            output_data[i] = Scalar[dtype](0.0)
+        # Core computation only - no setup/teardown
+        cpu_function(output_data, input_data, SIZE)
+
+    # Run benchmark iterations
+    bencher.iter[run_cpu_benchmark]()
+
+    # Clean up memory
+    input_data.free()
+    output_data.free()
+
+@parameter
+@always_inline
+fn benchmark_gpu_implementation(
+    mut bencher: Bencher,
+    gpu_data: (UnsafePointer[Scalar[dtype]], UnsafePointer[Scalar[dtype]], Int)
+) raises:
+    """Benchmark GPU implementation using custom iteration."""
+    var out_ptr = gpu_data[0]
+    var a_ptr = gpu_data[1]
+    var size = gpu_data[2]
+
+    @parameter
+    @always_inline
+    fn kernel_launch(ctx: DeviceContext) raises:
+        # Core computation only - launch GPU kernel
+        ctx.enqueue_function[gpu_kernel](
+            out_ptr, a_ptr, size,
+            grid_dim=blocks_needed,
+            block_dim=(block_size, block_size)
+        )
+
+    var bench_ctx = DeviceContext()
+    bencher.iter_custom[kernel_launch](bench_ctx)
+```
+
+### 🎯 **Benchmark Setup Patterns**
+
+#### **1. Main Benchmark Function**
+```mojo
+def main():
+    """Main benchmark function using official benchmark module."""
+    print("=== Performance Benchmark ===")
+
+    # Create benchmark instance with configuration
+    var bench = Bench(BenchConfig())
+
+    # Benchmark CPU implementation
+    bench.bench_function[benchmark_cpu_implementation](
+        BenchId("operation", "cpu")
+    )
+
+    # Setup GPU data once for GPU benchmarks
+    with DeviceContext() as ctx:
+        var out_buf = ctx.enqueue_create_buffer[dtype](SIZE * SIZE).enqueue_fill(0)
+        var a_buf = ctx.enqueue_create_buffer[dtype](SIZE * SIZE).enqueue_fill(0)
+
+        # Initialize input data
+        with a_buf.map_to_host() as a_host:
+            for i in range(SIZE * SIZE):
+                a_host[i] = i
+
+        var gpu_data = (out_buf.unsafe_ptr(), a_buf.unsafe_ptr(), SIZE)
+
+        # Benchmark GPU implementation
+        bench.bench_with_input[
+            (UnsafePointer[Scalar[dtype]], UnsafePointer[Scalar[dtype]], Int),
+            benchmark_gpu_implementation
+        ](BenchId("operation", "gpu"), gpu_data)
+
+        ctx.synchronize()
+
+    # Print results
+    print(bench)
+```
+
+#### **2. Performance Analysis Patterns**
+```mojo
+fn extract_benchmark_results(bench: Bench) -> (Float64, Float64, Bool, Bool):
+    """Extract timing results from benchmark for analysis."""
+    var cpu_time: Float64 = 0.0
+    var gpu_time: Float64 = 0.0
+    var cpu_found = False
+    var gpu_found = False
+
+    # Extract results from benchmark info
+    for info in bench.info_vec:
+        var name = info.name
+        var time_ms = info.result.mean("ms")
+
+        if name == "operation/cpu":
+            cpu_time = time_ms
+            cpu_found = True
+        elif name == "operation/gpu":
+            gpu_time = time_ms
+            gpu_found = True
+
+    return (cpu_time, gpu_time, cpu_found, gpu_found)
+
+fn print_performance_analysis(
+    cpu_time: Float64, gpu_time: Float64,
+    cpu_found: Bool, gpu_found: Bool, size: Int
+):
+    """Print detailed performance analysis."""
+    elements = size * size
+    print("\n=== Performance Analysis ===")
+    print("Matrix size:", size, "x", size, "(" + String(elements) + " elements)")
+
+    if cpu_found:
+        print("CPU Implementation:     ", cpu_time, "ms")
+    if gpu_found:
+        print("GPU Implementation:     ", gpu_time, "ms")
+
+    # Calculate speedups and throughput
+    if cpu_found and gpu_found and cpu_time > 0 and gpu_time > 0:
+        var speedup = cpu_time / gpu_time
+        if speedup > 1.0:
+            print("GPU vs CPU speedup:     ", speedup, "x")
+        else:
+            print("CPU vs GPU advantage:   ", 1.0 / speedup, "x")
+
+        # Calculate throughput
+        var cpu_throughput = Float64(elements) / cpu_time / 1000.0
+        var gpu_throughput = Float64(elements) / gpu_time / 1000.0
+        print("CPU Throughput:         ", cpu_throughput, "M elements/ms")
+        print("GPU Throughput:         ", gpu_throughput, "M elements/ms")
+
+        # Identify fastest implementation
+        var fastest_name = String("CPU") if cpu_time < gpu_time else String("GPU")
+        var fastest_time = cpu_time if cpu_time < gpu_time else gpu_time
+        print("Fastest implementation: ", fastest_name, "with", fastest_time, "ms")
+```
+
+#### **3. Multi-Size Scaling Analysis**
+```mojo
+fn run_scaling_analysis():
+    """Run benchmarks across multiple sizes to find performance crossover points."""
+    sizes = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+
+    var crossover_found = False
+    var crossover_size = 0
+
+    print("=== Scaling Analysis ===")
+
+    for size in sizes:
+        try:
+            results = run_benchmarks_for_size(size)
+            cpu_time = results[0]
+            gpu_time = results[1]
+            cpu_success = results[2]
+            gpu_success = results[3]
+
+            print_performance_analysis(cpu_time, gpu_time, cpu_success, gpu_success, size)
+
+            # Check for crossover point (GPU becomes faster than CPU)
+            if not crossover_found and gpu_success and cpu_success:
+                if gpu_time > 0 and cpu_time > 0 and gpu_time < cpu_time:
+                    crossover_found = True
+                    crossover_size = size
+                    print("🎯 CROSSOVER POINT! GPU becomes faster at size", size, "x", size)
+
+        except:
+            print("❌ Benchmark failed for size", size, "x", size)
+
+    # Print recommendations
+    if crossover_found:
+        print("\n📊 Recommendations:")
+        print("   - Use CPU for matrices smaller than", crossover_size, "x", crossover_size)
+        print("   - Use GPU for matrices", crossover_size, "x", crossover_size, "and larger")
+    else:
+        print("\n📊 No crossover point found - CPU dominates in tested range")
+```
+
+### 📋 **Benchmarking Best Practices**
+
+1. **Use official benchmark module** (`from benchmark import Bench, Bencher, BenchId, BenchConfig`)
+2. **Pre-allocate memory** outside benchmark loops to measure core computation only
+3. **Use `@parameter @always_inline`** decorators for benchmark functions
+4. **Separate setup from measurement** - only time the core operation
+5. **Use `bencher.iter[]` for CPU** and `bencher.iter_custom[]` for GPU benchmarks
+6. **Initialize data once** and reuse across benchmark iterations
+7. **Clean up memory** after benchmarking to prevent leaks
+8. **Extract timing data** using `info.result.mean("ms")` for analysis
+9. **Test multiple sizes** to find performance crossover points
+10. **Include correctness verification** alongside performance measurement
+11. **Handle edge cases** (zero timing, failed benchmarks) gracefully
+12. **Calculate meaningful metrics** (speedup, throughput, efficiency)
+
+### 🚫 **Benchmarking Anti-Patterns**
+
+```mojo
+# DON'T: Include setup/teardown in benchmark timing
+@parameter
+@always_inline
+fn bad_benchmark(mut bencher: Bencher):
+    bencher.iter[lambda: (
+        setup_data(),           # Setup included in timing
+        core_operation(),       # Core operation
+        cleanup_data()          # Cleanup included in timing
+    )]()
+
+# DON'T: Allocate memory inside benchmark loop
+@parameter
+@always_inline
+fn bad_memory_benchmark(mut bencher: Bencher):
+    @parameter
+    @always_inline
+    fn bad_run():
+        var data = UnsafePointer[Float32].alloc(1000)  # Allocation in timing
+        process_data(data)
+        data.free()  # Deallocation in timing
+
+    bencher.iter[bad_run]()
+
+# DON'T: Use manual timing instead of benchmark module
+fn bad_manual_timing():
+    var start = now()
+    operation()
+    var end = now()
+    print("Time:", end - start)  # Inaccurate, no statistical analysis
+```
+
+**Related Files**: `/home/johnsoe1/dev/EzMojo/mojo-gpu-puzzles/solutions/p04/comprehensive_performance_analysis_2.mojo`, `/home/johnsoe1/dev/EzMojo/mojo-gpu-puzzles/solutions/p04/benchmark_add_10_2d_2.mojo`
 
 ---
 

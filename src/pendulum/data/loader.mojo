@@ -114,7 +114,7 @@ struct DataSample(Copyable, Movable):
         Returns:
             Normalized values as list
         """
-        var normalized = List[Float64]()
+        normalized = List[Float64]()
 
         # Normalize each field
         normalized.append((self.la_position - means[0]) / stds[0])
@@ -150,8 +150,8 @@ struct DataStatistics(Copyable, Movable):
         # Initialize accumulators
         var sums = List[Float64](0.0, 0.0, 0.0, 0.0)
         var sum_squares = List[Float64](0.0, 0.0, 0.0, 0.0)
-        var mins = List[Float64](1e9, 1e9, 1e9, 1e9)
-        var maxs = List[Float64](-1e9, -1e9, -1e9, -1e9)
+        mins = List[Float64](1e9, 1e9, 1e9, 1e9)
+        maxs = List[Float64](-1e9, -1e9, -1e9, -1e9)
 
         # Accumulate statistics
         for i in range(len(samples)):
@@ -224,27 +224,27 @@ struct PendulumDataLoader(Copyable, Movable):
         # Generate representative samples based on data analysis
         # This simulates the actual data loading process
         var sample_count = 1000  # Reduced for testing
-        var timestamp = 0.0
+        timestamp = 0.0
 
         for i in range(sample_count):
             # Simulate data patterns observed in actual dataset
-            var t = Float64(i) * 0.04  # 40ms intervals
+            t = Float64(i) * 0.04  # 40ms intervals
 
             # Simulate pendulum motion (simplified)
-            var angle = 180.0 * (
+            angle = 180.0 * (
                 1.0 - Float64(i) / Float64(sample_count)
             )  # Transition from hanging
-            var velocity = -200.0 + 400.0 * Float64(i) / Float64(
+            velocity = -200.0 + 400.0 * Float64(i) / Float64(
                 sample_count
             )  # Increasing velocity
-            var actuator = -2.0 + 4.0 * Float64(i) / Float64(
+            actuator = -2.0 + 4.0 * Float64(i) / Float64(
                 sample_count
             )  # Actuator movement
-            var voltage = 0.1 * (
+            voltage = 0.1 * (
                 Float64(i % 10) - 5.0
             )  # Control voltage variation
 
-            var sample = DataSample(
+            sample = DataSample(
                 actuator, velocity, angle, voltage, 40.0, timestamp
             )
 
@@ -292,11 +292,11 @@ struct PendulumDataLoader(Copyable, Movable):
         Returns:
             List of training sequences
         """
-        var sequences = List[List[DataSample]]()
+        sequences = List[List[DataSample]]()
 
         var i = 0
         while i + sequence_length <= len(self._samples):
-            var sequence = List[DataSample]()
+            sequence = List[DataSample]()
 
             for j in range(sequence_length):
                 sequence.append(self._samples[i + j])
@@ -319,13 +319,13 @@ struct PendulumDataLoader(Copyable, Movable):
         Returns:
             Tuple of (train_samples, val_samples, test_samples)
         """
-        var total_samples = len(self._samples)
+        total_samples = len(self._samples)
         var train_count = Int(Float64(total_samples) * train_ratio)
         var val_count = Int(Float64(total_samples) * val_ratio)
 
-        var train_samples = List[DataSample]()
-        var val_samples = List[DataSample]()
-        var test_samples = List[DataSample]()
+        train_samples = List[DataSample]()
+        val_samples = List[DataSample]()
+        test_samples = List[DataSample]()
 
         # Split samples
         for i in range(total_samples):
@@ -394,14 +394,14 @@ struct DataLoaderUtils:
         Returns:
             Configured PendulumDataLoader with loaded data.
         """
-        var samples = List[DataSample]()
-        var stats = DataStatistics(
+        samples = List[DataSample]()
+        stats = DataStatistics(
             List[Float64](),
             List[Float64](),
             List[Float64](),
             List[Float64](),
             0,
         )
-        var loader = PendulumDataLoader(samples, stats, False)
+        loader = PendulumDataLoader(samples, stats, False)
         _ = loader.load_csv_data(file_path)
         return loader

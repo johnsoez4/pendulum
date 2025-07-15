@@ -15,10 +15,10 @@ fn main():
     print("Testing basic SIMULATED GPU utility concepts...")
 
     # Test compute mode constants
-    var auto_mode = 0  # ComputeMode.AUTO
-    var gpu_only_mode = 1  # ComputeMode.GPU_ONLY
-    var cpu_only_mode = 2  # ComputeMode.CPU_ONLY
-    var hybrid_mode = 3  # ComputeMode.HYBRID
+    auto_mode = 0  # ComputeMode.AUTO
+    gpu_only_mode = 1  # ComputeMode.GPU_ONLY
+    cpu_only_mode = 2  # ComputeMode.CPU_ONLY
+    hybrid_mode = 3  # ComputeMode.HYBRID
 
     print("Compute modes defined:")
     print("  AUTO:", auto_mode)
@@ -27,10 +27,10 @@ fn main():
     print("  HYBRID:", hybrid_mode)
 
     # Test basic GPU availability simulation
-    var gpu_available = True  # Simulate GPU detection
+    gpu_available = True  # Simulate GPU detection
     var device_count = 1
-    var device_name = "NVIDIA A10"
-    var memory_total = 23028
+    device_name = "NVIDIA A10"
+    memory_total = 23028
 
     print()
     print("SIMULATED: GPU detection results")
@@ -40,11 +40,11 @@ fn main():
     print("  Memory Total:", memory_total, "MB")
 
     # Test performance simulation
-    var matrix_size = 512
-    var iterations = 10
-    var simulated_ops = matrix_size * matrix_size * iterations
-    var simulated_time = 0.001
-    var ops_per_second = Float64(simulated_ops) / simulated_time
+    matrix_size = 512
+    iterations = 10
+    simulated_ops = matrix_size * matrix_size * iterations
+    simulated_time = 0.001
+    ops_per_second = Float64(simulated_ops) / simulated_time
 
     print()
     print("Performance simulation:")
@@ -74,15 +74,15 @@ fn test_gpu_memory_leaks():
     print("  SIMULATED: GPU memory allocation tracking...")
 
     # Simulate memory allocation tracking
-    var initial_memory = 1024  # MB
+    initial_memory = 1024  # MB
     var allocated_memory = 0
-    var max_allocations = 10
+    max_allocations = 10
 
     print("  SIMULATED: Initial GPU memory -", initial_memory, "MB")
 
     # Simulate multiple allocations
     for i in range(max_allocations):
-        var allocation_size = 64  # MB per allocation
+        allocation_size = 64  # MB per allocation
         allocated_memory += allocation_size
         print(
             "    Allocation",
@@ -97,7 +97,7 @@ fn test_gpu_memory_leaks():
     # Simulate memory cleanup
     print("  SIMULATED: Cleaning up GPU memory allocations...")
     for i in range(max_allocations):
-        var deallocation_size = 64  # MB per deallocation
+        deallocation_size = 64  # MB per deallocation
         allocated_memory -= deallocation_size
         print(
             "    SIMULATED: Deallocation",
@@ -127,10 +127,10 @@ fn test_real_performance_validation():
     print("  SIMULATED: Testing GPU performance metrics...")
 
     # Simulate real performance measurements
-    var cpu_baseline_ops = 1000000.0  # ops/sec
-    var gpu_measured_ops = 4200000.0  # ops/sec
-    var target_speedup = 3.5
-    var measured_speedup = gpu_measured_ops / cpu_baseline_ops
+    cpu_baseline_ops = 1000000.0  # ops/sec
+    gpu_measured_ops = 4200000.0  # ops/sec
+    target_speedup = 3.5
+    measured_speedup = gpu_measured_ops / cpu_baseline_ops
 
     print("  MOCK: CPU baseline performance -", cpu_baseline_ops, "ops/sec")
     print("  MOCK: GPU measured performance -", gpu_measured_ops, "ops/sec")
@@ -144,8 +144,8 @@ fn test_real_performance_validation():
         print("  ❌ MOCK: GPU performance below target")
 
     # Test memory bandwidth utilization
-    var memory_bandwidth_target = 70.0  # %
-    var measured_bandwidth = 82.5  # %
+    memory_bandwidth_target = 70.0  # %
+    measured_bandwidth = 82.5  # %
 
     print("  Memory bandwidth target:", memory_bandwidth_target, "%")
     print("  Measured bandwidth utilization:", measured_bandwidth, "%")

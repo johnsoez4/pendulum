@@ -90,7 +90,7 @@ struct SafetyMonitor:
         )
         
         self.last_state = List[Float64]()
-        var predicted_state = List[Float64]()
+        predicted_state = List[Float64]()
         predicted_state.append(0.0)
         predicted_state.append(0.0)
         predicted_state.append(0.0)
@@ -143,12 +143,12 @@ struct SafetyMonitor:
     
     fn _check_position_constraints(mut self, current_state: List[Float64], timestamp: Float64):
         """Check actuator position constraints."""
-        var la_position = current_state[0]
-        var abs_position = abs(la_position)
+        la_position = current_state[0]
+        abs_position = abs(la_position)
         
         # Warning level check
         if abs_position > (MAX_ACTUATOR_POSITION - SAFETY_MARGIN_POSITION):
-            var violation = SafetyViolation(
+            violation = SafetyViolation(
                 "position_warning",
                 "warning",
                 timestamp,
@@ -161,7 +161,7 @@ struct SafetyMonitor:
         
         # Critical level check
         if abs_position > MAX_ACTUATOR_POSITION:
-            var violation = SafetyViolation(
+            violation = SafetyViolation(
                 "position_critical",
                 "critical",
                 timestamp,
@@ -174,12 +174,12 @@ struct SafetyMonitor:
     
     fn _check_velocity_constraints(mut self, current_state: List[Float64], timestamp: Float64):
         """Check pendulum velocity constraints."""
-        var pend_velocity = current_state[1]
-        var abs_velocity = abs(pend_velocity)
+        pend_velocity = current_state[1]
+        abs_velocity = abs(pend_velocity)
         
         # Warning level check
         if abs_velocity > (MAX_PENDULUM_VELOCITY - SAFETY_MARGIN_VELOCITY):
-            var violation = SafetyViolation(
+            violation = SafetyViolation(
                 "velocity_warning",
                 "warning",
                 timestamp,
@@ -192,7 +192,7 @@ struct SafetyMonitor:
         
         # Critical level check
         if abs_velocity > MAX_PENDULUM_VELOCITY:
-            var violation = SafetyViolation(
+            violation = SafetyViolation(
                 "velocity_critical",
                 "critical",
                 timestamp,
@@ -205,11 +205,11 @@ struct SafetyMonitor:
     
     fn _check_control_constraints(mut self, command: ControlCommand):
         """Check control command constraints."""
-        var abs_voltage = abs(command.voltage)
+        abs_voltage = abs(command.voltage)
         
         # Critical level check for control voltage
         if abs_voltage > MAX_CONTROL_VOLTAGE:
-            var violation = SafetyViolation(
+            violation = SafetyViolation(
                 "control_critical",
                 "critical",
                 command.timestamp,
@@ -225,15 +225,15 @@ struct SafetyMonitor:
         if len(self.last_state) == 0:
             return  # No previous state to compare
         
-        var current_velocity = current_state[1]
-        var last_velocity = self.last_state[1]
-        var dt = timestamp - self.last_command.timestamp
+        current_velocity = current_state[1]
+        last_velocity = self.last_state[1]
+        dt = timestamp - self.last_command.timestamp
         
         if dt > 0.0:
-            var acceleration = abs((current_velocity - last_velocity) / dt)
+            acceleration = abs((current_velocity - last_velocity) / dt)
             
             if acceleration > MAX_ACCELERATION:
-                var violation = SafetyViolation(
+                violation = SafetyViolation(
                     "acceleration_warning",
                     "warning",
                     timestamp,
@@ -249,12 +249,12 @@ struct SafetyMonitor:
         if len(command.predicted_state) < 3:
             return  # No prediction available
         
-        var predicted_la_pos = command.predicted_state[0]
-        var predicted_pend_vel = command.predicted_state[1]
+        predicted_la_pos = command.predicted_state[0]
+        predicted_pend_vel = command.predicted_state[1]
         
         # Check if prediction violates constraints
         if abs(predicted_la_pos) > (MAX_ACTUATOR_POSITION - SAFETY_MARGIN_POSITION):
-            var violation = SafetyViolation(
+            violation = SafetyViolation(
                 "predictive_position",
                 "warning",
                 command.timestamp,
@@ -266,7 +266,7 @@ struct SafetyMonitor:
             self.safety_status.warnings_active += 1
         
         if abs(predicted_pend_vel) > (MAX_PENDULUM_VELOCITY - SAFETY_MARGIN_VELOCITY):
-            var violation = SafetyViolation(
+            violation = SafetyViolation(
                 "predictive_velocity",
                 "warning",
                 command.timestamp,
@@ -311,12 +311,12 @@ struct SafetyMonitor:
             return command  # No override needed
         
         # Create safe command
-        var safe_predicted_state = List[Float64]()
+        safe_predicted_state = List[Float64]()
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
         safe_predicted_state.append(0.0)
         
-        var safe_command = ControlCommand(
+        safe_command = ControlCommand(
             0.0,                    # voltage (emergency stop)
             command.timestamp,      # timestamp
             "emergency_stop",       # control_mode
@@ -333,7 +333,7 @@ struct SafetyMonitor:
         Returns:
             (total_violations, critical_violations, uptime_percentage, system_safe)
         """
-        var total_violations = len(self.violation_history)
+        total_violations = len(self.violation_history)
         var critical_count = 0
         
         for i in range(len(self.violation_history)):
@@ -344,9 +344,9 @@ struct SafetyMonitor:
         if current_time == 0.0:
             current_time = self.monitoring_start_time + 1.0  # Avoid division by zero
         
-        var total_time = current_time - self.monitoring_start_time
+        total_time = current_time - self.monitoring_start_time
         var violation_time = Float64(critical_count) * 0.1  # Estimate violation duration
-        var uptime_percentage = max(0.0, (total_time - violation_time) / total_time * 100.0)
+        uptime_percentage = max(0.0, (total_time - violation_time) / total_time * 100.0)
         
         return (total_violations, critical_count, uptime_percentage, self.safety_status.system_safe)
     
@@ -372,7 +372,7 @@ struct SafetyMonitor:
     
     fn get_recent_violations(self, count: Int) -> List[SafetyViolation]:
         """Get the most recent safety violations."""
-        var recent = List[SafetyViolation]()
+        recent = List[SafetyViolation]()
         var start_idx = max(0, len(self.violation_history) - count)
         
         for i in range(start_idx, len(self.violation_history)):

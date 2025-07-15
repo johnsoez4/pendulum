@@ -40,8 +40,8 @@ struct PerformanceTarget:
     
     fn validate_performance(mut self, actual_speedup: Float64) -> Bool:
         """Validate actual performance against targets."""
-        var meets_target = actual_speedup >= self.target_speedup
-        var within_tolerance = abs(actual_speedup - self.simulated_speedup) <= (self.simulated_speedup * self.tolerance_percent / 100.0)
+        meets_target = actual_speedup >= self.target_speedup
+        within_tolerance = abs(actual_speedup - self.simulated_speedup) <= (self.simulated_speedup * self.tolerance_percent / 100.0)
         
         self.test_passed = meets_target
         
@@ -108,24 +108,24 @@ struct PerformanceRegressionTester:
     fn _initialize_performance_targets(mut self):
         """Initialize performance targets based on simulation claims."""
         # Matrix Operations: Simulated 4.0x, Target ≥3.5x
-        var matrix_target = PerformanceTarget("Matrix Operations", 4.0, 3.5, 15.0)
+        matrix_target = PerformanceTarget("Matrix Operations", 4.0, 3.5, 15.0)
         self.performance_targets.append(matrix_target)
         
         # Neural Network: Simulated 3.3x, Target ≥3.0x
-        var neural_target = PerformanceTarget("Neural Network", 3.3, 3.0, 10.0)
+        neural_target = PerformanceTarget("Neural Network", 3.3, 3.0, 10.0)
         self.performance_targets.append(neural_target)
         
         # Memory Operations: Simulated 2.8x, Target ≥2.5x
-        var memory_target = PerformanceTarget("Memory Operations", 2.8, 2.5, 12.0)
+        memory_target = PerformanceTarget("Memory Operations", 2.8, 2.5, 12.0)
         self.performance_targets.append(memory_target)
         
         # Tensor Operations: Simulated 3.7x, Target ≥3.2x
-        var tensor_target = PerformanceTarget("Tensor Operations", 3.7, 3.2, 15.0)
+        tensor_target = PerformanceTarget("Tensor Operations", 3.7, 3.2, 15.0)
         self.performance_targets.append(tensor_target)
         
         print("✓ Performance targets initialized:")
         for i in range(len(self.performance_targets)):
-            var target = self.performance_targets[i]
+            target = self.performance_targets[i]
             print("  -", target.operation_name, ":", target.simulated_speedup, "x simulated,", target.target_speedup, "x target")
     
     fn test_matrix_operations_performance(mut self) raises -> Float64:
@@ -138,40 +138,40 @@ struct PerformanceRegressionTester:
             print("✓ Testing matrix operations performance regression...")
             
             # Test parameters
-            var matrix_size = 512
+            matrix_size = 512
             var iterations = 20  # Reduced for testing
             
             # CPU benchmark
-            var cpu_start_time = Float64(now()) / 1_000_000_000.0
+            cpu_start_time = Float64(now()) / 1_000_000_000.0
             for _ in range(iterations):
                 # Simulate CPU matrix operations
                 var cpu_result = 0.0
                 for i in range(min(matrix_size, 100)):  # Simplified CPU computation
                     for j in range(min(matrix_size, 100)):
                         cpu_result += Float64(i * j) * 0.001
-            var cpu_end_time = Float64(now()) / 1_000_000_000.0
-            var cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
+            cpu_end_time = Float64(now()) / 1_000_000_000.0
+            cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
             
             # GPU benchmark
             self.device_context.synchronize()
-            var gpu_start_time = Float64(now()) / 1_000_000_000.0
+            gpu_start_time = Float64(now()) / 1_000_000_000.0
             
             for _ in range(iterations):
                 # Real GPU matrix operations
-                var buffer_size = matrix_size * matrix_size
-                var matrix_buffer = self.device_context.enqueue_create_buffer[DType.float64](min(buffer_size, 10000))
+                buffer_size = matrix_size * matrix_size
+                matrix_buffer = self.device_context.enqueue_create_buffer[DType.float64](min(buffer_size, 10000))
                 
                 # Fill buffer with matrix data
                 for i in range(min(buffer_size, 1000)):
-                    var matrix_value = Float64(i) * 0.001
+                    matrix_value = Float64(i) * 0.001
                     _ = matrix_buffer.enqueue_fill(matrix_value)
             
             self.device_context.synchronize()
-            var gpu_end_time = Float64(now()) / 1_000_000_000.0
-            var gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
+            gpu_end_time = Float64(now()) / 1_000_000_000.0
+            gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
             
             # Calculate speedup
-            var speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
+            speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
             
             print("  ✓ Matrix operations performance test completed")
             print("    - CPU time:", cpu_time_ms, "ms")
@@ -194,14 +194,14 @@ struct PerformanceRegressionTester:
             print("✓ Testing neural network performance regression...")
             
             # Test parameters
-            var batch_size = 100
-            var input_dim = 4
-            var hidden_dim = 8
-            var output_dim = 3
-            var iterations = 15
+            batch_size = 100
+            input_dim = 4
+            hidden_dim = 8
+            output_dim = 3
+            iterations = 15
             
             # CPU benchmark
-            var cpu_start_time = Float64(now()) / 1_000_000_000.0
+            cpu_start_time = Float64(now()) / 1_000_000_000.0
             for _ in range(iterations):
                 # Simulate CPU neural network forward pass
                 var cpu_result = 0.0
@@ -209,38 +209,38 @@ struct PerformanceRegressionTester:
                     for j in range(hidden_dim):
                         for k in range(input_dim):
                             cpu_result += Float64(i + j + k) * 0.001
-            var cpu_end_time = Float64(now()) / 1_000_000_000.0
-            var cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
+            cpu_end_time = Float64(now()) / 1_000_000_000.0
+            cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
             
             # GPU benchmark
             self.device_context.synchronize()
-            var gpu_start_time = Float64(now()) / 1_000_000_000.0
+            gpu_start_time = Float64(now()) / 1_000_000_000.0
             
             for _ in range(iterations):
                 # Real GPU neural network operations
-                var input_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * input_dim)
-                var hidden_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * hidden_dim)
-                var output_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * output_dim)
+                input_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * input_dim)
+                hidden_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * hidden_dim)
+                output_buffer = self.device_context.enqueue_create_buffer[DType.float64](batch_size * output_dim)
                 
                 # Fill buffers with neural network data
                 for i in range(min(batch_size * input_dim, 1000)):
-                    var input_value = Float64(i) * 0.001
+                    input_value = Float64(i) * 0.001
                     _ = input_buffer.enqueue_fill(input_value)
                 
                 for i in range(min(batch_size * hidden_dim, 1000)):
-                    var hidden_value = Float64(i) * 0.002
+                    hidden_value = Float64(i) * 0.002
                     _ = hidden_buffer.enqueue_fill(hidden_value)
                 
                 for i in range(min(batch_size * output_dim, 1000)):
-                    var output_value = Float64(i) * 0.003
+                    output_value = Float64(i) * 0.003
                     _ = output_buffer.enqueue_fill(output_value)
             
             self.device_context.synchronize()
-            var gpu_end_time = Float64(now()) / 1_000_000_000.0
-            var gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
+            gpu_end_time = Float64(now()) / 1_000_000_000.0
+            gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
             
             # Calculate speedup
-            var speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
+            speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
             
             print("  ✓ Neural network performance test completed")
             print("    - CPU time:", cpu_time_ms, "ms")
@@ -263,38 +263,38 @@ struct PerformanceRegressionTester:
             print("✓ Testing memory operations performance regression...")
             
             # Test parameters
-            var memory_size = 65536  # 64K elements
-            var iterations = 25
+            memory_size = 65536  # 64K elements
+            iterations = 25
             
             # CPU benchmark
-            var cpu_start_time = Float64(now()) / 1_000_000_000.0
+            cpu_start_time = Float64(now()) / 1_000_000_000.0
             for _ in range(iterations):
                 # Simulate CPU memory operations
-                var cpu_data = List[Float64]()
+                cpu_data = List[Float64]()
                 for i in range(min(memory_size, 1000)):
                     cpu_data.append(Float64(i) * 0.001)
-            var cpu_end_time = Float64(now()) / 1_000_000_000.0
-            var cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
+            cpu_end_time = Float64(now()) / 1_000_000_000.0
+            cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
             
             # GPU benchmark
             self.device_context.synchronize()
-            var gpu_start_time = Float64(now()) / 1_000_000_000.0
+            gpu_start_time = Float64(now()) / 1_000_000_000.0
             
             for _ in range(iterations):
                 # Real GPU memory operations
-                var memory_buffer = self.device_context.enqueue_create_buffer[DType.float64](memory_size)
+                memory_buffer = self.device_context.enqueue_create_buffer[DType.float64](memory_size)
                 
                 # Fill buffer with memory data
                 for i in range(min(memory_size, 1000)):
-                    var memory_value = Float64(i) * 0.001
+                    memory_value = Float64(i) * 0.001
                     _ = memory_buffer.enqueue_fill(memory_value)
             
             self.device_context.synchronize()
-            var gpu_end_time = Float64(now()) / 1_000_000_000.0
-            var gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
+            gpu_end_time = Float64(now()) / 1_000_000_000.0
+            gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
             
             # Calculate speedup
-            var speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
+            speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
             
             print("  ✓ Memory operations performance test completed")
             print("    - CPU time:", cpu_time_ms, "ms")
@@ -317,38 +317,38 @@ struct PerformanceRegressionTester:
             print("✓ Testing tensor operations performance regression...")
             
             # Test parameters
-            var tensor_size = 32768  # 32K elements
-            var iterations = 18
+            tensor_size = 32768  # 32K elements
+            iterations = 18
             
             # CPU benchmark
-            var cpu_start_time = Float64(now()) / 1_000_000_000.0
+            cpu_start_time = Float64(now()) / 1_000_000_000.0
             for _ in range(iterations):
                 # Simulate CPU tensor operations
                 var cpu_result = 0.0
                 for i in range(min(tensor_size, 1000)):
                     cpu_result += Float64(i) * 0.001
-            var cpu_end_time = Float64(now()) / 1_000_000_000.0
-            var cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
+            cpu_end_time = Float64(now()) / 1_000_000_000.0
+            cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
             
             # GPU benchmark
             self.device_context.synchronize()
-            var gpu_start_time = Float64(now()) / 1_000_000_000.0
+            gpu_start_time = Float64(now()) / 1_000_000_000.0
             
             for _ in range(iterations):
                 # Real GPU tensor operations
-                var tensor_buffer = self.device_context.enqueue_create_buffer[DType.float64](tensor_size)
+                tensor_buffer = self.device_context.enqueue_create_buffer[DType.float64](tensor_size)
                 
                 # Fill buffer with tensor data
                 for i in range(min(tensor_size, 1000)):
-                    var tensor_value = Float64(i) * 0.001
+                    tensor_value = Float64(i) * 0.001
                     _ = tensor_buffer.enqueue_fill(tensor_value)
             
             self.device_context.synchronize()
-            var gpu_end_time = Float64(now()) / 1_000_000_000.0
-            var gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
+            gpu_end_time = Float64(now()) / 1_000_000_000.0
+            gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
             
             # Calculate speedup
-            var speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
+            speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
             
             print("  ✓ Tensor operations performance test completed")
             print("    - CPU time:", cpu_time_ms, "ms")
@@ -372,25 +372,25 @@ struct PerformanceRegressionTester:
         print()
         
         # Test all operations and collect results
-        var actual_speedups = List[Float64]()
+        actual_speedups = List[Float64]()
         
         # Test matrix operations
-        var matrix_speedup = self.test_matrix_operations_performance()
+        matrix_speedup = self.test_matrix_operations_performance()
         actual_speedups.append(matrix_speedup)
         print()
         
         # Test neural network operations
-        var neural_speedup = self.test_neural_network_performance()
+        neural_speedup = self.test_neural_network_performance()
         actual_speedups.append(neural_speedup)
         print()
         
         # Test memory operations
-        var memory_speedup = self.test_memory_operations_performance()
+        memory_speedup = self.test_memory_operations_performance()
         actual_speedups.append(memory_speedup)
         print()
         
         # Test tensor operations
-        var tensor_speedup = self.test_tensor_operations_performance()
+        tensor_speedup = self.test_tensor_operations_performance()
         actual_speedups.append(tensor_speedup)
         print()
         
@@ -400,8 +400,8 @@ struct PerformanceRegressionTester:
         print("=" * 70)
         
         for i in range(len(self.performance_targets)):
-            var target = self.performance_targets[i]
-            var actual_speedup = actual_speedups[i]
+            target = self.performance_targets[i]
+            actual_speedup = actual_speedups[i]
             
             self.total_tests += 1
             if target.validate_performance(actual_speedup):
@@ -411,8 +411,8 @@ struct PerformanceRegressionTester:
             print()
         
         # Calculate overall results
-        var pass_rate = Float64(self.passed_tests) / Float64(self.total_tests) * 100.0
-        var overall_success = self.passed_tests == self.total_tests
+        pass_rate = Float64(self.passed_tests) / Float64(self.total_tests) * 100.0
+        overall_success = self.passed_tests == self.total_tests
         
         print("OVERALL REGRESSION TEST RESULTS:")
         print("  - Total tests:", self.total_tests)
@@ -439,5 +439,5 @@ fn create_regression_tester() raises -> PerformanceRegressionTester:
 
 fn run_performance_regression_tests() raises -> Bool:
     """Run comprehensive performance regression testing."""
-    var tester = create_regression_tester()
+    tester = create_regression_tester()
     return tester.run_comprehensive_regression_tests()

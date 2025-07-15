@@ -116,11 +116,11 @@ struct BenchmarkMetrics(Copyable, Movable):
             self.speedup_factor = 1.0
         
         # Calculate energy efficiency (throughput per watt - simulated)
-        var cpu_power_watts = 65.0  # Typical CPU power
-        var gpu_power_watts = 150.0  # A10 max power
+        cpu_power_watts = 65.0  # Typical CPU power
+        gpu_power_watts = 150.0  # A10 max power
         
-        var cpu_efficiency = self.cpu_throughput / cpu_power_watts
-        var gpu_efficiency = self.gpu_throughput / gpu_power_watts
+        cpu_efficiency = self.cpu_throughput / cpu_power_watts
+        gpu_efficiency = self.gpu_throughput / gpu_power_watts
         
         self.energy_efficiency = gpu_efficiency / cpu_efficiency if cpu_efficiency > 0.0 else 1.0
         
@@ -174,7 +174,7 @@ struct BenchmarkReportGenerator:
         summary += "=" * 40 + "\n\n"
         
         # Calculate overall statistics
-        var total_tests = len(metrics)
+        total_tests = len(metrics)
         var avg_speedup = 0.0
         
         for i in range(total_tests):
@@ -196,7 +196,7 @@ fn test_benchmark_metrics_creation():
     """Test benchmark metrics creation and calculation."""
     print("Testing benchmark metrics creation...")
     
-    var metrics = BenchmarkMetrics("Test Benchmark")
+    metrics = BenchmarkMetrics("Test Benchmark")
     metrics.cpu_time_ms = 100.0
     metrics.gpu_time_ms = 25.0
     metrics.cpu_throughput = 1000.0
@@ -223,11 +223,11 @@ fn test_report_generation():
     """Test comprehensive report generation."""
     print("Testing report generation...")
     
-    var generator = BenchmarkReportGenerator()
-    var metrics = List[BenchmarkMetrics]()
+    generator = BenchmarkReportGenerator()
+    metrics = List[BenchmarkMetrics]()
     
     # Create sample metrics
-    var matrix_metrics = BenchmarkMetrics("Matrix Operations")
+    matrix_metrics = BenchmarkMetrics("Matrix Operations")
     matrix_metrics.cpu_time_ms = 100.0
     matrix_metrics.gpu_time_ms = 25.0
     matrix_metrics.cpu_throughput = 1000000.0
@@ -237,7 +237,7 @@ fn test_report_generation():
     matrix_metrics.calculate_derived_metrics()
     metrics.append(matrix_metrics)
     
-    var nn_metrics = BenchmarkMetrics("Neural Network Inference")
+    nn_metrics = BenchmarkMetrics("Neural Network Inference")
     nn_metrics.cpu_time_ms = 50.0
     nn_metrics.gpu_time_ms = 15.0
     nn_metrics.cpu_throughput = 2000.0
@@ -248,7 +248,7 @@ fn test_report_generation():
     metrics.append(nn_metrics)
     
     # Generate report
-    var report = generator.generate_comprehensive_report(metrics)
+    report = generator.generate_comprehensive_report(metrics)
     
     print("Report generated successfully")
     print("Report length:", len(report))

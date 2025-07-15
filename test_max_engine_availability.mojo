@@ -23,7 +23,7 @@ fn main():
     print("Test value:", test_value)
 
     # Test list operations
-    var test_list = List[Float64]()
+    test_list = List[Float64]()
     test_list.append(1.0)
     test_list.append(2.0)
     test_list.append(3.0)

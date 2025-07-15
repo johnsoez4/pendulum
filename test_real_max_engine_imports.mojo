@@ -16,8 +16,8 @@ fn test_real_gpu_detection() -> Bool:
 
     print("✓ GPU detection imports successful")
 
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
 
     print("- NVIDIA GPU available:", has_nvidia)
     print("- AMD GPU available:", has_amd)
@@ -63,10 +63,10 @@ fn test_max_engine_imports() -> Bool:
     print("Testing Real MAX Engine Imports...")
     print("-" * 40)
 
-    var gpu_ok = test_real_gpu_detection()
-    var context_ok = test_real_device_context()
-    var layout_ok = test_real_layout_tensor()
-    var functions_ok = test_real_gpu_functions()
+    gpu_ok = test_real_gpu_detection()
+    context_ok = test_real_device_context()
+    layout_ok = test_real_layout_tensor()
+    functions_ok = test_real_gpu_functions()
 
     var success_count = 0
     if gpu_ok:

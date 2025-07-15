@@ -96,7 +96,7 @@ struct ControlTrainer:
         self.training_history = List[TrainingResults]()
         
         # Initialize with default parameters
-        var default_params = ParameterSet(
+        default_params = ParameterSet(
             100.0, 10.0, 1.0, 0.1, 0.5, 10, 5,  # MPC parameters
             15.0, 2.0, 0.5, 1.0, 0.1,            # Adaptive gains
             15.0, 100.0, 90.0, 150.0,            # Control thresholds
@@ -146,7 +146,7 @@ struct ControlTrainer:
         print("- Optimize control parameters")
         print()
         
-        var training_start_time = 0.0  # Simplified timing
+        training_start_time = 0.0  # Simplified timing
         
         # Phase 1: Initial parameter optimization
         print("Phase 1: Initial Parameter Optimization")
@@ -166,7 +166,7 @@ struct ControlTrainer:
         # Phase 3: Robustness testing
         print("Phase 3: Robustness Testing")
         print("-" * 40)
-        var robustness_score = self._test_robustness()
+        robustness_score = self._test_robustness()
         print("Robustness testing complete")
         print()
         
@@ -177,8 +177,8 @@ struct ControlTrainer:
         print("Validation complete")
         print()
         
-        var training_end_time = training_start_time + 30.0  # Simplified timing
-        var training_time = training_end_time - training_start_time
+        training_end_time = training_start_time + 30.0  # Simplified timing
+        training_time = training_end_time - training_start_time
         
         # Compile final results
         var final_results = TrainingResults(
@@ -208,15 +208,15 @@ struct ControlTrainer:
         Returns:
             (successful_episodes, avg_success_rate, avg_stability_time, convergence_episode)
         """
-        var successful_episodes = 0
-        var total_success_rate = 0.0
-        var total_stability_time = 0.0
-        var convergence_episode = -1
+        successful_episodes = 0
+        total_success_rate = 0.0
+        total_stability_time = 0.0
+        convergence_episode = -1
         
         print("  Running", len(self.training_episodes), "training episodes...")
         
         for i in range(len(self.training_episodes)):
-            var episode = self.training_episodes[i]
+            episode = self.training_episodes[i]
             
             print("    Episode", i + 1, "- Difficulty:", episode.difficulty_level)
             
@@ -246,8 +246,8 @@ struct ControlTrainer:
             if i % 10 == 9:  # Every 10 episodes
                 self._adaptive_parameter_update(success_rate, stability_time)
         
-        var avg_success_rate = total_success_rate / Float64(len(self.training_episodes))
-        var avg_stability_time = total_stability_time / Float64(len(self.training_episodes))
+        avg_success_rate = total_success_rate / Float64(len(self.training_episodes))
+        avg_stability_time = total_stability_time / Float64(len(self.training_episodes))
         
         print("  Training episodes summary:")
         print("    Successful episodes:", successful_episodes, "/", len(self.training_episodes))
@@ -261,26 +261,26 @@ struct ControlTrainer:
         """Test control robustness across parameter variations."""
         print("  Testing robustness across", ROBUSTNESS_TEST_VARIATIONS, "parameter variations...")
         
-        var robustness_tests = 0
-        var successful_tests = 0
+        robustness_tests = 0
+        successful_tests = 0
         
         # Test with parameter variations
         for i in range(ROBUSTNESS_TEST_VARIATIONS):
             # Create parameter variation (±10% variation)
-            var variation_factor = 0.9 + 0.2 * (Float64(i) / Float64(ROBUSTNESS_TEST_VARIATIONS))
-            var varied_params = self.current_parameters
+            variation_factor = 0.9 + 0.2 * (Float64(i) / Float64(ROBUSTNESS_TEST_VARIATIONS))
+            varied_params = self.current_parameters
             varied_params.kp_stabilize *= variation_factor
             varied_params.mpc_weight_angle *= variation_factor
             
             # Test with varied parameters
-            var test_episode = self.training_episodes[i % len(self.training_episodes)]
+            test_episode = self.training_episodes[i % len(self.training_episodes)]
             var test_result = self._run_single_episode_with_params(test_episode, varied_params)
             
             robustness_tests += 1
             if test_result.0 > 0.60:  # 60% success rate threshold for robustness
                 successful_tests += 1
         
-        var robustness_score = Float64(successful_tests) / Float64(robustness_tests)
+        robustness_score = Float64(successful_tests) / Float64(robustness_tests)
         
         print("  Robustness test results:")
         print("    Successful tests:", successful_tests, "/", robustness_tests)
@@ -301,14 +301,14 @@ struct ControlTrainer:
         var total_stability = 0.0
         
         for i in range(len(self.validation_episodes)):
-            var episode = self.validation_episodes[i]
+            episode = self.validation_episodes[i]
             var result = self._run_single_episode(episode)
             
             total_success += result.0
             total_stability += result.1
         
-        var avg_success = total_success / Float64(len(self.validation_episodes))
-        var avg_stability = total_stability / Float64(len(self.validation_episodes))
+        avg_success = total_success / Float64(len(self.validation_episodes))
+        avg_stability = total_stability / Float64(len(self.validation_episodes))
         
         print("  Validation results:")
         print("    Average success rate:", avg_success * 100.0, "%")
@@ -333,13 +333,13 @@ struct ControlTrainer:
             (success_rate, stability_time, control_effort)
         """
         # Simplified episode simulation
-        var initial_angle = episode.initial_state[2]
-        var difficulty = episode.get_difficulty_score()
+        initial_angle = episode.initial_state[2]
+        difficulty = episode.get_difficulty_score()
         
         # Estimate performance based on initial conditions and parameters
         var base_success = 0.5
         var base_stability = 10.0
-        var base_effort = 5.0
+        base_effort = 5.0
         
         # Adjust based on initial angle
         if abs(initial_angle) < 30.0:  # Near inverted
@@ -350,7 +350,7 @@ struct ControlTrainer:
             base_stability = 5.0
         
         # Adjust based on parameters
-        var param_factor = (params.kp_stabilize / 15.0 + params.mpc_weight_angle / 100.0) / 2.0
+        param_factor = (params.kp_stabilize / 15.0 + params.mpc_weight_angle / 100.0) / 2.0
         var success_rate = min(1.0, base_success * param_factor)
         var stability_time = base_stability * param_factor
         var control_effort = base_effort / param_factor
@@ -410,20 +410,20 @@ struct ControlTrainer:
         """Create validation episodes for final testing."""
         # Mixed difficulty validation episodes
         for i in range(VALIDATION_EPISODES):
-            var angle = Float64(i - 25) * 7.0  # Wide range of angles
-            var velocity = Float64(i % 10 - 5) * 20.0  # -100 to +80 deg/s
-            var episode = self._create_episode(angle, velocity, "medium", 0.65)
+            angle = Float64(i - 25) * 7.0  # Wide range of angles
+            velocity = Float64(i % 10 - 5) * 20.0  # -100 to +80 deg/s
+            episode = self._create_episode(angle, velocity, "medium", 0.65)
             self.validation_episodes.append(episode)
     
     fn _create_episode(self, angle: Float64, velocity: Float64, difficulty: String, target: Float64) -> TrainingEpisode:
         """Create a single training episode."""
-        var initial_state = List[Float64]()
+        initial_state = List[Float64]()
         initial_state.append(0.0)      # la_position (centered)
         initial_state.append(velocity) # pend_velocity
         initial_state.append(angle)    # pend_angle
         initial_state.append(0.0)      # cmd_volts
         
-        var disturbances = List[Float64]()
+        disturbances = List[Float64]()
         disturbances.append(0.0)  # No disturbances for now
         
         return TrainingEpisode(

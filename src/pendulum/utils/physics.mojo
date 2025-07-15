@@ -337,27 +337,27 @@ struct PendulumPhysics:
         b = self.friction
 
         # Linearized system matrix (4x4)
-        var A = List[List[Float64]]()
+        A = List[List[Float64]]()
 
         # Row 1: d(cart_pos)/dt = cart_vel
-        var row1 = List[Float64](0.0, 1.0, 0.0, 0.0)
+        row1 = List[Float64](0.0, 1.0, 0.0, 0.0)
         A.append(row1)
 
         # Row 2: d(cart_vel)/dt = ...
         total_mass = m_c + m_p
         a22 = -b / total_mass
         a23 = m_p * g / total_mass
-        var row2 = List[Float64](0.0, a22, a23, 0.0)
+        row2 = List[Float64](0.0, a22, a23, 0.0)
         A.append(row2)
 
         # Row 3: d(pend_angle)/dt = pend_vel
-        var row3 = List[Float64](0.0, 0.0, 0.0, 1.0)
+        row3 = List[Float64](0.0, 0.0, 0.0, 1.0)
         A.append(row3)
 
         # Row 4: d(pend_vel)/dt = ...
         a42 = b / (l * total_mass)
         a43 = g / l
-        var row4 = List[Float64](0.0, a42, a43, 0.0)
+        row4 = List[Float64](0.0, a42, a43, 0.0)
         A.append(row4)
 
         return A

@@ -61,13 +61,13 @@ struct StateHistory(Copyable, Movable):
         # Maintain maximum history length
         if len(self.positions) > self.max_history:
             # Remove oldest entries (simplified - in practice would use circular buffer)
-            var new_positions = List[Float64]()
-            var new_velocities = List[Float64]()
-            var new_angles = List[Float64]()
-            var new_angular_velocities = List[Float64]()
-            var new_timestamps = List[Float64]()
+            new_positions = List[Float64]()
+            new_velocities = List[Float64]()
+            new_angles = List[Float64]()
+            new_angular_velocities = List[Float64]()
+            new_timestamps = List[Float64]()
             
-            var start_idx = len(self.positions) - self.max_history
+            start_idx = len(self.positions) - self.max_history
             for i in range(start_idx, len(self.positions)):
                 new_positions.append(self.positions[i])
                 new_velocities.append(self.velocities[i])
@@ -83,11 +83,11 @@ struct StateHistory(Copyable, Movable):
     
     fn get_recent_states(self, count: Int) -> List[List[Float64]]:
         """Get recent states for analysis."""
-        var recent = List[List[Float64]]()
+        recent = List[List[Float64]]()
         var start_idx = max(0, len(self.positions) - count)
         
         for i in range(start_idx, len(self.positions)):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(self.positions[i])
             state.append(self.angular_velocities[i])
             state.append(self.angles[i])
@@ -120,11 +120,11 @@ struct StateEstimator:
         self.physics_model = PendulumPhysics()
         
         # Initialize state history
-        var positions = List[Float64]()
-        var velocities = List[Float64]()
-        var angles = List[Float64]()
-        var angular_velocities = List[Float64]()
-        var timestamps = List[Float64]()
+        positions = List[Float64]()
+        velocities = List[Float64]()
+        angles = List[Float64]()
+        angular_velocities = List[Float64]()
+        timestamps = List[Float64]()
         
         self.state_history = StateHistory(
             positions, velocities, angles, angular_velocities, timestamps, 20
@@ -177,9 +177,9 @@ struct StateEstimator:
             return self.filtered_state
         
         # Extract raw measurements
-        var raw_la_pos = raw_state[0]
-        var raw_pend_vel = raw_state[1]
-        var raw_pend_angle = raw_state[2]
+        raw_la_pos = raw_state[0]
+        raw_pend_vel = raw_state[1]
+        raw_pend_angle = raw_state[2]
         
         # Outlier detection
         var outlier_detected = self._detect_outliers(raw_state, timestamp)
@@ -241,7 +241,7 @@ struct StateEstimator:
         elif angle_diff < -180.0:
             angle_diff += 360.0
         
-        var filtered_diff = self._apply_low_pass_filter(0.0, angle_diff, FILTER_ALPHA)
+        filtered_diff = self._apply_low_pass_filter(0.0, angle_diff, FILTER_ALPHA)
         var new_angle = filtered_angle + filtered_diff
         
         # Normalize to [-180, 180]
@@ -254,16 +254,16 @@ struct StateEstimator:
     
     fn _estimate_derivative(self, values: List[Float64], timestamps: List[Float64]) -> Float64:
         """Estimate derivative using finite differences."""
-        var n = len(values)
+        n = len(values)
         if n < 2:
             return 0.0
         
         # Use last two points for simple derivative
-        var dt = timestamps[n-1] - timestamps[n-2]
+        dt = timestamps[n-1] - timestamps[n-2]
         if dt <= 0.0:
             return 0.0
         
-        var derivative = (values[n-1] - values[n-2]) / dt
+        derivative = (values[n-1] - values[n-2]) / dt
         
         # Apply reasonable limits
         return max(-1000.0, min(1000.0, derivative))
@@ -273,19 +273,19 @@ struct StateEstimator:
         if len(self.last_raw_state) == 0:
             return False
         
-        var dt = timestamp - self.filtered_state.timestamp
+        dt = timestamp - self.filtered_state.timestamp
         if dt <= 0.0:
             return True  # Invalid timestamp
         
         # Check for unreasonable changes
-        var la_pos_change = abs(raw_state[0] - self.last_raw_state[0])
-        var pend_vel_change = abs(raw_state[1] - self.last_raw_state[1])
-        var pend_angle_change = abs(raw_state[2] - self.last_raw_state[2])
+        la_pos_change = abs(raw_state[0] - self.last_raw_state[0])
+        pend_vel_change = abs(raw_state[1] - self.last_raw_state[1])
+        pend_angle_change = abs(raw_state[2] - self.last_raw_state[2])
         
         # Maximum reasonable changes per time step
-        var max_pos_change = 2.0 * dt  # 2 inches/second max
-        var max_vel_change = 500.0 * dt  # 500 deg/s^2 max acceleration
-        var max_angle_change = 100.0 * dt  # 100 deg/s max angular velocity
+        max_pos_change = 2.0 * dt  # 2 inches/second max
+        max_vel_change = 500.0 * dt  # 500 deg/s^2 max acceleration
+        max_angle_change = 100.0 * dt  # 100 deg/s max angular velocity
         
         if (la_pos_change > max_pos_change or 
             pend_vel_change > max_vel_change or
@@ -296,18 +296,18 @@ struct StateEstimator:
     
     fn _predict_state(self, timestamp: Float64) -> FilteredState:
         """Predict state when measurement is unavailable."""
-        var dt = timestamp - self.filtered_state.timestamp
+        dt = timestamp - self.filtered_state.timestamp
         
         # Simple prediction using current velocity
         var predicted_la_pos = self.filtered_state.la_position + self.filtered_state.la_velocity * dt
-        var predicted_pend_angle = self.filtered_state.pend_angle + self.filtered_state.pend_velocity * dt
+        predicted_pend_angle = self.filtered_state.pend_angle + self.filtered_state.pend_velocity * dt
         var predicted_pend_vel = self.filtered_state.pend_velocity + self.filtered_state.pend_acceleration * dt
         
         # Apply constraints
         predicted_la_pos = max(-4.5, min(4.5, predicted_la_pos))
         predicted_pend_vel = max(-1100.0, min(1100.0, predicted_pend_vel))
         
-        var predicted_state = FilteredState(
+        predicted_state = FilteredState(
             predicted_la_pos,
             self.filtered_state.la_velocity,
             predicted_pend_angle,
@@ -327,8 +327,8 @@ struct StateEstimator:
         
         # Keep only recent statistics
         if len(self.estimation_statistics) > 100:
-            var new_stats = List[Float64]()
-            var start_idx = len(self.estimation_statistics) - 100
+            new_stats = List[Float64]()
+            start_idx = len(self.estimation_statistics) - 100
             for i in range(start_idx, len(self.estimation_statistics)):
                 new_stats.append(self.estimation_statistics[i])
             self.estimation_statistics = new_stats
@@ -351,7 +351,7 @@ struct StateEstimator:
         
         # Count outliers in recent history
         var outlier_count = 0
-        var recent_states = self.state_history.get_recent_states(10)
+        recent_states = self.state_history.get_recent_states(10)
         # Simplified outlier counting
         
         return (avg_confidence, self.filtered_state.confidence, outlier_count)

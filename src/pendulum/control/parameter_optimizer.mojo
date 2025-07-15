@@ -207,23 +207,23 @@ struct ParameterOptimizer:
         """Perform grid search optimization over key parameters."""
         print("  Running grid search over parameter space...")
         
-        var best_parameters = self.current_parameters
-        var best_score = 0.0
-        var evaluations = 0
+        best_parameters = self.current_parameters
+        best_score = 0.0
+        evaluations = 0
         
         # Grid search over critical parameters
-        var angle_weights = List[Float64]()
+        angle_weights = List[Float64]()
         angle_weights.append(50.0)
         angle_weights.append(100.0)
         angle_weights.append(200.0)
         
-        var kp_values = List[Float64]()
+        kp_values = List[Float64]()
         kp_values.append(10.0)
         kp_values.append(15.0)
         kp_values.append(20.0)
         kp_values.append(25.0)
         
-        var kd_values = List[Float64]()
+        kd_values = List[Float64]()
         kd_values.append(1.0)
         kd_values.append(2.0)
         kd_values.append(3.0)
@@ -231,12 +231,12 @@ struct ParameterOptimizer:
         for i in range(len(angle_weights)):
             for j in range(len(kp_values)):
                 for k in range(len(kd_values)):
-                    var test_params = self.current_parameters
+                    test_params = self.current_parameters
                     test_params.mpc_weight_angle = angle_weights[i]
                     test_params.kp_stabilize = kp_values[j]
                     test_params.kd_stabilize = kd_values[k]
                     
-                    var performance = self._evaluate_parameter_set(test_params)
+                    performance = self._evaluate_parameter_set(test_params)
                     evaluations += 1
                     
                     if performance > best_score:
@@ -252,15 +252,15 @@ struct ParameterOptimizer:
         """Perform gradient-based optimization starting from initial parameters."""
         print("  Running gradient-based optimization...")
         
-        var current_params = initial_params
-        var current_score = self._evaluate_parameter_set(current_params)
-        var iterations = 0
-        var step_size = 0.1
+        current_params = initial_params
+        current_score = self._evaluate_parameter_set(current_params)
+        iterations = 0
+        step_size = 0.1
         
         for iteration in range(20):  # Limited iterations for gradient descent
             # Compute gradients using finite differences
-            var improved_params = self._compute_parameter_gradients(current_params, step_size)
-            var improved_score = self._evaluate_parameter_set(improved_params)
+            improved_params = self._compute_parameter_gradients(current_params, step_size)
+            improved_score = self._evaluate_parameter_set(improved_params)
             
             if improved_score > current_score:
                 current_params = improved_params
@@ -280,11 +280,11 @@ struct ParameterOptimizer:
         """Perform adaptive parameter refinement based on performance feedback."""
         print("  Running adaptive parameter refinement...")
         
-        var refined_params = initial_params
-        var refinement_score = self._evaluate_parameter_set(refined_params)
+        refined_params = initial_params
+        refinement_score = self._evaluate_parameter_set(refined_params)
         
         # Test different learning rates
-        var learning_rates = List[Float64]()
+        learning_rates = List[Float64]()
         learning_rates.append(0.05)
         learning_rates.append(0.1)
         learning_rates.append(0.15)
@@ -292,26 +292,26 @@ struct ParameterOptimizer:
         
         var best_lr_score = refinement_score
         for i in range(len(learning_rates)):
-            var test_params = refined_params
+            test_params = refined_params
             test_params.learning_rate = learning_rates[i]
             
-            var lr_score = self._evaluate_parameter_set(test_params)
+            lr_score = self._evaluate_parameter_set(test_params)
             if lr_score > best_lr_score:
                 best_lr_score = lr_score
                 refined_params.learning_rate = learning_rates[i]
         
         # Fine-tune hybrid control weights
-        var mpc_weights = List[Float64]()
+        mpc_weights = List[Float64]()
         mpc_weights.append(0.6)
         mpc_weights.append(0.7)
         mpc_weights.append(0.8)
         
         for i in range(len(mpc_weights)):
-            var test_params = refined_params
+            test_params = refined_params
             test_params.mpc_hybrid_weight = mpc_weights[i]
             test_params.classical_hybrid_weight = 1.0 - mpc_weights[i]
             
-            var weight_score = self._evaluate_parameter_set(test_params)
+            weight_score = self._evaluate_parameter_set(test_params)
             if weight_score > refinement_score:
                 refinement_score = weight_score
                 refined_params = test_params
@@ -333,7 +333,7 @@ struct ParameterOptimizer:
         
         # Test parameters across all scenarios
         for i in range(len(self.test_scenarios)):
-            var scenario = self.test_scenarios[i]
+            scenario = self.test_scenarios[i]
             var result = self._test_scenario_performance(scenario, params)
             
             total_success += result.0      # Success rate
@@ -346,11 +346,11 @@ struct ParameterOptimizer:
         var avg_control_effort = total_control_effort / scenario_count
         
         # Compute weighted performance score
-        var success_score = min(1.0, avg_success / TARGET_SUCCESS_RATE)
-        var stability_score = min(1.0, avg_stability / TARGET_STABILITY_TIME)
-        var effort_score = max(0.0, 1.0 - avg_control_effort / 10.0)  # Lower effort is better
+        success_score = min(1.0, avg_success / TARGET_SUCCESS_RATE)
+        stability_score = min(1.0, avg_stability / TARGET_STABILITY_TIME)
+        effort_score = max(0.0, 1.0 - avg_control_effort / 10.0)  # Lower effort is better
         
-        var total_score = (self.performance_weights[0] * success_score +
+        total_score = (self.performance_weights[0] * success_score +
                           self.performance_weights[1] * stability_score +
                           self.performance_weights[2] * effort_score)
         
@@ -364,8 +364,8 @@ struct ParameterOptimizer:
         var control_effort = 0.0
         
         # Simulate control performance (simplified)
-        var angle = initial_state[2]
-        var velocity = initial_state[1]
+        angle = initial_state[2]
+        velocity = initial_state[1]
         
         # Estimate success based on initial conditions and parameters
         if abs(angle) < 30.0:  # Near inverted
@@ -390,17 +390,17 @@ struct ParameterOptimizer:
     
     fn _compute_parameter_gradients(self, params: ParameterSet, step_size: Float64) -> ParameterSet:
         """Compute parameter gradients using finite differences."""
-        var improved_params = params
+        improved_params = params
         
         # Gradient for kp_stabilize
-        var kp_plus = params
+        kp_plus = params
         kp_plus.kp_stabilize += step_size
-        var kp_minus = params
+        kp_minus = params
         kp_minus.kp_stabilize -= step_size
         
-        var score_plus = self._evaluate_parameter_set(kp_plus)
-        var score_minus = self._evaluate_parameter_set(kp_minus)
-        var kp_gradient = (score_plus - score_minus) / (2.0 * step_size)
+        score_plus = self._evaluate_parameter_set(kp_plus)
+        score_minus = self._evaluate_parameter_set(kp_minus)
+        kp_gradient = (score_plus - score_minus) / (2.0 * step_size)
         
         if kp_gradient > 0:
             improved_params.kp_stabilize += step_size * 0.5
@@ -415,14 +415,14 @@ struct ParameterOptimizer:
     fn _create_test_scenarios(mut self):
         """Create diverse test scenarios for parameter evaluation."""
         # Near inverted scenarios
-        var scenario1 = List[Float64]()
+        scenario1 = List[Float64]()
         scenario1.append(0.5)   # la_position
         scenario1.append(20.0)  # pend_velocity
         scenario1.append(8.0)   # pend_angle
         scenario1.append(0.0)   # cmd_volts
         self.test_scenarios.append(scenario1)
         
-        var scenario2 = List[Float64]()
+        scenario2 = List[Float64]()
         scenario2.append(-0.3)
         scenario2.append(-15.0)
         scenario2.append(-12.0)
@@ -430,14 +430,14 @@ struct ParameterOptimizer:
         self.test_scenarios.append(scenario2)
         
         # Transition scenarios
-        var scenario3 = List[Float64]()
+        scenario3 = List[Float64]()
         scenario3.append(1.0)
         scenario3.append(100.0)
         scenario3.append(45.0)
         scenario3.append(0.0)
         self.test_scenarios.append(scenario3)
         
-        var scenario4 = List[Float64]()
+        scenario4 = List[Float64]()
         scenario4.append(-1.5)
         scenario4.append(-80.0)
         scenario4.append(-60.0)
@@ -445,14 +445,14 @@ struct ParameterOptimizer:
         self.test_scenarios.append(scenario4)
         
         # Hanging scenarios
-        var scenario5 = List[Float64]()
+        scenario5 = List[Float64]()
         scenario5.append(0.0)
         scenario5.append(10.0)
         scenario5.append(175.0)
         scenario5.append(0.0)
         self.test_scenarios.append(scenario5)
         
-        var scenario6 = List[Float64]()
+        scenario6 = List[Float64]()
         scenario6.append(0.2)
         scenario6.append(-5.0)
         scenario6.append(-170.0)
@@ -461,7 +461,7 @@ struct ParameterOptimizer:
     
     fn _create_optimization_result(self, params: ParameterSet, score: Float64, iterations: Int) -> OptimizationResult:
         """Create optimization result structure."""
-        var meets_targets = (score > 0.7)  # Simplified target check
+        meets_targets = (score > 0.7)  # Simplified target check
         
         return OptimizationResult(
             params,         # best_parameters

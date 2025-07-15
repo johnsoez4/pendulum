@@ -24,20 +24,20 @@ struct CSVReader:
         # TODO: Implement actual file reading when Mojo file I/O is stable
         # For now, return synthetic data that matches the expected format
         
-        var data = List[List[Float64]]()
+        data = List[List[Float64]]()
         
         # Generate synthetic data based on known characteristics
         # This simulates the actual CSV data structure
         for i in range(100):  # Smaller dataset for testing
-            var row = List[Float64]()
+            row = List[Float64]()
             
             # Simulate pendulum motion patterns
-            var t = Float64(i) * 0.04  # 40ms intervals
-            var angle = 180.0 * (1.0 - Float64(i) / 100.0)  # Transition from hanging
-            var velocity = -200.0 + 400.0 * Float64(i) / 100.0  # Increasing velocity
-            var actuator = -2.0 + 4.0 * Float64(i) / 100.0  # Actuator movement
-            var voltage = 0.1 * (Float64(i % 10) - 5.0)  # Control voltage variation
-            var elapsed = 40.0  # 40ms elapsed time
+            t = Float64(i) * 0.04  # 40ms intervals
+            angle = 180.0 * (1.0 - Float64(i) / 100.0)  # Transition from hanging
+            velocity = -200.0 + 400.0 * Float64(i) / 100.0  # Increasing velocity
+            actuator = -2.0 + 4.0 * Float64(i) / 100.0  # Actuator movement
+            voltage = 0.1 * (Float64(i % 10) - 5.0)  # Control voltage variation
+            elapsed = 40.0  # 40ms elapsed time
             
             row.append(actuator)  # la_position
             row.append(velocity)  # pend_velocity  

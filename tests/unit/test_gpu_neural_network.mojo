@@ -78,11 +78,11 @@ struct GPUMatrix:
 
     fn multiply(self, other: GPUMatrix) -> GPUMatrix:
         """Matrix multiplication with GPU acceleration."""
-        var result = GPUMatrix(self.rows, other.cols, self.use_gpu)
+        result = GPUMatrix(self.rows, other.cols, self.use_gpu)
 
         for i in range(self.rows):
             for j in range(other.cols):
-                var sum = 0.0
+                var sum = 0.0  # Needs var - reassigned in loop
                 for k in range(self.cols):
                     sum += self.get(i, k) * other.get(k, j)
                 result.set(i, j, sum)
@@ -100,7 +100,7 @@ struct GPUMatrix:
         """Apply activation function with GPU acceleration."""
         for i in range(self.rows):
             for j in range(self.cols):
-                var val = self.get(i, j)
+                val = self.get(i, j)
                 if activation == "tanh":
                     self.set(i, j, tanh(val))
                 elif activation == "relu":
@@ -152,19 +152,17 @@ struct GPUNeuralLayer:
 
     fn _initialize_weights(mut self):
         """Initialize weights using Xavier initialization."""
-        var scale = sqrt(2.0 / Float64(self.input_size + self.output_size))
+        scale = sqrt(2.0 / Float64(self.input_size + self.output_size))
 
         for i in range(self.input_size):
             for j in range(self.output_size):
                 # Simple pseudo-random initialization
-                var val = scale * (
-                    Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5
-                )
+                val = scale * (Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5)
                 self.weights.set(i, j, val)
 
     fn forward(self, input: GPUMatrix) -> GPUMatrix:
         """Forward pass through the layer with GPU acceleration."""
-        var output = input.multiply(self.weights)
+        output = input.multiply(self.weights)
         output.add_bias(self.biases)
         output.apply_activation(self.activation)
         return output
@@ -225,11 +223,11 @@ struct GPUPendulumNeuralNetwork:
 
     fn normalize_input(self, input: List[Float64]) -> List[Float64]:
         """Normalize input using stored statistics."""
-        var normalized = List[Float64]()
+        normalized = List[Float64]()
 
         for i in range(len(input)):
             if i < len(self.input_means):
-                var val = (input[i] - self.input_means[i]) / self.input_stds[i]
+                val = (input[i] - self.input_means[i]) / self.input_stds[i]
                 normalized.append(val)
             else:
                 normalized.append(input[i])
@@ -238,11 +236,11 @@ struct GPUPendulumNeuralNetwork:
 
     fn denormalize_output(self, output: List[Float64]) -> List[Float64]:
         """Denormalize output using stored statistics."""
-        var denormalized = List[Float64]()
+        denormalized = List[Float64]()
 
         for i in range(len(output)):
             if i < len(self.output_means):
-                var val = output[i] * self.output_stds[i] + self.output_means[i]
+                val = output[i] * self.output_stds[i] + self.output_means[i]
                 denormalized.append(val)
             else:
                 denormalized.append(output[i])
@@ -252,7 +250,7 @@ struct GPUPendulumNeuralNetwork:
     fn forward(self, input: List[Float64]) -> List[Float64]:
         """GPU-accelerated forward pass through the network."""
         # Normalize input
-        var normalized_input = self.normalize_input(input)
+        normalized_input = self.normalize_input(input)
 
         # Convert to GPU matrix format
         var current_output = GPUMatrix(1, len(normalized_input), self.use_gpu)
@@ -266,12 +264,12 @@ struct GPUPendulumNeuralNetwork:
         current_output = self.output_layer.forward(current_output)
 
         # Extract output
-        var raw_output = List[Float64]()
+        raw_output = List[Float64]()
         for i in range(MODEL_OUTPUT_DIM):
             raw_output.append(current_output.get(0, i))
 
         # Denormalize output
-        var final_output = self.denormalize_output(raw_output)
+        final_output = self.denormalize_output(raw_output)
 
         # Apply physics constraints
         return self._apply_physics_constraints(input, final_output)
@@ -280,19 +278,19 @@ struct GPUPendulumNeuralNetwork:
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to network predictions."""
-        var constrained = List[Float64]()
+        constrained = List[Float64]()
 
         # Extract predictions
-        var pred_la_pos = prediction[0]
-        var pred_pend_vel = prediction[1]
-        var pred_pend_pos = prediction[2]
+        pred_la_pos = prediction[0]
+        pred_pend_vel = prediction[1]
+        pred_pend_pos = prediction[2]
 
         # Apply actuator position constraints
-        var constrained_la_pos = max(-4.0, min(4.0, pred_la_pos))
+        constrained_la_pos = max(-4.0, min(4.0, pred_la_pos))
         constrained.append(constrained_la_pos)
 
         # Apply velocity constraints
-        var constrained_pend_vel = max(-1000.0, min(1000.0, pred_pend_vel))
+        constrained_pend_vel = max(-1000.0, min(1000.0, pred_pend_vel))
         constrained.append(constrained_pend_vel)
 
         # Apply angle continuity
@@ -313,12 +311,12 @@ fn test_gpu_neural_network_creation():
     print("Testing GPU neural network creation...")
 
     # Test GPU-enabled network
-    var gpu_network = GPUPendulumNeuralNetwork(True)
+    gpu_network = GPUPendulumNeuralNetwork(True)
     print("GPU network created:", gpu_network.get_compute_info())
     print("Number of layers: 4 (layer1, layer2, layer3, output_layer)")
 
     # Test CPU-only network
-    var cpu_network = GPUPendulumNeuralNetwork(False)
+    cpu_network = GPUPendulumNeuralNetwork(False)
     print("CPU network created:", cpu_network.get_compute_info())
     print("Number of layers: 4 (layer1, layer2, layer3, output_layer)")
 
@@ -327,10 +325,10 @@ fn test_gpu_neural_network_forward_pass():
     """Test GPU neural network forward pass."""
     print("Testing GPU neural network forward pass...")
 
-    var network = GPUPendulumNeuralNetwork(True)
+    network = GPUPendulumNeuralNetwork(True)
 
     # Create test input
-    var test_input = List[Float64]()
+    test_input = List[Float64]()
     test_input.append(0.5)  # la_position
     test_input.append(10.0)  # pend_velocity
     test_input.append(5.0)  # pend_position
@@ -339,7 +337,7 @@ fn test_gpu_neural_network_forward_pass():
     print("Input:", test_input[0], test_input[1], test_input[2], test_input[3])
 
     # Run forward pass
-    var output = network.forward(test_input)
+    output = network.forward(test_input)
 
     print("Output:", output[0], output[1], output[2])
     print("Output dimensions:", len(output))
@@ -350,19 +348,19 @@ fn test_gpu_cpu_compatibility():
     print("Testing GPU-CPU compatibility...")
 
     # Create both networks
-    var gpu_network = GPUPendulumNeuralNetwork(True)
-    var cpu_network = GPUPendulumNeuralNetwork(False)
+    gpu_network = GPUPendulumNeuralNetwork(True)
+    cpu_network = GPUPendulumNeuralNetwork(False)
 
     # Test input
-    var test_input = List[Float64]()
+    test_input = List[Float64]()
     test_input.append(1.0)
     test_input.append(5.0)
     test_input.append(10.0)
     test_input.append(1.5)
 
     # Run forward pass on both
-    var gpu_output = gpu_network.forward(test_input)
-    var cpu_output = cpu_network.forward(test_input)
+    gpu_output = gpu_network.forward(test_input)
+    cpu_output = cpu_network.forward(test_input)
 
     print("GPU output:", gpu_output[0], gpu_output[1], gpu_output[2])
     print("CPU output:", cpu_output[0], cpu_output[1], cpu_output[2])

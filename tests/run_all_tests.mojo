@@ -83,20 +83,20 @@ struct TestRunner:
         print("RUNNING UNIT TESTS")
         print("=" * 60)
 
-        var suite_start = now()
+        suite_start = now()
         var results = List[TestResult]()
-        var passed = 0
-        var failed = 0
+        passed = 0
+        failed = 0
 
         # Physics Tests
         print("\n1. Physics Module Tests")
         print("-" * 30)
-        var physics_start = now()
+        physics_start = now()
 
         # Simulate physics test execution
-        var physics_passed = TestRunner.simulate_physics_tests()
-        var physics_end = now()
-        var physics_time = Float64(physics_end - physics_start) / 1_000_000.0
+        physics_passed = TestRunner.simulate_physics_tests()
+        physics_end = now()
+        physics_time = Float64(physics_end - physics_start) / 1_000_000.0
 
         if physics_passed:
             results.append(TestResult("Physics Tests", True, physics_time, ""))
@@ -117,11 +117,11 @@ struct TestRunner:
         # Neural Network Tests
         print("\n2. Neural Network Module Tests")
         print("-" * 30)
-        var nn_start = now()
+        nn_start = now()
 
-        var nn_passed = TestRunner.simulate_neural_network_tests()
-        var nn_end = now()
-        var nn_time = Float64(nn_end - nn_start) / 1_000_000.0
+        nn_passed = TestRunner.simulate_neural_network_tests()
+        nn_end = now()
+        nn_time = Float64(nn_end - nn_start) / 1_000_000.0
 
         if nn_passed:
             results.append(
@@ -144,11 +144,11 @@ struct TestRunner:
         # Data Loader Tests
         print("\n3. Data Loader Module Tests")
         print("-" * 30)
-        var data_start = now()
+        data_start = now()
 
-        var data_passed = TestRunner.simulate_data_loader_tests()
-        var data_end = now()
-        var data_time = Float64(data_end - data_start) / 1_000_000.0
+        data_passed = TestRunner.simulate_data_loader_tests()
+        data_end = now()
+        data_time = Float64(data_end - data_start) / 1_000_000.0
 
         if data_passed:
             results.append(TestResult("Data Loader Tests", True, data_time, ""))
@@ -166,8 +166,8 @@ struct TestRunner:
             failed += 1
             print("✗ Data loader tests failed")
 
-        var suite_end = now()
-        var total_time = Float64(suite_end - suite_start) / 1_000_000.0
+        suite_end = now()
+        total_time = Float64(suite_end - suite_start) / 1_000_000.0
 
         return TestSuite(
             "Unit Tests", passed + failed, passed, failed, total_time, results
@@ -180,19 +180,19 @@ struct TestRunner:
         print("RUNNING INTEGRATION TESTS")
         print("=" * 60)
 
-        var suite_start = now()
+        suite_start = now()
         var results = List[TestResult]()
-        var passed = 0
-        var failed = 0
+        passed = 0
+        failed = 0
 
         # Training Pipeline Tests
         print("\n1. Training Pipeline Integration")
         print("-" * 30)
-        var pipeline_start = now()
+        pipeline_start = now()
 
-        var pipeline_passed = TestRunner.simulate_training_pipeline_tests()
-        var pipeline_end = now()
-        var pipeline_time = Float64(pipeline_end - pipeline_start) / 1_000_000.0
+        pipeline_passed = TestRunner.simulate_training_pipeline_tests()
+        pipeline_end = now()
+        pipeline_time = Float64(pipeline_end - pipeline_start) / 1_000_000.0
 
         if pipeline_passed:
             results.append(
@@ -215,11 +215,11 @@ struct TestRunner:
         # End-to-End Tests
         print("\n2. End-to-End System Tests")
         print("-" * 30)
-        var e2e_start = now()
+        e2e_start = now()
 
-        var e2e_passed = TestRunner.simulate_end_to_end_tests()
-        var e2e_end = now()
-        var e2e_time = Float64(e2e_end - e2e_start) / 1_000_000.0
+        e2e_passed = TestRunner.simulate_end_to_end_tests()
+        e2e_end = now()
+        e2e_time = Float64(e2e_end - e2e_start) / 1_000_000.0
 
         if e2e_passed:
             results.append(TestResult("End-to-End Tests", True, e2e_time, ""))
@@ -237,8 +237,8 @@ struct TestRunner:
             failed += 1
             print("✗ End-to-end tests failed")
 
-        var suite_end = now()
-        var total_time = Float64(suite_end - suite_start) / 1_000_000.0
+        suite_end = now()
+        total_time = Float64(suite_end - suite_start) / 1_000_000.0
 
         return TestSuite(
             "Integration Tests",
@@ -256,19 +256,19 @@ struct TestRunner:
         print("RUNNING PERFORMANCE TESTS")
         print("=" * 60)
 
-        var suite_start = now()
+        suite_start = now()
         var results = List[TestResult]()
-        var passed = 0
-        var failed = 0
+        passed = 0
+        failed = 0
 
         # Latency Tests
         print("\n1. Inference Latency Benchmarks")
         print("-" * 30)
-        var latency_start = now()
+        latency_start = now()
 
-        var latency_passed = TestRunner.simulate_latency_tests()
-        var latency_end = now()
-        var latency_time = Float64(latency_end - latency_start) / 1_000_000.0
+        latency_passed = TestRunner.simulate_latency_tests()
+        latency_end = now()
+        latency_time = Float64(latency_end - latency_start) / 1_000_000.0
 
         if latency_passed:
             results.append(
@@ -291,11 +291,11 @@ struct TestRunner:
         # Throughput Tests
         print("\n2. Throughput Benchmarks")
         print("-" * 30)
-        var throughput_start = now()
+        throughput_start = now()
 
-        var throughput_passed = TestRunner.simulate_throughput_tests()
-        var throughput_end = now()
-        var throughput_time = (
+        throughput_passed = TestRunner.simulate_throughput_tests()
+        throughput_end = now()
+        throughput_time = (
             Float64(throughput_end - throughput_start) / 1_000_000.0
         )
 
@@ -320,11 +320,11 @@ struct TestRunner:
         # Real-time Tests
         print("\n3. Real-time Control Simulation")
         print("-" * 30)
-        var realtime_start = now()
+        realtime_start = now()
 
-        var realtime_passed = TestRunner.simulate_realtime_tests()
-        var realtime_end = now()
-        var realtime_time = Float64(realtime_end - realtime_start) / 1_000_000.0
+        realtime_passed = TestRunner.simulate_realtime_tests()
+        realtime_end = now()
+        realtime_time = Float64(realtime_end - realtime_start) / 1_000_000.0
 
         if realtime_passed:
             results.append(
@@ -344,8 +344,8 @@ struct TestRunner:
             failed += 1
             print("✗ Real-time control tests failed")
 
-        var suite_end = now()
-        var total_time = Float64(suite_end - suite_start) / 1_000_000.0
+        suite_end = now()
+        total_time = Float64(suite_end - suite_start) / 1_000_000.0
 
         return TestSuite(
             "Performance Tests",
@@ -367,22 +367,22 @@ struct TestRunner:
         print("COMPREHENSIVE TEST REPORT")
         print("=" * 80)
 
-        var total_tests = (
+        total_tests = (
             unit_suite.total_tests
             + integration_suite.total_tests
             + performance_suite.total_tests
         )
-        var total_passed = (
+        total_passed = (
             unit_suite.passed_tests
             + integration_suite.passed_tests
             + performance_suite.passed_tests
         )
-        var total_failed = (
+        total_failed = (
             unit_suite.failed_tests
             + integration_suite.failed_tests
             + performance_suite.failed_tests
         )
-        var total_time = (
+        total_time = (
             unit_suite.total_time_ms
             + integration_suite.total_time_ms
             + performance_suite.total_time_ms
@@ -520,15 +520,15 @@ fn main():
     print("Testing all system components for functionality and performance")
     print("Target: 25 Hz real-time control with physics constraints")
 
-    var overall_start = now()
+    overall_start = now()
 
     # Run all test suites
     var unit_results = TestRunner.run_unit_tests()
     var integration_results = TestRunner.run_integration_tests()
     var performance_results = TestRunner.run_performance_tests()
 
-    var overall_end = now()
-    var overall_time = Float64(overall_end - overall_start) / 1_000_000.0
+    overall_end = now()
+    overall_time = Float64(overall_end - overall_start) / 1_000_000.0
 
     # Generate comprehensive report
     TestRunner.generate_test_report(

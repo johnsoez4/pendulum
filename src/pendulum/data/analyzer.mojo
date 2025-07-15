@@ -63,10 +63,10 @@ struct PendulumDataAnalyzer:
         # TODO: Implement file reading when Mojo file I/O is available
         # For now, return placeholder statistics based on known data characteristics
         
-        var stats = Dict[String, DataStats]()
+        stats = Dict[String, DataStats]()
         
         # Linear actuator position statistics (from data inspection)
-        var la_pos_stats = DataStats()
+        la_pos_stats = DataStats()
         la_pos_stats.min_val = -3.5  # Approximate from data
         la_pos_stats.max_val = 0.0   # Starts at center
         la_pos_stats.mean_val = -1.75
@@ -74,7 +74,7 @@ struct PendulumDataAnalyzer:
         stats["la_position"] = la_pos_stats
         
         # Pendulum velocity statistics
-        var pend_vel_stats = DataStats()
+        pend_vel_stats = DataStats()
         pend_vel_stats.min_val = -450.0  # Approximate from data
         pend_vel_stats.max_val = 450.0
         pend_vel_stats.mean_val = 0.0
@@ -82,7 +82,7 @@ struct PendulumDataAnalyzer:
         stats["pend_velocity"] = pend_vel_stats
         
         # Pendulum position statistics
-        var pend_pos_stats = DataStats()
+        pend_pos_stats = DataStats()
         pend_pos_stats.min_val = -180.0  # Hanging position
         pend_pos_stats.max_val = 180.0   # Full rotation
         pend_pos_stats.mean_val = -90.0  # Mostly hanging/swinging
@@ -90,7 +90,7 @@ struct PendulumDataAnalyzer:
         stats["pend_position"] = pend_pos_stats
         
         # Command voltage statistics
-        var cmd_volts_stats = DataStats()
+        cmd_volts_stats = DataStats()
         cmd_volts_stats.min_val = -5.0   # Approximate motor limits
         cmd_volts_stats.max_val = 5.0
         cmd_volts_stats.mean_val = -0.2  # Small bias observed
@@ -98,7 +98,7 @@ struct PendulumDataAnalyzer:
         stats["cmd_volts"] = cmd_volts_stats
         
         # Elapsed time statistics
-        var elapsed_stats = DataStats()
+        elapsed_stats = DataStats()
         elapsed_stats.min_val = 39.0    # Minimum sample interval (ms)
         elapsed_stats.max_val = 41.0    # Maximum sample interval (ms)
         elapsed_stats.mean_val = 40.0   # Target 40ms = 25Hz
@@ -134,7 +134,7 @@ struct PendulumDataAnalyzer:
         Returns:
             Dictionary indicating which constraints are satisfied
         """
-        var constraints = Dict[String, Bool]()
+        constraints = Dict[String, Bool]()
         
         # Actuator travel constraint
         constraints["actuator_within_limits"] = True  # Max observed ~3.5 inches
@@ -160,7 +160,7 @@ struct PendulumDataAnalyzer:
         Returns:
             Dictionary with estimated system parameters
         """
-        var dynamics = Dict[String, Float64]()
+        dynamics = Dict[String, Float64]()
         
         # Estimated from data characteristics
         dynamics["natural_frequency"] = 1.5      # Hz - pendulum natural frequency
@@ -223,6 +223,6 @@ fn analyze_pendulum_data(file_path: String) raises -> String:
     Returns:
         Analysis report string
     """
-    var analyzer = PendulumDataAnalyzer()
+    analyzer = PendulumDataAnalyzer()
     _ = analyzer.analyze_data_file(file_path)
     return analyzer.generate_analysis_report()

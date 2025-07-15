@@ -28,8 +28,8 @@ fn main():
     print("\n1. Testing GPU Hardware for Async Transfers...")
     print("-" * 60)
     
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -48,18 +48,18 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for async transfer manager")
         
         # Initialize async transfer manager variables
-        var active_transfers = 0
-        var max_concurrent_transfers = 4
-        var transfer_queue_size = 0
-        var total_transfers_completed = 0
-        var total_bytes_transferred = 0
-        var transfer_efficiency = 0.0
-        var bandwidth_utilization = 0.0
-        var async_operations_enabled = True
+        active_transfers = 0
+        max_concurrent_transfers = 4
+        transfer_queue_size = 0
+        total_transfers_completed = 0
+        total_bytes_transferred = 0
+        transfer_efficiency = 0.0
+        bandwidth_utilization = 0.0
+        async_operations_enabled = True
         
         print("✓ Asynchronous GPU Transfer Manager initialized")
         print("✓ DeviceContext ready for async operations")
@@ -75,25 +75,25 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for CPU→GPU async transfers")
         
         # Test various data sizes for async transfers
-        var transfer_sizes = List[Int](1024, 4096, 16384, 65536)
-        var active_transfers = 0
-        var max_concurrent = 4
-        var total_bytes = 0
+        transfer_sizes = List[Int](1024, 4096, 16384, 65536)
+        active_transfers = 0
+        max_concurrent = 4
+        total_bytes = 0
         
         print("Testing async CPU→GPU transfers with different sizes:")
         
         for i in range(len(transfer_sizes)):
-            var data_size = transfer_sizes[i]
+            data_size = transfer_sizes[i]
             
             if active_transfers < max_concurrent:
                 print("  Test", i + 1, "- Data size:", data_size, "elements")
                 
                 # Real asynchronous CPU to GPU transfer
-                var buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
+                buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
                 
                 # Fill buffer asynchronously (simulating data transfer)
                 for j in range(min(data_size, 1000)):  # Limit for performance
@@ -104,8 +104,8 @@ fn main():
                 total_bytes += data_size * 8  # 8 bytes per Float64
                 
                 # Calculate transfer efficiency
-                var transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
-                var efficiency = min(100.0, transfer_mb * 10.0)
+                transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+                efficiency = min(100.0, transfer_mb * 10.0)
                 
                 print("    ✓ Async CPU→GPU transfer scheduled")
                 print("    - Transfer size:", transfer_mb, "MB")
@@ -127,25 +127,25 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for GPU→CPU async transfers")
         
         # Test GPU to CPU async transfers
-        var gpu_transfer_sizes = List[Int](2048, 8192, 32768, 131072)
-        var active_gpu_transfers = 0
-        var max_gpu_concurrent = 4
-        var total_gpu_bytes = 0
+        gpu_transfer_sizes = List[Int](2048, 8192, 32768, 131072)
+        active_gpu_transfers = 0
+        max_gpu_concurrent = 4
+        total_gpu_bytes = 0
         
         print("Testing async GPU→CPU transfers:")
         
         for i in range(len(gpu_transfer_sizes)):
-            var data_size = gpu_transfer_sizes[i]
+            data_size = gpu_transfer_sizes[i]
             
             if active_gpu_transfers < max_gpu_concurrent:
                 print("  Transfer", i + 1, "- Data size:", data_size, "elements")
                 
                 # Real asynchronous GPU to CPU transfer
-                var buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
+                buffer = ctx.enqueue_create_buffer[DType.float64](data_size)
                 
                 # Simulate GPU data preparation
                 for j in range(min(data_size, 1000)):
@@ -156,8 +156,8 @@ fn main():
                 total_gpu_bytes += data_size * 8
                 
                 # Calculate bandwidth utilization
-                var transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
-                var bandwidth = min(100.0, transfer_mb * 15.0)
+                transfer_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+                bandwidth = min(100.0, transfer_mb * 15.0)
                 
                 print("    ✓ Async GPU→CPU transfer scheduled")
                 print("    - Transfer size:", transfer_mb, "MB")
@@ -179,28 +179,28 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for batch async transfers")
         
         # Batch transfer test
-        var batch_sizes = List[Int]()
+        batch_sizes = List[Int]()
         for i in range(8):
             batch_sizes.append((i + 1) * 1024)  # 1KB to 8KB
         
-        var successful_batch_transfers = 0
-        var batch_active_transfers = 0
-        var max_batch_concurrent = 4
-        var total_batch_bytes = 0
+        successful_batch_transfers = 0
+        batch_active_transfers = 0
+        max_batch_concurrent = 4
+        total_batch_bytes = 0
         
         print("Testing batch async transfers:")
         print("- Batch size:", len(batch_sizes), "transfers")
         
         for i in range(len(batch_sizes)):
-            var size = batch_sizes[i]
+            size = batch_sizes[i]
             
             if batch_active_transfers < max_batch_concurrent:
                 # Schedule individual transfer
-                var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+                buffer = ctx.enqueue_create_buffer[DType.float64](size)
                 
                 # Async data filling
                 for j in range(min(size, 500)):  # Limit for batch performance
@@ -215,8 +215,8 @@ fn main():
                 print("  Transfer", i + 1, "queued (max concurrent reached)")
         
         # Update efficiency metrics
-        var total_mb = Float64(total_batch_bytes) / (1024.0 * 1024.0)
-        var batch_efficiency = min(100.0, total_mb * 5.0)
+        total_mb = Float64(total_batch_bytes) / (1024.0 * 1024.0)
+        batch_efficiency = min(100.0, total_mb * 5.0)
         
         ctx.synchronize()
         print("✓ Batch async transfer scheduling completed")
@@ -233,13 +233,13 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for neural network transfers")
         
         # Neural network layer sizes (4→8→8→3 architecture)
-        var layer_sizes = List[Int](32, 64, 64, 24)  # 4×8, 8×8, 8×8, 8×3
-        var nn_active_transfers = 0
-        var max_nn_concurrent = 4
+        layer_sizes = List[Int](32, 64, 64, 24)  # 4×8, 8×8, 8×8, 8×3
+        nn_active_transfers = 0
+        max_nn_concurrent = 4
         var total_nn_elements = 0
         
         print("Testing neural network async transfers:")
@@ -252,15 +252,15 @@ fn main():
         
         # Schedule transfers for each layer
         for i in range(len(layer_sizes)):
-            var layer_size = layer_sizes[i]
+            layer_size = layer_sizes[i]
             
             if nn_active_transfers < max_nn_concurrent:
                 # Create buffer for neural network layer
-                var layer_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
+                layer_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
                 
                 # Initialize with neural network weights/data
                 for j in range(min(layer_size, 1000)):
-                    var weight_value = Float64(i * 0.1 + j * 0.001)  # Simulated weights
+                    weight_value = Float64(i * 0.1 + j * 0.001)  # Simulated weights
                     _ = layer_buffer.enqueue_fill(weight_value)
                 
                 nn_active_transfers += 1
@@ -270,7 +270,7 @@ fn main():
                 print("  Layer", i + 1, "queued (max concurrent reached)")
         
         # Update neural network transfer efficiency
-        var nn_mb = Float64(total_nn_elements * 8) / (1024.0 * 1024.0)
+        nn_mb = Float64(total_nn_elements * 8) / (1024.0 * 1024.0)
         var nn_efficiency = min(100.0, nn_mb * 20.0)  # Higher efficiency for NN
         
         ctx.synchronize()

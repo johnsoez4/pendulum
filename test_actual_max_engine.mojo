@@ -41,7 +41,7 @@ fn test_real_device_detection():
             
             if device_count > 0:
                 # Try to get device information
-                var device = get_device(0)
+                device = get_device(0)
                 print("✓ Successfully accessed GPU device 0")
                 return True
             else:
@@ -65,16 +65,16 @@ fn test_real_tensor_operations():
         
         try:
             # Create tensor specification
-            var shape = List[Int]()
+            shape = List[Int]()
             shape.append(2)
             shape.append(2)
             
             # Create tensor spec
-            var spec = TensorSpec(DType.float64, shape)
+            spec = TensorSpec(DType.float64, shape)
             print("✓ TensorSpec created successfully")
             
             # Create tensor
-            var tensor = Tensor[DType.float64](spec)
+            tensor = Tensor[DType.float64](spec)
             print("✓ Tensor created successfully")
             
             return True
@@ -96,13 +96,13 @@ fn test_real_gpu_operations():
         
         try:
             # Create test tensors
-            var shape = List[Int]()
+            shape = List[Int]()
             shape.append(2)
             shape.append(2)
             
-            var spec = TensorSpec(DType.float64, shape)
-            var tensor_a = Tensor[DType.float64](spec)
-            var tensor_b = Tensor[DType.float64](spec)
+            spec = TensorSpec(DType.float64, shape)
+            tensor_a = Tensor[DType.float64](spec)
+            tensor_b = Tensor[DType.float64](spec)
             
             # Test addition
             var result_add = add(tensor_a, tensor_b)

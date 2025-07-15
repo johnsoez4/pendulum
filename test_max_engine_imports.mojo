@@ -14,11 +14,11 @@ fn main():
     
     # Test GPU manager initialization
     print("1. Testing GPU Manager initialization...")
-    var gpu_manager = GPUManager(ComputeMode.AUTO)
+    gpu_manager = GPUManager(ComputeMode.AUTO)
     
     # Test GPU detection with new MAX Engine structure
     print("\n2. Testing GPU detection with MAX Engine structure...")
-    var gpu_detected = gpu_manager.detect_gpu()
+    gpu_detected = gpu_manager.detect_gpu()
     
     if gpu_detected:
         print("✓ GPU detection successful with MAX Engine structure")
@@ -29,12 +29,12 @@ fn main():
     
     # Test GPU availability checking
     print("\n3. Testing MAX Engine availability checking...")
-    var gpu_available = gpu_manager.is_gpu_available()
+    gpu_available = gpu_manager.is_gpu_available()
     print("GPU available:", gpu_available)
     
     # Test compute mode selection
     print("\n4. Testing compute mode selection...")
-    var should_use_gpu = gpu_manager.should_use_gpu()
+    should_use_gpu = gpu_manager.should_use_gpu()
     print("Should use GPU:", should_use_gpu)
     
     print("\n" + "=" * 50)

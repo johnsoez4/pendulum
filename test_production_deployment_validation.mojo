@@ -28,8 +28,8 @@ fn main():
     print("\n1. Testing GPU Hardware for Production Validation...")
     print("-" * 60)
     
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -47,17 +47,17 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for production deployment validation")
         
         # Initialize production deployment validator variables
-        var gpu_available = has_nvidia or has_amd
-        var validation_enabled = True
-        var total_validations = 0
-        var passed_validations = 0
+        gpu_available = has_nvidia or has_amd
+        validation_enabled = True
+        total_validations = 0
+        passed_validations = 0
         
         # Initialize production targets
-        var production_targets = List[Float64]()
+        production_targets = List[Float64]()
         production_targets.append(95.0)  # 95% system stability
         production_targets.append(99.0)  # 99% error handling
         production_targets.append(98.0)  # 98% memory management
@@ -86,28 +86,28 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for system stability validation")
         
         print("Validating system stability under continuous operation...")
         
-        var start_time = Float64(now()) / 1_000_000_000.0
+        start_time = Float64(now()) / 1_000_000_000.0
         
         # Test continuous operation stability
         var stability_cycles = 20  # Reduced for testing
-        var stable_cycles = 0
-        var performance_samples = List[Float64]()
+        stable_cycles = 0
+        performance_samples = List[Float64]()
         
         for cycle in range(stability_cycles):
-            var cycle_start = Float64(now()) / 1_000_000_000.0
+            cycle_start = Float64(now()) / 1_000_000_000.0
             
             if has_nvidia or has_amd:
                 # GPU stability testing
-                var stability_buffer = ctx.enqueue_create_buffer[DType.float64](500)  # Reduced size
+                stability_buffer = ctx.enqueue_create_buffer[DType.float64](500)  # Reduced size
                 
                 # Fill buffer with stability test data
                 for i in range(min(500, 250)):  # Reduced for continuous testing
-                    var stability_value = Float64(cycle * 500 + i) * 0.0001
+                    stability_value = Float64(cycle * 500 + i) * 0.0001
                     _ = stability_buffer.enqueue_fill(stability_value)
                 
                 ctx.synchronize()
@@ -117,20 +117,20 @@ fn main():
                 for i in range(100):
                     cpu_stability_result += Float64(cycle * 100 + i) * 0.001
             
-            var cycle_end = Float64(now()) / 1_000_000_000.0
-            var cycle_time_ms = (cycle_end - cycle_start) * 1000.0
+            cycle_end = Float64(now()) / 1_000_000_000.0
+            cycle_time_ms = (cycle_end - cycle_start) * 1000.0
             performance_samples.append(cycle_time_ms)
             
             # Check cycle stability (under 50ms for production)
             if cycle_time_ms < 50.0:
                 stable_cycles += 1
         
-        var end_time = Float64(now()) / 1_000_000_000.0
-        var total_time_ms = (end_time - start_time) * 1000.0
+        end_time = Float64(now()) / 1_000_000_000.0
+        total_time_ms = (end_time - start_time) * 1000.0
         
         # Calculate stability metrics
-        var stability_rate = Float64(stable_cycles) / Float64(stability_cycles) * 100.0
-        var system_stability = stability_rate >= 95.0
+        stability_rate = Float64(stable_cycles) / Float64(stability_cycles) * 100.0
+        system_stability = stability_rate >= 95.0
         
         # Calculate performance variance
         var avg_performance = 0.0
@@ -140,12 +140,12 @@ fn main():
         
         var performance_variance = 0.0
         for i in range(len(performance_samples)):
-            var diff = performance_samples[i] - avg_performance
+            diff = performance_samples[i] - avg_performance
             performance_variance += diff * diff
         performance_variance /= Float64(len(performance_samples))
         
-        var performance_consistency = performance_variance < 100.0  # Low variance required
-        var production_ready = system_stability and performance_consistency
+        performance_consistency = performance_variance < 100.0  # Low variance required
+        production_ready = system_stability and performance_consistency
         
         print("  ✓ System stability validation completed")
         print("    - Stability cycles:", stable_cycles, "/", stability_cycles)
@@ -167,28 +167,28 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for error handling validation")
         
         print("Validating error handling and recovery mechanisms...")
         
-        var start_time = Float64(now()) / 1_000_000_000.0
+        start_time = Float64(now()) / 1_000_000_000.0
         
         # Test error handling scenarios
         var error_scenarios = 5  # Reduced for testing
-        var handled_errors = 0
+        handled_errors = 0
         
         for scenario in range(error_scenarios):
-            var scenario_start = Float64(now()) / 1_000_000_000.0
+            scenario_start = Float64(now()) / 1_000_000_000.0
             
             try:
                 if has_nvidia or has_amd:
                     # Test GPU error handling
-                    var error_buffer = ctx.enqueue_create_buffer[DType.float64](500)  # Reduced size
+                    error_buffer = ctx.enqueue_create_buffer[DType.float64](500)  # Reduced size
                     
                     # Simulate potential error conditions
                     for i in range(min(500, 250)):
-                        var error_value = Float64(scenario * 500 + i) * 0.001
+                        error_value = Float64(scenario * 500 + i) * 0.001
                         _ = error_buffer.enqueue_fill(error_value)
                     
                     ctx.synchronize()
@@ -205,19 +205,19 @@ fn main():
                 # Error occurred but was caught - this is good error handling
                 handled_errors += 1
             
-            var scenario_end = Float64(now()) / 1_000_000_000.0
-            var scenario_time_ms = (scenario_end - scenario_start) * 1000.0
+            scenario_end = Float64(now()) / 1_000_000_000.0
+            scenario_time_ms = (scenario_end - scenario_start) * 1000.0
             
             # Ensure error handling doesn't take too long
             if scenario_time_ms > 100.0:  # 100ms timeout
                 print("    Warning: Error handling scenario", scenario + 1, "took", scenario_time_ms, "ms")
         
-        var end_time = Float64(now()) / 1_000_000_000.0
-        var total_time_ms = (end_time - start_time) * 1000.0
+        end_time = Float64(now()) / 1_000_000_000.0
+        total_time_ms = (end_time - start_time) * 1000.0
         
         # Calculate error handling metrics
-        var error_handling_rate = Float64(handled_errors) / Float64(error_scenarios) * 100.0
-        var error_handling = error_handling_rate >= 99.0
+        error_handling_rate = Float64(handled_errors) / Float64(error_scenarios) * 100.0
+        error_handling = error_handling_rate >= 99.0
         
         print("  ✓ Error handling validation completed")
         print("    - Error scenarios:", error_scenarios)
@@ -236,36 +236,36 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for memory management validation")
         
         print("Validating memory management and leak detection...")
         
-        var start_time = Float64(now()) / 1_000_000_000.0
+        start_time = Float64(now()) / 1_000_000_000.0
         
         # Test memory allocation and deallocation
         var memory_cycles = 10  # Reduced for testing
-        var successful_memory_ops = 0
-        var allocated_buffers = List[Int]()  # Track buffer sizes
+        successful_memory_ops = 0
+        allocated_buffers = List[Int]()  # Track buffer sizes
         
         # Allocation phase
         for cycle in range(memory_cycles):
             try:
                 if has_nvidia or has_amd:
                     # Test GPU memory management
-                    var buffer_size = 500 + cycle * 5  # Varying buffer sizes, reduced
-                    var memory_buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
+                    buffer_size = 500 + cycle * 5  # Varying buffer sizes, reduced
+                    memory_buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
                     
                     # Fill buffer to ensure allocation
                     for i in range(min(buffer_size, 50)):  # Reduced for memory testing
-                        var memory_value = Float64(cycle * 50 + i) * 0.001
+                        memory_value = Float64(cycle * 50 + i) * 0.001
                         _ = memory_buffer.enqueue_fill(memory_value)
                     
                     allocated_buffers.append(buffer_size)
                     successful_memory_ops += 1
                 else:
                     # Test CPU memory management
-                    var cpu_memory = List[Float64]()
+                    cpu_memory = List[Float64]()
                     for i in range(50):
                         cpu_memory.append(Float64(cycle * 50 + i) * 0.001)
                     successful_memory_ops += 1
@@ -277,12 +277,12 @@ fn main():
         if has_nvidia or has_amd:
             ctx.synchronize()
         
-        var end_time = Float64(now()) / 1_000_000_000.0
-        var total_time_ms = (end_time - start_time) * 1000.0
+        end_time = Float64(now()) / 1_000_000_000.0
+        total_time_ms = (end_time - start_time) * 1000.0
         
         # Calculate memory management metrics
-        var memory_success_rate = Float64(successful_memory_ops) / Float64(memory_cycles) * 100.0
-        var memory_management = memory_success_rate >= 98.0
+        memory_success_rate = Float64(successful_memory_ops) / Float64(memory_cycles) * 100.0
+        memory_management = memory_success_rate >= 98.0
         
         print("  ✓ Memory management validation completed")
         print("    - Memory cycles:", memory_cycles)
@@ -302,28 +302,28 @@ fn main():
     print("-" * 60)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for performance consistency validation")
         
         print("Validating performance consistency over time...")
         
-        var start_time = Float64(now()) / 1_000_000_000.0
+        start_time = Float64(now()) / 1_000_000_000.0
         
         # Test performance consistency
         var performance_samples = 10  # Reduced for testing
-        var performance_times = List[Float64]()
-        var consistent_samples = 0
+        performance_times = List[Float64]()
+        consistent_samples = 0
         
         for sample in range(performance_samples):
-            var sample_start = Float64(now()) / 1_000_000_000.0
+            sample_start = Float64(now()) / 1_000_000_000.0
             
             if has_nvidia or has_amd:
                 # GPU performance testing
-                var perf_buffer = ctx.enqueue_create_buffer[DType.float64](500)  # Reduced size
+                perf_buffer = ctx.enqueue_create_buffer[DType.float64](500)  # Reduced size
                 
                 # Fill buffer with performance test data
                 for i in range(min(500, 250)):  # Reduced for performance testing
-                    var perf_value = Float64(sample * 500 + i) * 0.001
+                    perf_value = Float64(sample * 500 + i) * 0.001
                     _ = perf_buffer.enqueue_fill(perf_value)
                 
                 ctx.synchronize()
@@ -333,12 +333,12 @@ fn main():
                 for i in range(250):
                     cpu_perf_result += Float64(sample * 250 + i) * 0.001
             
-            var sample_end = Float64(now()) / 1_000_000_000.0
-            var sample_time_ms = (sample_end - sample_start) * 1000.0
+            sample_end = Float64(now()) / 1_000_000_000.0
+            sample_time_ms = (sample_end - sample_start) * 1000.0
             performance_times.append(sample_time_ms)
         
-        var end_time = Float64(now()) / 1_000_000_000.0
-        var total_time_ms = (end_time - start_time) * 1000.0
+        end_time = Float64(now()) / 1_000_000_000.0
+        total_time_ms = (end_time - start_time) * 1000.0
         
         # Calculate performance consistency metrics
         var avg_time = 0.0
@@ -347,7 +347,7 @@ fn main():
         avg_time /= Float64(len(performance_times))
         
         # Check consistency (within 20% of average)
-        var consistency_threshold = avg_time * 0.2
+        consistency_threshold = avg_time * 0.2
         for i in range(len(performance_times)):
             var time_diff = performance_times[i] - avg_time
             if time_diff < 0:
@@ -355,8 +355,8 @@ fn main():
             if time_diff <= consistency_threshold:
                 consistent_samples += 1
         
-        var consistency_rate = Float64(consistent_samples) / Float64(performance_samples) * 100.0
-        var performance_consistency = consistency_rate >= 90.0
+        consistency_rate = Float64(consistent_samples) / Float64(performance_samples) * 100.0
+        performance_consistency = consistency_rate >= 90.0
         
         print("  ✓ Performance consistency validation completed")
         print("    - Performance samples:", performance_samples)
@@ -380,13 +380,13 @@ fn main():
         print("✓ Generating comprehensive production validation summary...")
         
         # Simulate validation results from previous tests
-        var gpu_available = has_nvidia or has_amd
-        var total_validations = 4  # Stability, Error, Memory, Performance
+        gpu_available = has_nvidia or has_amd
+        total_validations = 4  # Stability, Error, Memory, Performance
         var passed_validations = 4 if gpu_available else 4  # All tests should pass
         
         # Calculate overall results
-        var pass_rate = Float64(passed_validations) / Float64(total_validations) * 100.0
-        var overall_success = passed_validations == total_validations
+        pass_rate = Float64(passed_validations) / Float64(total_validations) * 100.0
+        overall_success = passed_validations == total_validations
         
         print("  ✓ Comprehensive production validation summary completed")
         print("    - Total validations:", total_validations)

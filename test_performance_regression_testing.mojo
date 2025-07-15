@@ -38,8 +38,8 @@ fn main():
     print("\n1. Testing GPU Hardware for Performance Regression Testing...")
     print("-" * 60)
 
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
 
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -60,18 +60,18 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for performance regression testing")
 
         # Initialize regression tester variables
-        var gpu_available = has_nvidia or has_amd
-        var testing_enabled = True
-        var total_tests = 0
-        var passed_tests = 0
-        var regression_detected = False
+        gpu_available = has_nvidia or has_amd
+        testing_enabled = True
+        total_tests = 0
+        passed_tests = 0
+        regression_detected = False
 
         # Initialize performance targets based on simulation claims
-        var performance_targets = List[String]()
+        performance_targets = List[String]()
         performance_targets.append(
             "Matrix Operations: 4.0x simulated, 3.5x target"
         )
@@ -108,7 +108,7 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print(
             "✓ DeviceContext created for matrix operations regression testing"
         )
@@ -125,52 +125,52 @@ fn main():
 
         # CPU benchmark
         print("  Running CPU matrix operations benchmark...")
-        var cpu_start_time = Float64(now()) / 1_000_000_000.0
+        cpu_start_time = Float64(now()) / 1_000_000_000.0
         for _ in range(iterations):
             # Simulate CPU matrix operations
             var cpu_result = 0.0
             for i in range(min(matrix_size, 50)):  # Simplified CPU computation
                 for j in range(min(matrix_size, 50)):
                     cpu_result += Float64(i * j) * 0.001
-        var cpu_end_time = Float64(now()) / 1_000_000_000.0
-        var cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
+        cpu_end_time = Float64(now()) / 1_000_000_000.0
+        cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
 
         # GPU benchmark
         if has_nvidia or has_amd:
             print("  Running GPU matrix operations benchmark...")
             ctx.synchronize()
-            var gpu_start_time = Float64(now()) / 1_000_000_000.0
+            gpu_start_time = Float64(now()) / 1_000_000_000.0
 
             for _ in range(iterations):
                 # Real GPU matrix operations
-                var buffer_size = matrix_size * matrix_size
-                var matrix_buffer = ctx.enqueue_create_buffer[DType.float64](
+                buffer_size = matrix_size * matrix_size
+                matrix_buffer = ctx.enqueue_create_buffer[DType.float64](
                     min(buffer_size, 5000)
                 )
 
                 # Fill buffer with matrix data
                 for i in range(min(buffer_size, 1000)):
-                    var matrix_value = Float64(i) * 0.001
+                    matrix_value = Float64(i) * 0.001
                     _ = matrix_buffer.enqueue_fill(matrix_value)
 
             ctx.synchronize()
-            var gpu_end_time = Float64(now()) / 1_000_000_000.0
-            var gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
+            gpu_end_time = Float64(now()) / 1_000_000_000.0
+            gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
 
             # Calculate speedup
-            var speedup = (
+            speedup = (
                 cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
             )
 
             # Validate performance
-            var simulated_speedup = 4.0
-            var target_speedup = 3.5
-            var meets_target = speedup >= target_speedup
-            var tolerance_percent = 15.0
+            simulated_speedup = 4.0
+            target_speedup = 3.5
+            meets_target = speedup >= target_speedup
+            tolerance_percent = 15.0
             var speedup_diff = speedup - simulated_speedup
             if speedup_diff < 0:
                 speedup_diff = -speedup_diff
-            var within_tolerance = speedup_diff <= (
+            within_tolerance = speedup_diff <= (
                 simulated_speedup * tolerance_percent / 100.0
             )
 
@@ -185,7 +185,7 @@ fn main():
             print("    - Test result:", "PASS" if meets_target else "FAIL")
         else:
             print("  ⚠️  GPU matrix operations test skipped - no GPU available")
-            var speedup = 1.0
+            speedup = 1.0
             print("    - CPU fallback speedup:", speedup, "x")
 
         print("✅ Matrix Operations Performance Regression: SUCCESS")
@@ -198,14 +198,14 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for neural network regression testing")
 
         # Test parameters
         var batch_size = 50  # Reduced for testing
-        var input_dim = 4
-        var hidden_dim = 8
-        var output_dim = 3
+        input_dim = 4
+        hidden_dim = 8
+        output_dim = 3
         var iterations = 8  # Reduced for testing
 
         print("Testing neural network performance regression...")
@@ -224,7 +224,7 @@ fn main():
 
         # CPU benchmark
         print("  Running CPU neural network benchmark...")
-        var cpu_start_time = Float64(now()) / 1_000_000_000.0
+        cpu_start_time = Float64(now()) / 1_000_000_000.0
         for _ in range(iterations):
             # Simulate CPU neural network forward pass
             var cpu_result = 0.0
@@ -232,58 +232,58 @@ fn main():
                 for j in range(hidden_dim):
                     for k in range(input_dim):
                         cpu_result += Float64(i + j + k) * 0.001
-        var cpu_end_time = Float64(now()) / 1_000_000_000.0
-        var cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
+        cpu_end_time = Float64(now()) / 1_000_000_000.0
+        cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
 
         # GPU benchmark
         if has_nvidia or has_amd:
             print("  Running GPU neural network benchmark...")
             ctx.synchronize()
-            var gpu_start_time = Float64(now()) / 1_000_000_000.0
+            gpu_start_time = Float64(now()) / 1_000_000_000.0
 
             for _ in range(iterations):
                 # Real GPU neural network operations
-                var input_buffer = ctx.enqueue_create_buffer[DType.float64](
+                input_buffer = ctx.enqueue_create_buffer[DType.float64](
                     batch_size * input_dim
                 )
-                var hidden_buffer = ctx.enqueue_create_buffer[DType.float64](
+                hidden_buffer = ctx.enqueue_create_buffer[DType.float64](
                     batch_size * hidden_dim
                 )
-                var output_buffer = ctx.enqueue_create_buffer[DType.float64](
+                output_buffer = ctx.enqueue_create_buffer[DType.float64](
                     batch_size * output_dim
                 )
 
                 # Fill buffers with neural network data
                 for i in range(min(batch_size * input_dim, 1000)):
-                    var input_value = Float64(i) * 0.001
+                    input_value = Float64(i) * 0.001
                     _ = input_buffer.enqueue_fill(input_value)
 
                 for i in range(min(batch_size * hidden_dim, 1000)):
-                    var hidden_value = Float64(i) * 0.002
+                    hidden_value = Float64(i) * 0.002
                     _ = hidden_buffer.enqueue_fill(hidden_value)
 
                 for i in range(min(batch_size * output_dim, 1000)):
-                    var output_value = Float64(i) * 0.003
+                    output_value = Float64(i) * 0.003
                     _ = output_buffer.enqueue_fill(output_value)
 
             ctx.synchronize()
-            var gpu_end_time = Float64(now()) / 1_000_000_000.0
-            var gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
+            gpu_end_time = Float64(now()) / 1_000_000_000.0
+            gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
 
             # Calculate speedup
-            var speedup = (
+            speedup = (
                 cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
             )
 
             # Validate performance
-            var simulated_speedup = 3.3
-            var target_speedup = 3.0
-            var meets_target = speedup >= target_speedup
-            var tolerance_percent = 10.0
+            simulated_speedup = 3.3
+            target_speedup = 3.0
+            meets_target = speedup >= target_speedup
+            tolerance_percent = 10.0
             var speedup_diff2 = speedup - simulated_speedup
             if speedup_diff2 < 0:
                 speedup_diff2 = -speedup_diff2
-            var within_tolerance = speedup_diff2 <= (
+            within_tolerance = speedup_diff2 <= (
                 simulated_speedup * tolerance_percent / 100.0
             )
 
@@ -298,7 +298,7 @@ fn main():
             print("    - Test result:", "PASS" if meets_target else "FAIL")
         else:
             print("  ⚠️  GPU neural network test skipped - no GPU available")
-            var speedup = 1.0
+            speedup = 1.0
             print("    - CPU fallback speedup:", speedup, "x")
 
         print("✅ Neural Network Performance Regression: SUCCESS")
@@ -311,7 +311,7 @@ fn main():
     print("-" * 60)
 
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print(
             "✓ DeviceContext created for memory operations regression testing"
         )
@@ -328,50 +328,50 @@ fn main():
 
         # CPU benchmark
         print("  Running CPU memory operations benchmark...")
-        var cpu_start_time = Float64(now()) / 1_000_000_000.0
+        cpu_start_time = Float64(now()) / 1_000_000_000.0
         for _ in range(iterations):
             # Simulate CPU memory operations
-            var cpu_data = List[Float64]()
+            cpu_data = List[Float64]()
             for i in range(min(memory_size, 1000)):
                 cpu_data.append(Float64(i) * 0.001)
-        var cpu_end_time = Float64(now()) / 1_000_000_000.0
-        var cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
+        cpu_end_time = Float64(now()) / 1_000_000_000.0
+        cpu_time_ms = (cpu_end_time - cpu_start_time) * 1000.0
 
         # GPU benchmark
         if has_nvidia or has_amd:
             print("  Running GPU memory operations benchmark...")
             ctx.synchronize()
-            var gpu_start_time = Float64(now()) / 1_000_000_000.0
+            gpu_start_time = Float64(now()) / 1_000_000_000.0
 
             for _ in range(iterations):
                 # Real GPU memory operations
-                var memory_buffer = ctx.enqueue_create_buffer[DType.float64](
+                memory_buffer = ctx.enqueue_create_buffer[DType.float64](
                     memory_size
                 )
 
                 # Fill buffer with memory data
                 for i in range(min(memory_size, 1000)):
-                    var memory_value = Float64(i) * 0.001
+                    memory_value = Float64(i) * 0.001
                     _ = memory_buffer.enqueue_fill(memory_value)
 
             ctx.synchronize()
-            var gpu_end_time = Float64(now()) / 1_000_000_000.0
-            var gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
+            gpu_end_time = Float64(now()) / 1_000_000_000.0
+            gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
 
             # Calculate speedup
-            var speedup = (
+            speedup = (
                 cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
             )
 
             # Validate performance
-            var simulated_speedup = 2.8
-            var target_speedup = 2.5
-            var meets_target = speedup >= target_speedup
-            var tolerance_percent = 12.0
+            simulated_speedup = 2.8
+            target_speedup = 2.5
+            meets_target = speedup >= target_speedup
+            tolerance_percent = 12.0
             var speedup_diff3 = speedup - simulated_speedup
             if speedup_diff3 < 0:
                 speedup_diff3 = -speedup_diff3
-            var within_tolerance = speedup_diff3 <= (
+            within_tolerance = speedup_diff3 <= (
                 simulated_speedup * tolerance_percent / 100.0
             )
 
@@ -386,7 +386,7 @@ fn main():
             print("    - Test result:", "PASS" if meets_target else "FAIL")
         else:
             print("  ⚠️  GPU memory operations test skipped - no GPU available")
-            var speedup = 1.0
+            speedup = 1.0
             print("    - CPU fallback speedup:", speedup, "x")
 
         print("✅ Memory Operations Performance Regression: SUCCESS")
@@ -402,14 +402,14 @@ fn main():
         print("✓ Generating comprehensive regression test summary...")
 
         # Simulate test results from previous tests
-        var gpu_available = has_nvidia or has_amd
-        var total_tests = 4  # Matrix, Neural, Memory, Tensor
+        gpu_available = has_nvidia or has_amd
+        total_tests = 4  # Matrix, Neural, Memory, Tensor
         var passed_tests = 4 if gpu_available else 0  # All tests pass with GPU
-        var regression_detected = False
+        regression_detected = False
 
         # Calculate overall results
-        var pass_rate = Float64(passed_tests) / Float64(total_tests) * 100.0
-        var overall_success = passed_tests == total_tests
+        pass_rate = Float64(passed_tests) / Float64(total_tests) * 100.0
+        overall_success = passed_tests == total_tests
 
         print("  ✓ Comprehensive regression test summary completed")
         print("    - Total tests:", total_tests)

@@ -87,7 +87,7 @@ struct GPUMatrix:
         """Apply activation function element-wise."""
         for i in range(self.rows):
             for j in range(self.cols):
-                var val = self.get(i, j)
+                val = self.get(i, j)
                 if activation == "tanh":
                     self.set(i, j, tanh(val))
                 elif activation == "relu":
@@ -97,7 +97,7 @@ struct GPUMatrix:
 
     fn to_cpu_matrix(self) -> Matrix:
         """Convert to CPU-only matrix."""
-        var cpu_matrix = Matrix(self.rows, self.cols)
+        cpu_matrix = Matrix(self.rows, self.cols)
         for i in range(self.rows):
             for j in range(self.cols):
                 cpu_matrix.set(i, j, self.get(i, j))
@@ -136,7 +136,7 @@ struct Matrix:
 
     fn to_gpu_matrix(self, compute_mode: Int = ComputeMode_AUTO) -> GPUMatrix:
         """Convert to GPU matrix."""
-        var gpu_matrix = GPUMatrix(self.rows, self.cols, compute_mode)
+        gpu_matrix = GPUMatrix(self.rows, self.cols, compute_mode)
         for i in range(self.rows):
             for j in range(self.cols):
                 gpu_matrix.set(i, j, self.get(i, j))
@@ -148,11 +148,11 @@ fn test_matrix_creation():
     print("Testing matrix creation...")
 
     # Test CPU-only matrix creation
-    var cpu_matrix = Matrix(3, 3)
+    cpu_matrix = Matrix(3, 3)
     print("CPU matrix created: ", cpu_matrix.rows, "x", cpu_matrix.cols)
 
     # Test GPU matrix creation with different modes
-    var gpu_matrix_auto = GPUMatrix(3, 3, ComputeMode_AUTO)
+    gpu_matrix_auto = GPUMatrix(3, 3, ComputeMode_AUTO)
     print(
         "GPU matrix (AUTO) created: ",
         gpu_matrix_auto.rows,
@@ -160,7 +160,7 @@ fn test_matrix_creation():
         gpu_matrix_auto.cols,
     )
 
-    var gpu_matrix_cpu = GPUMatrix(3, 3, ComputeMode_CPU_ONLY)
+    gpu_matrix_cpu = GPUMatrix(3, 3, ComputeMode_CPU_ONLY)
     print(
         "GPU matrix (CPU_ONLY) created: ",
         gpu_matrix_cpu.rows,
@@ -168,7 +168,7 @@ fn test_matrix_creation():
         gpu_matrix_cpu.cols,
     )
 
-    var gpu_matrix_gpu = GPUMatrix(3, 3, ComputeMode_GPU_ONLY)
+    gpu_matrix_gpu = GPUMatrix(3, 3, ComputeMode_GPU_ONLY)
     print(
         "GPU matrix (GPU_ONLY) created: ",
         gpu_matrix_gpu.rows,
@@ -182,8 +182,8 @@ fn test_matrix_operations():
     print("Testing matrix operations...")
 
     # Create test matrices
-    var matrix_a = GPUMatrix(2, 3, ComputeMode_AUTO)
-    var matrix_b = GPUMatrix(3, 2, ComputeMode_AUTO)
+    matrix_a = GPUMatrix(2, 3, ComputeMode_AUTO)
+    matrix_b = GPUMatrix(3, 2, ComputeMode_AUTO)
 
     # Set some test values
     matrix_a.set(0, 0, 1.0)
@@ -222,7 +222,7 @@ fn test_activation_functions():
     """Test activation function applications."""
     print("Testing activation functions...")
 
-    var matrix = GPUMatrix(2, 2, ComputeMode_AUTO)
+    matrix = GPUMatrix(2, 2, ComputeMode_AUTO)
 
     # Set test values
     matrix.set(0, 0, -1.0)
@@ -236,7 +236,7 @@ fn test_activation_functions():
             print("  [", i, ",", j, "] =", matrix.get(i, j))
 
     # Test tanh activation
-    var tanh_matrix = matrix
+    tanh_matrix = matrix
     tanh_matrix.apply_activation("tanh")
     print("After tanh activation:")
     for i in range(tanh_matrix.rows):
@@ -244,7 +244,7 @@ fn test_activation_functions():
             print("  [", i, ",", j, "] =", tanh_matrix.get(i, j))
 
     # Test ReLU activation
-    var relu_matrix = matrix
+    relu_matrix = matrix
     relu_matrix.apply_activation("relu")
     print("After ReLU activation:")
     for i in range(relu_matrix.rows):
@@ -256,7 +256,7 @@ fn test_bias_addition():
     """Test bias vector addition."""
     print("Testing bias addition...")
 
-    var matrix = GPUMatrix(2, 3, ComputeMode_AUTO)
+    matrix = GPUMatrix(2, 3, ComputeMode_AUTO)
 
     # Set test values
     for i in range(matrix.rows):
@@ -269,7 +269,7 @@ fn test_bias_addition():
             print("  [", i, ",", j, "] =", matrix.get(i, j))
 
     # Create bias vector
-    var bias = List[Float64]()
+    bias = List[Float64]()
     bias.append(1.0)
     bias.append(2.0)
     bias.append(3.0)
@@ -288,7 +288,7 @@ fn test_cpu_gpu_compatibility():
     print("Testing CPU-SIMULATED GPU compatibility...")
 
     # Create CPU matrix
-    var cpu_matrix = Matrix(2, 2)
+    cpu_matrix = Matrix(2, 2)
     cpu_matrix.set(0, 0, 1.0)
     cpu_matrix.set(0, 1, 2.0)
     cpu_matrix.set(1, 0, 3.0)
@@ -300,7 +300,7 @@ fn test_cpu_gpu_compatibility():
             print("  [", i, ",", j, "] =", cpu_matrix.get(i, j))
 
     # Convert to GPU matrix
-    var gpu_matrix = cpu_matrix.to_gpu_matrix(ComputeMode_AUTO)
+    gpu_matrix = cpu_matrix.to_gpu_matrix(ComputeMode_AUTO)
 
     print("SIMULATED: Converted to GPU matrix")
     for i in range(gpu_matrix.rows):
@@ -308,7 +308,7 @@ fn test_cpu_gpu_compatibility():
             print("  SIMULATED: [", i, ",", j, "] =", gpu_matrix.get(i, j))
 
     # Convert back to CPU matrix
-    var cpu_matrix_back = gpu_matrix.to_cpu_matrix()
+    cpu_matrix_back = gpu_matrix.to_cpu_matrix()
 
     print("Converted back to CPU matrix:")
     for i in range(cpu_matrix_back.rows):
@@ -354,14 +354,14 @@ fn test_gpu_matrix_memory_leaks():
     print("Testing GPU matrix memory leak detection...")
 
     var matrices_created = 0
-    var matrices_destroyed = 0
-    var max_matrices = 5
+    matrices_destroyed = 0
+    max_matrices = 5
 
     print("  Creating multiple GPU matrices...")
 
     # Create multiple matrices to test memory management
     for i in range(max_matrices):
-        var test_matrix = GPUMatrix(64, 64, ComputeMode_GPU_ONLY)
+        test_matrix = GPUMatrix(64, 64, ComputeMode_GPU_ONLY)
         matrices_created += 1
         print("    Matrix", i + 1, "created (64x64) - Total:", matrices_created)
 
@@ -399,15 +399,15 @@ fn test_gpu_matrix_performance():
     print("Testing GPU matrix performance validation...")
 
     # Test matrix multiplication performance
-    var matrix_size = 256
+    matrix_size = 256
     print("  Matrix size:", matrix_size, "x", matrix_size)
     print("  Testing GPU matrix performance with simulated workload...")
 
     # Simulate performance measurements
-    var cpu_ops_per_sec = 1500000.0  # Simulated CPU performance
-    var gpu_ops_per_sec = 6200000.0  # Simulated GPU performance
-    var target_speedup = 4.0
-    var measured_speedup = gpu_ops_per_sec / cpu_ops_per_sec
+    cpu_ops_per_sec = 1500000.0  # Simulated CPU performance
+    gpu_ops_per_sec = 6200000.0  # Simulated GPU performance
+    target_speedup = 4.0
+    measured_speedup = gpu_ops_per_sec / cpu_ops_per_sec
 
     print("  CPU matrix performance:", cpu_ops_per_sec, "ops/sec")
     print("  GPU matrix performance:", gpu_ops_per_sec, "ops/sec")
@@ -421,8 +421,8 @@ fn test_gpu_matrix_performance():
         print("  ❌ GPU matrix performance below target")
 
     # Test memory efficiency
-    var memory_efficiency_target = 80.0  # %
-    var measured_efficiency = 87.3  # %
+    memory_efficiency_target = 80.0  # %
+    measured_efficiency = 87.3  # %
 
     print("  Memory efficiency target:", memory_efficiency_target, "%")
     print("  Measured memory efficiency:", measured_efficiency, "%")

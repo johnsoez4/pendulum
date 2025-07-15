@@ -46,7 +46,7 @@ struct PerformanceMetrics(Copyable, Movable):
     
     fn get_overall_score(self) -> Float64:
         """Calculate overall performance score."""
-        var weights = List[Float64]()
+        weights = List[Float64]()
         weights.append(0.25)  # Success rate
         weights.append(0.20)  # Stability time
         weights.append(0.15)  # Control effort
@@ -55,7 +55,7 @@ struct PerformanceMetrics(Copyable, Movable):
         weights.append(0.10)  # Real-time performance
         weights.append(0.05)  # Energy efficiency
         
-        var score = (weights[0] * min(1.0, self.inversion_success_rate / TARGET_SUCCESS_RATE) +
+        score = (weights[0] * min(1.0, self.inversion_success_rate / TARGET_SUCCESS_RATE) +
                     weights[1] * min(1.0, self.average_stability_time / MIN_STABILITY_DURATION) +
                     weights[2] * max(0.0, 1.0 - self.control_effort_rms / 10.0) +
                     weights[3] * max(0.0, 1.0 - self.tracking_error_rms / 20.0) +
@@ -150,19 +150,19 @@ struct PerformanceEvaluator:
         print()
         
         # Initialize metrics collection
-        var total_success_rate = 0.0
-        var total_stability_time = 0.0
-        var total_control_effort = 0.0
-        var total_tracking_error = 0.0
-        var total_scenario_weight = 0.0
-        var max_stability_time = 0.0
-        var safety_violations = 0
-        var total_evaluations = 0
+        total_success_rate = 0.0
+        total_stability_time = 0.0
+        total_control_effort = 0.0
+        total_tracking_error = 0.0
+        total_scenario_weight = 0.0
+        max_stability_time = 0.0
+        safety_violations = 0
+        total_evaluations = 0
         
         # Evaluate each scenario
         for i in range(len(self.evaluation_scenarios)):
-            var scenario = self.evaluation_scenarios[i]
-            var scenario_weight = scenario.get_scenario_weight()
+            scenario = self.evaluation_scenarios[i]
+            scenario_weight = scenario.get_scenario_weight()
             
             print("Scenario", i + 1, ":", scenario.scenario_name)
             print("  Difficulty level:", scenario.difficulty_level)
@@ -198,17 +198,17 @@ struct PerformanceEvaluator:
             print()
         
         # Calculate final metrics
-        var avg_success_rate = total_success_rate / total_scenario_weight
-        var avg_stability_time = total_stability_time / total_scenario_weight
-        var avg_control_effort = total_control_effort / total_scenario_weight
-        var avg_tracking_error = total_tracking_error / total_scenario_weight
-        var safety_compliance = Float64(total_evaluations - safety_violations) / Float64(total_evaluations)
+        avg_success_rate = total_success_rate / total_scenario_weight
+        avg_stability_time = total_stability_time / total_scenario_weight
+        avg_control_effort = total_control_effort / total_scenario_weight
+        avg_tracking_error = total_tracking_error / total_scenario_weight
+        safety_compliance = Float64(total_evaluations - safety_violations) / Float64(total_evaluations)
         
         # Additional performance metrics
-        var robustness_score = self._calculate_robustness_score(trained_parameters)
-        var real_time_score = self._evaluate_real_time_performance(trained_parameters)
-        var energy_efficiency = self._calculate_energy_efficiency(avg_control_effort)
-        var settling_time = self._estimate_settling_time(trained_parameters)
+        robustness_score = self._calculate_robustness_score(trained_parameters)
+        real_time_score = self._evaluate_real_time_performance(trained_parameters)
+        energy_efficiency = self._calculate_energy_efficiency(avg_control_effort)
+        settling_time = self._estimate_settling_time(trained_parameters)
         
         # Create comprehensive metrics
         self.current_metrics = PerformanceMetrics(
@@ -239,15 +239,15 @@ struct PerformanceEvaluator:
         Returns:
             (success_rate, stability_time, control_effort, tracking_error, safety_score)
         """
-        var total_success = 0.0
-        var total_stability = 0.0
-        var total_effort = 0.0
-        var total_error = 0.0
-        var safety_violations = 0
+        total_success = 0.0
+        total_stability = 0.0
+        total_effort = 0.0
+        total_error = 0.0
+        safety_violations = 0
         
         # Test each initial state in the scenario
         for i in range(len(scenario.initial_states)):
-            var initial_state = scenario.initial_states[i]
+            initial_state = scenario.initial_states[i]
             var result = self._simulate_control_performance(initial_state, parameters, scenario.evaluation_duration)
             
             total_success += result.0
@@ -258,12 +258,12 @@ struct PerformanceEvaluator:
             if result.4 < 0.95:  # Safety score threshold
                 safety_violations += 1
         
-        var num_states = Float64(len(scenario.initial_states))
-        var avg_success = total_success / num_states
-        var avg_stability = total_stability / num_states
-        var avg_effort = total_effort / num_states
-        var avg_error = total_error / num_states
-        var safety_score = Float64(len(scenario.initial_states) - safety_violations) / num_states
+        num_states = Float64(len(scenario.initial_states))
+        avg_success = total_success / num_states
+        avg_stability = total_stability / num_states
+        avg_effort = total_effort / num_states
+        avg_error = total_error / num_states
+        safety_score = Float64(len(scenario.initial_states) - safety_violations) / num_states
         
         return (avg_success, avg_stability, avg_effort, avg_error, safety_score)
     
@@ -275,8 +275,8 @@ struct PerformanceEvaluator:
             (success_rate, stability_time, control_effort, tracking_error, safety_score)
         """
         # Simplified performance simulation based on initial conditions and parameters
-        var initial_angle = initial_state[2]
-        var initial_velocity = initial_state[1]
+        initial_angle = initial_state[2]
+        initial_velocity = initial_state[1]
         
         # Estimate success rate based on initial conditions
         var success_rate = 0.5
@@ -293,10 +293,10 @@ struct PerformanceEvaluator:
             stability_time = 10.0 + parameters.kd_stabilize * 3.0
         
         # Estimate control effort
-        var control_effort = parameters.mpc_weight_control * 20.0 + abs(initial_angle) * 0.1
+        control_effort = parameters.mpc_weight_control * 20.0 + abs(initial_angle) * 0.1
         
         # Estimate tracking error
-        var tracking_error = abs(initial_angle) * 0.5 + abs(initial_velocity) * 0.01
+        tracking_error = abs(initial_angle) * 0.5 + abs(initial_velocity) * 0.01
         
         # Safety score (simplified)
         var safety_score = 1.0
@@ -314,18 +314,18 @@ struct PerformanceEvaluator:
     
     fn _calculate_robustness_score(self, parameters: ParameterSet) -> Float64:
         """Calculate robustness score across parameter variations."""
-        var robustness_tests = 10
-        var successful_tests = 0
+        robustness_tests = 10
+        successful_tests = 0
         
         for i in range(robustness_tests):
             # Create parameter variation
-            var variation = 0.8 + 0.4 * Float64(i) / Float64(robustness_tests)  # 80% to 120%
-            var varied_params = parameters
+            variation = 0.8 + 0.4 * Float64(i) / Float64(robustness_tests)  # 80% to 120%
+            varied_params = parameters
             varied_params.kp_stabilize *= variation
             varied_params.mpc_weight_angle *= variation
             
             # Test with standard scenario
-            var test_state = List[Float64]()
+            test_state = List[Float64]()
             test_state.append(0.5)
             test_state.append(30.0)
             test_state.append(15.0)
@@ -340,35 +340,35 @@ struct PerformanceEvaluator:
     fn _evaluate_real_time_performance(self, parameters: ParameterSet) -> Float64:
         """Evaluate real-time performance capability."""
         # Simplified real-time score based on parameter complexity
-        var complexity_score = (parameters.mpc_prediction_horizon * parameters.mpc_control_horizon) / 50.0
-        var real_time_score = max(0.0, 1.0 - complexity_score * 0.1)
+        complexity_score = (parameters.mpc_prediction_horizon * parameters.mpc_control_horizon) / 50.0
+        real_time_score = max(0.0, 1.0 - complexity_score * 0.1)
         return min(1.0, real_time_score)
     
     fn _calculate_energy_efficiency(self, avg_control_effort: Float64) -> Float64:
         """Calculate energy efficiency score."""
         # Lower control effort indicates better efficiency
-        var efficiency = max(0.0, 1.0 - avg_control_effort / 15.0)
+        efficiency = max(0.0, 1.0 - avg_control_effort / 15.0)
         return efficiency
     
     fn _estimate_settling_time(self, parameters: ParameterSet) -> Float64:
         """Estimate average settling time to inverted state."""
         # Simplified estimation based on gains
-        var settling_time = 10.0 / (parameters.kp_stabilize / 15.0)
+        settling_time = 10.0 / (parameters.kp_stabilize / 15.0)
         return max(2.0, min(20.0, settling_time))
     
     fn _create_evaluation_scenarios(mut self):
         """Create comprehensive evaluation scenarios."""
         # Scenario 1: Near inverted states (easy)
-        var scenario1_states = List[List[Float64]]()
+        scenario1_states = List[List[Float64]]()
         for i in range(10):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 5) * 0.2)  # Position variation
             state.append(Float64(i - 5) * 10.0) # Velocity variation
             state.append(Float64(i - 5) * 2.0)  # Angle variation ±10°
             state.append(0.0)
             scenario1_states.append(state)
         
-        var scenario1 = EvaluationScenario(
+        scenario1 = EvaluationScenario(
             "Near Inverted States",
             scenario1_states,
             List[Float64](),
@@ -379,16 +379,16 @@ struct PerformanceEvaluator:
         self.evaluation_scenarios.append(scenario1)
         
         # Scenario 2: Transition region (medium)
-        var scenario2_states = List[List[Float64]]()
+        scenario2_states = List[List[Float64]]()
         for i in range(15):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 7) * 0.3)
             state.append(Float64(i - 7) * 20.0)
             state.append(Float64(i - 7) * 6.0)  # ±42° variation
             state.append(0.0)
             scenario2_states.append(state)
         
-        var scenario2 = EvaluationScenario(
+        scenario2 = EvaluationScenario(
             "Transition Region",
             scenario2_states,
             List[Float64](),
@@ -399,16 +399,16 @@ struct PerformanceEvaluator:
         self.evaluation_scenarios.append(scenario2)
         
         # Scenario 3: Large angles (hard)
-        var scenario3_states = List[List[Float64]]()
+        scenario3_states = List[List[Float64]]()
         for i in range(10):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 5) * 0.4)
             state.append(Float64(i - 5) * 30.0)
             state.append(90.0 + Float64(i) * 9.0)  # 90° to 180°
             state.append(0.0)
             scenario3_states.append(state)
         
-        var scenario3 = EvaluationScenario(
+        scenario3 = EvaluationScenario(
             "Large Angle Recovery",
             scenario3_states,
             List[Float64](),
@@ -419,16 +419,16 @@ struct PerformanceEvaluator:
         self.evaluation_scenarios.append(scenario3)
         
         # Scenario 4: Robustness test (extreme)
-        var scenario4_states = List[List[Float64]]()
+        scenario4_states = List[List[Float64]]()
         for i in range(8):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 4) * 0.8)  # Large position variations
             state.append(Float64(i - 4) * 50.0) # Large velocity variations
             state.append(Float64(i) * 22.5)     # 0° to 157.5°
             state.append(0.0)
             scenario4_states.append(state)
         
-        var scenario4 = EvaluationScenario(
+        scenario4 = EvaluationScenario(
             "Robustness Test",
             scenario4_states,
             List[Float64](),

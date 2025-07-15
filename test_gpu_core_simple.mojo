@@ -22,8 +22,8 @@ fn main():
     print("\n1. Testing GPU Hardware Detection...")
     print("-" * 40)
     
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Detection Results:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -42,19 +42,19 @@ fn main():
     print("-" * 40)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created successfully")
         
         # Test GPU buffer creation for tensor operations
-        var size = 6  # 2x3 tensor
-        var buffer1 = ctx.enqueue_create_buffer[DType.float64](size)
-        var buffer2 = ctx.enqueue_create_buffer[DType.float64](size)
+        size = 6  # 2x3 tensor
+        buffer1 = ctx.enqueue_create_buffer[DType.float64](size)
+        buffer2 = ctx.enqueue_create_buffer[DType.float64](size)
         var result_buffer = ctx.enqueue_create_buffer[DType.float64](size)
         print("✓ GPU buffers created for tensor operations")
         
         # Fill buffers with test data (simulating tensor data)
-        var data1 = List[Float64](1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
-        var data2 = List[Float64](2.0, 3.0, 4.0, 5.0, 6.0, 7.0)
+        data1 = List[Float64](1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+        data2 = List[Float64](2.0, 3.0, 4.0, 5.0, 6.0, 7.0)
         
         for i in range(size):
             _ = buffer1.enqueue_fill(data1[i])
@@ -79,26 +79,26 @@ fn main():
     print("-" * 40)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         
         # Test 2x3 @ 3x2 = 2x2 matrix multiplication
-        var a_rows = 2
-        var a_cols = 3
-        var b_rows = 3
-        var b_cols = 2
-        var c_rows = a_rows
-        var c_cols = b_cols
+        a_rows = 2
+        a_cols = 3
+        b_rows = 3
+        b_cols = 2
+        c_rows = a_rows
+        c_cols = b_cols
         
         # Create GPU buffers for matrices
-        var a_buffer = ctx.enqueue_create_buffer[DType.float64](a_rows * a_cols)
-        var b_buffer = ctx.enqueue_create_buffer[DType.float64](b_rows * b_cols)
-        var c_buffer = ctx.enqueue_create_buffer[DType.float64](c_rows * c_cols)
+        a_buffer = ctx.enqueue_create_buffer[DType.float64](a_rows * a_cols)
+        b_buffer = ctx.enqueue_create_buffer[DType.float64](b_rows * b_cols)
+        c_buffer = ctx.enqueue_create_buffer[DType.float64](c_rows * c_cols)
         print("✓ GPU buffers created for matrix multiplication")
         
         # Matrix A: [[1, 2, 3], [4, 5, 6]]
-        var matrix_a = List[Float64](1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+        matrix_a = List[Float64](1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
         # Matrix B: [[1, 2], [3, 4], [5, 6]]
-        var matrix_b = List[Float64](1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+        matrix_b = List[Float64](1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
         
         # Transfer matrices to GPU
         for i in range(a_rows * a_cols):
@@ -130,17 +130,17 @@ fn main():
     print("-" * 40)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         
         # Test data for activation functions
-        var size = 4
-        var test_data = List[Float64](-1.0, 0.0, 1.0, 2.0)
+        size = 4
+        test_data = List[Float64](-1.0, 0.0, 1.0, 2.0)
         
         # Create GPU buffers
-        var input_buffer = ctx.enqueue_create_buffer[DType.float64](size)
-        var tanh_buffer = ctx.enqueue_create_buffer[DType.float64](size)
-        var relu_buffer = ctx.enqueue_create_buffer[DType.float64](size)
-        var sigmoid_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+        input_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+        tanh_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+        relu_buffer = ctx.enqueue_create_buffer[DType.float64](size)
+        sigmoid_buffer = ctx.enqueue_create_buffer[DType.float64](size)
         print("✓ GPU buffers created for activation functions")
         
         # Transfer test data to GPU
@@ -156,13 +156,13 @@ fn main():
         
         # ReLU activation
         for i in range(size):
-            var relu_val = test_data[i] if test_data[i] > 0.0 else 0.0
+            relu_val = test_data[i] if test_data[i] > 0.0 else 0.0
             _ = relu_buffer.enqueue_fill(relu_val)
         print("✓ GPU ReLU activation completed")
         
         # Sigmoid activation
         for i in range(size):
-            var sigmoid_val = 1.0 / (1.0 + exp(-test_data[i]))
+            sigmoid_val = 1.0 / (1.0 + exp(-test_data[i]))
             _ = sigmoid_buffer.enqueue_fill(sigmoid_val)
         print("✓ GPU sigmoid activation completed")
         

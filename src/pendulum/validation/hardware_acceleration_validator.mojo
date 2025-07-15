@@ -83,20 +83,20 @@ struct GPUExecutionValidator:
             self.total_gpu_operations += 1
 
             # Create GPU buffer to verify GPU execution
-            var gpu_buffer = self.device_context.enqueue_create_buffer[
+            gpu_buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](data_size)
 
             # Fill buffer with test data to verify GPU memory access
             for i in range(min(data_size, 1000)):  # Limit for performance
-                var test_value = Float64(i) * 0.001
+                test_value = Float64(i) * 0.001
                 _ = gpu_buffer.enqueue_fill(test_value)
 
             # Synchronize to ensure GPU execution completion
             self.device_context.synchronize()
 
             # Update GPU memory tracking
-            var memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+            memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
             self.gpu_memory_allocated_mb += memory_mb
 
             # Track successful operation
@@ -123,13 +123,13 @@ struct GPUExecutionValidator:
             print("✓ Validating GPU memory usage...")
 
             # Calculate memory efficiency
-            var memory_efficiency = min(
+            memory_efficiency = min(
                 100.0,
                 (self.gpu_memory_allocated_mb / expected_memory_mb) * 100.0,
             )
 
             # Validate memory allocation patterns
-            var memory_valid = self.gpu_memory_allocated_mb > 0.0
+            memory_valid = self.gpu_memory_allocated_mb > 0.0
 
             print("  ✓ GPU memory validation completed")
             print(
@@ -171,7 +171,7 @@ struct GPUExecutionValidator:
             )  # Conservative estimate
 
             # Validate utilization thresholds
-            var utilization_valid = (
+            utilization_valid = (
                 self.gpu_utilization_percent > 50.0
             )  # Minimum 50% utilization
 
@@ -208,9 +208,9 @@ struct GPUExecutionValidator:
             print("✓ Validating hardware acceleration effectiveness...")
 
             # Check multiple validation criteria
-            var memory_valid = self.gpu_memory_allocated_mb > 0.0
-            var operations_valid = self.successful_gpu_operations > 0
-            var utilization_valid = (
+            memory_valid = self.gpu_memory_allocated_mb > 0.0
+            operations_valid = self.successful_gpu_operations > 0
+            utilization_valid = (
                 self.gpu_utilization_percent > 30.0
             )  # Minimum threshold
 
@@ -259,11 +259,11 @@ struct GPUExecutionValidator:
         # Calculate overall validation score
         var validation_score = 0.0
         if self.gpu_available:
-            var memory_score = min(100.0, self.gpu_memory_allocated_mb * 10.0)
-            var operation_score = min(
+            memory_score = min(100.0, self.gpu_memory_allocated_mb * 10.0)
+            operation_score = min(
                 100.0, Float64(self.successful_gpu_operations) * 5.0
             )
-            var utilization_score = self.gpu_utilization_percent
+            utilization_score = self.gpu_utilization_percent
             validation_score = (
                 memory_score + operation_score + utilization_score
             ) / 3.0
@@ -341,31 +341,31 @@ struct GPUPerformanceMonitor:
 
             # Start performance timing
             self.device_context.synchronize()
-            var start_time = (
+            start_time = (
                 Float64(now()) / 1_000_000_000.0
             )  # Convert to seconds
 
             # Create and execute GPU operation
-            var gpu_buffer = self.device_context.enqueue_create_buffer[
+            gpu_buffer = self.device_context.enqueue_create_buffer[
                 DType.float64
             ](data_size)
 
             # Perform GPU operations
             for i in range(min(data_size, 1000)):  # Limit for performance
-                var operation_value = Float64(i) * 0.001
+                operation_value = Float64(i) * 0.001
                 _ = gpu_buffer.enqueue_fill(operation_value)
 
             # End performance timing
             self.device_context.synchronize()
-            var end_time = Float64(now()) / 1_000_000_000.0
-            var execution_time_ms = (end_time - start_time) * 1000.0
+            end_time = Float64(now()) / 1_000_000_000.0
+            execution_time_ms = (end_time - start_time) * 1000.0
 
             # Calculate performance metrics
-            var memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
-            var memory_bandwidth_gb_s = (
+            memory_mb = Float64(data_size * 8) / (1024.0 * 1024.0)
+            memory_bandwidth_gb_s = (
                 memory_mb / (execution_time_ms / 1000.0) / 1024.0
             )
-            var compute_throughput = Float64(data_size) / (
+            compute_throughput = Float64(data_size) / (
                 execution_time_ms / 1000.0
             )
 
@@ -394,14 +394,14 @@ struct GPUPerformanceMonitor:
         print("  - Performance Samples:", self.performance_samples)
 
         if self.performance_samples > 0:
-            var avg_execution_time = self.total_execution_time_ms / Float64(
+            avg_execution_time = self.total_execution_time_ms / Float64(
                 self.performance_samples
             )
-            var avg_memory_bandwidth = (
+            avg_memory_bandwidth = (
                 self.total_memory_bandwidth_gb_s
                 / Float64(self.performance_samples)
             )
-            var avg_compute_throughput = (
+            avg_compute_throughput = (
                 self.total_compute_throughput
                 / Float64(self.performance_samples)
             )
@@ -444,8 +444,8 @@ fn validate_hardware_acceleration_system() raises -> Bool:
     print("COMPREHENSIVE HARDWARE ACCELERATION VALIDATION")
     print("=" * 70)
 
-    var validator = create_hardware_validator()
-    var monitor = create_performance_monitor()
+    validator = create_hardware_validator()
+    monitor = create_performance_monitor()
 
     # Test various GPU operations
     var validation_success = True
@@ -472,11 +472,11 @@ fn validate_hardware_acceleration_system() raises -> Bool:
     var _ = monitor.monitor_gpu_operation("Memory Operations", 2048)
 
     # Validate overall system
-    var memory_valid = validator.validate_gpu_memory_usage(
+    memory_valid = validator.validate_gpu_memory_usage(
         10.0
     )  # Expected 10MB
-    var utilization_valid = validator.validate_gpu_utilization()
-    var acceleration_valid = validator.validate_hardware_acceleration()
+    utilization_valid = validator.validate_gpu_utilization()
+    acceleration_valid = validator.validate_hardware_acceleration()
 
     # Print comprehensive statistics
     print("\n" + "=" * 70)
@@ -485,7 +485,7 @@ fn validate_hardware_acceleration_system() raises -> Bool:
     print()
     monitor.get_performance_statistics()
 
-    var overall_success = (
+    overall_success = (
         validation_success
         and memory_valid
         and utilization_valid

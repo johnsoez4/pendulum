@@ -201,7 +201,7 @@ fn test_individual_benchmarks():
     """Test individual benchmark functions."""
     print("Testing individual benchmarks...")
     
-    var benchmark = GPUCPUBenchmark()
+    benchmark = GPUCPUBenchmark()
     
     # Test matrix operations benchmark
     var matrix_result = benchmark.benchmark_matrix_operations()
@@ -221,7 +221,7 @@ fn test_comprehensive_benchmark():
     """Test comprehensive benchmark suite."""
     print("Testing comprehensive benchmark suite...")
     
-    var benchmark = GPUCPUBenchmark()
+    benchmark = GPUCPUBenchmark()
     benchmark.run_comprehensive_benchmark()
 
 fn main():

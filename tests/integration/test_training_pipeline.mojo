@@ -23,7 +23,7 @@ fn min(a: Float64, b: Float64) -> Float64:
 
 fn assert_near(actual: Float64, expected: Float64, tolerance: Float64 = 1e-6):
     """Assert that two floating point values are close."""
-    var diff = abs(actual - expected)
+    diff = abs(actual - expected)
     if diff > tolerance:
         print("Assertion failed: expected", expected, "but got", actual, "diff:", diff)
         assert_true(False)
@@ -35,7 +35,7 @@ fn tanh_approx(x: Float64) -> Float64:
     elif x < -3.0:
         return -1.0
     else:
-        var x2 = x * x
+        x2 = x * x
         return x * (1.0 - x2/3.0 + 2.0*x2*x2/15.0)
 
 # Network configuration for integration testing
@@ -59,9 +59,9 @@ struct IntegrationTestNetwork(Copyable, Movable):
         """Initialize network weights."""
         # Initialize weights1
         for i in range(INPUT_DIM):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(HIDDEN_SIZE):
-                var val = 0.1 * (Float64((i * 7 + j * 13) % 100) / 100.0 - 0.5)
+                val = 0.1 * (Float64((i * 7 + j * 13) % 100) / 100.0 - 0.5)
                 row.append(val)
             self.weights1.append(row)
         
@@ -71,9 +71,9 @@ struct IntegrationTestNetwork(Copyable, Movable):
         
         # Initialize weights2
         for i in range(HIDDEN_SIZE):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(OUTPUT_DIM):
-                var val = 0.1 * (Float64((i * 11 + j * 17) % 100) / 100.0 - 0.5)
+                val = 0.1 * (Float64((i * 11 + j * 17) % 100) / 100.0 - 0.5)
                 row.append(val)
             self.weights2.append(row)
         
@@ -84,7 +84,7 @@ struct IntegrationTestNetwork(Copyable, Movable):
     fn forward(self, input: List[Float64]) -> List[Float64]:
         """Forward pass through the network."""
         # Layer 1
-        var hidden = List[Float64]()
+        hidden = List[Float64]()
         for j in range(HIDDEN_SIZE):
             var sum = self.biases1[j]
             for i in range(INPUT_DIM):
@@ -93,7 +93,7 @@ struct IntegrationTestNetwork(Copyable, Movable):
             hidden.append(tanh_approx(sum))
         
         # Layer 2
-        var output = List[Float64]()
+        output = List[Float64]()
         for j in range(OUTPUT_DIM):
             var sum = self.biases2[j]
             for i in range(HIDDEN_SIZE):
@@ -104,14 +104,14 @@ struct IntegrationTestNetwork(Copyable, Movable):
     
     fn apply_constraints(self, input: List[Float64], prediction: List[Float64]) -> List[Float64]:
         """Apply physics constraints."""
-        var constrained = List[Float64]()
+        constrained = List[Float64]()
         
         # Actuator position constraint [-4, 4] inches
-        var la_pos = max(-4.0, min(4.0, prediction[0]))
+        la_pos = max(-4.0, min(4.0, prediction[0]))
         constrained.append(la_pos)
         
         # Velocity constraint [-1000, 1000] deg/s
-        var pend_vel = max(-1000.0, min(1000.0, prediction[1]))
+        pend_vel = max(-1000.0, min(1000.0, prediction[1]))
         constrained.append(pend_vel)
         
         # Angle (no hard constraint, but check continuity)
@@ -139,33 +139,33 @@ struct TrainingPipelineTests:
         """Test synthetic data generation for training."""
         print("Testing data generation...")
         
-        var inputs = List[List[Float64]]()
-        var targets = List[List[Float64]]()
+        inputs = List[List[Float64]]()
+        targets = List[List[Float64]]()
         
         # Generate synthetic training data
         for i in range(100):
-            var la_pos = (Float64(i % 50) / 50.0 - 0.5) * 8.0  # -4 to 4
-            var pend_vel = (Float64((i * 7) % 100) / 100.0 - 0.5) * 400.0  # -200 to 200
-            var pend_angle = Float64((i * 13) % 360)  # 0 to 360
-            var cmd_volts = (Float64((i * 17) % 100) / 100.0 - 0.5) * 10.0  # -5 to 5
+            la_pos = (Float64(i % 50) / 50.0 - 0.5) * 8.0  # -4 to 4
+            pend_vel = (Float64((i * 7) % 100) / 100.0 - 0.5) * 400.0  # -200 to 200
+            pend_angle = Float64((i * 13) % 360)  # 0 to 360
+            cmd_volts = (Float64((i * 17) % 100) / 100.0 - 0.5) * 10.0  # -5 to 5
             
-            var input = List[Float64]()
+            input = List[Float64]()
             input.append(la_pos)
             input.append(pend_vel)
             input.append(pend_angle)
             input.append(cmd_volts)
             
             # Simple physics-based target generation
-            var dt = 0.04
+            dt = 0.04
             var next_la_pos = la_pos + cmd_volts * dt * 0.1
             var next_pend_vel = pend_vel + cmd_volts * dt * 5.0
-            var next_pend_angle = pend_angle + pend_vel * dt
+            next_pend_angle = pend_angle + pend_vel * dt
             
             # Apply constraints to targets
             next_la_pos = max(-4.0, min(4.0, next_la_pos))
             next_pend_vel = max(-1000.0, min(1000.0, next_pend_vel))
             
-            var target = List[Float64]()
+            target = List[Float64]()
             target.append(next_la_pos)
             target.append(next_pend_vel)
             target.append(next_pend_angle)
@@ -187,28 +187,28 @@ struct TrainingPipelineTests:
         print("Testing training loop...")
         
         # Create network
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
         
-        var network = IntegrationTestNetwork(
+        network = IntegrationTestNetwork(
             weights1, biases1, weights2, biases2, False, 0.0, 0.0
         )
         network.initialize_weights()
         
         # Generate training data
-        var inputs = List[List[Float64]]()
-        var targets = List[List[Float64]]()
+        inputs = List[List[Float64]]()
+        targets = List[List[Float64]]()
         
         for i in range(50):  # Small dataset for testing
-            var input = List[Float64]()
+            input = List[Float64]()
             input.append(Float64(i) * 0.1)
             input.append(Float64(i) * 2.0)
             input.append(180.0 - Float64(i))
             input.append(0.1 * Float64(i % 10))
             
-            var target = List[Float64]()
+            target = List[Float64]()
             target.append(Float64(i + 1) * 0.1)
             target.append(Float64(i + 1) * 2.0)
             target.append(180.0 - Float64(i + 1))
@@ -217,28 +217,28 @@ struct TrainingPipelineTests:
             targets.append(target)
         
         # Training simulation
-        var epochs = 10
-        var learning_rate = 0.001
-        var initial_loss = 1000.0
-        var current_loss = initial_loss
+        epochs = 10
+        learning_rate = 0.001
+        initial_loss = 1000.0
+        current_loss = initial_loss
         
         for epoch in range(epochs):
-            var total_loss = 0.0
+            total_loss = 0.0
             
             for i in range(len(inputs)):
-                var prediction = network.forward(inputs[i])
+                prediction = network.forward(inputs[i])
                 
                 # Compute MSE loss
                 var mse_loss = 0.0
                 for j in range(OUTPUT_DIM):
-                    var error = prediction[j] - targets[i][j]
+                    error = prediction[j] - targets[i][j]
                     mse_loss += error * error
                 mse_loss /= Float64(OUTPUT_DIM)
                 
                 # Compute physics loss
-                var physics_loss = network.compute_physics_loss(inputs[i], prediction)
+                physics_loss = network.compute_physics_loss(inputs[i], prediction)
                 
-                var sample_loss = mse_loss + 0.1 * physics_loss
+                sample_loss = mse_loss + 0.1 * physics_loss
                 total_loss += sample_loss
             
             current_loss = total_loss / Float64(len(inputs))
@@ -260,28 +260,28 @@ struct TrainingPipelineTests:
         print("Testing validation pipeline...")
         
         # Create trained network
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
         
-        var network = IntegrationTestNetwork(
+        network = IntegrationTestNetwork(
             weights1, biases1, weights2, biases2, True, 100.0, 0.0
         )
         network.initialize_weights()
         
         # Generate validation data
-        var val_inputs = List[List[Float64]]()
-        var val_targets = List[List[Float64]]()
+        val_inputs = List[List[Float64]]()
+        val_targets = List[List[Float64]]()
         
         for i in range(20):
-            var input = List[Float64]()
+            input = List[Float64]()
             input.append(Float64(i) * 0.05)
             input.append(Float64(i) * 1.0)
             input.append(90.0 + Float64(i))
             input.append(0.05 * Float64(i % 5))
             
-            var target = List[Float64]()
+            target = List[Float64]()
             target.append(Float64(i + 1) * 0.05)
             target.append(Float64(i + 1) * 1.0)
             target.append(90.0 + Float64(i + 1))
@@ -290,20 +290,20 @@ struct TrainingPipelineTests:
             val_targets.append(target)
         
         # Validation loop
-        var val_loss = 0.0
-        var physics_violations = 0
+        val_loss = 0.0
+        physics_violations = 0
         
         for i in range(len(val_inputs)):
-            var prediction = network.forward(val_inputs[i])
+            prediction = network.forward(val_inputs[i])
             
             # Compute validation loss
             var mse_loss = 0.0
             for j in range(OUTPUT_DIM):
-                var error = prediction[j] - val_targets[i][j]
+                error = prediction[j] - val_targets[i][j]
                 mse_loss += error * error
             mse_loss /= Float64(OUTPUT_DIM)
             
-            var physics_loss = network.compute_physics_loss(val_inputs[i], prediction)
+            physics_loss = network.compute_physics_loss(val_inputs[i], prediction)
             val_loss += mse_loss + 0.1 * physics_loss
             
             # Check physics violations
@@ -326,27 +326,27 @@ struct TrainingPipelineTests:
         print("Testing physics constraint enforcement...")
         
         # Create network
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
         
-        var network = IntegrationTestNetwork(
+        network = IntegrationTestNetwork(
             weights1, biases1, weights2, biases2, False, 0.0, 0.0
         )
         network.initialize_weights()
         
         # Test with extreme inputs that might violate constraints
-        var extreme_inputs = List[List[Float64]]()
+        extreme_inputs = List[List[Float64]]()
         
-        var input1 = List[Float64]()
+        input1 = List[Float64]()
         input1.append(0.0)
         input1.append(0.0)
         input1.append(0.0)
         input1.append(10.0)  # High voltage
         extreme_inputs.append(input1)
         
-        var input2 = List[Float64]()
+        input2 = List[Float64]()
         input2.append(3.0)
         input2.append(500.0)
         input2.append(270.0)
@@ -355,7 +355,7 @@ struct TrainingPipelineTests:
         
         # Test constraint enforcement
         for i in range(len(extreme_inputs)):
-            var prediction = network.forward(extreme_inputs[i])
+            prediction = network.forward(extreme_inputs[i])
             
             # Check actuator position constraint
             assert_true(prediction[0] >= -4.0)
@@ -377,17 +377,17 @@ struct TrainingPipelineTests:
         print("Testing end-to-end pipeline...")
         
         # Step 1: Data generation
-        var train_inputs = List[List[Float64]]()
-        var train_targets = List[List[Float64]]()
+        train_inputs = List[List[Float64]]()
+        train_targets = List[List[Float64]]()
         
         for i in range(30):
-            var input = List[Float64]()
+            input = List[Float64]()
             input.append(Float64(i % 10) * 0.4 - 2.0)  # -2 to 2
             input.append(Float64(i % 20) * 10.0 - 100.0)  # -100 to 100
             input.append(Float64(i % 36) * 10.0)  # 0 to 350
             input.append(Float64(i % 5) * 0.4 - 1.0)  # -1 to 1
             
-            var target = List[Float64]()
+            target = List[Float64]()
             target.append(input[0] + 0.1)
             target.append(input[1] + 1.0)
             target.append(input[2] + 0.5)
@@ -396,30 +396,30 @@ struct TrainingPipelineTests:
             train_targets.append(target)
         
         # Step 2: Network creation and training
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
         
-        var network = IntegrationTestNetwork(
+        network = IntegrationTestNetwork(
             weights1, biases1, weights2, biases2, False, 0.0, 0.0
         )
         network.initialize_weights()
         
         # Step 3: Training simulation
-        var best_loss = 1000.0
+        best_loss = 1000.0
         for epoch in range(5):
             var total_loss = 0.0
             
             for i in range(len(train_inputs)):
-                var prediction = network.forward(train_inputs[i])
+                prediction = network.forward(train_inputs[i])
                 var mse_loss = 0.0
                 for j in range(OUTPUT_DIM):
-                    var error = prediction[j] - train_targets[i][j]
+                    error = prediction[j] - train_targets[i][j]
                     mse_loss += error * error
                 total_loss += mse_loss
             
-            var avg_loss = total_loss / Float64(len(train_inputs))
+            avg_loss = total_loss / Float64(len(train_inputs))
             if avg_loss < best_loss:
                 best_loss = avg_loss
         
@@ -427,13 +427,13 @@ struct TrainingPipelineTests:
         network.trained = True
         
         # Step 4: Inference testing
-        var test_input = List[Float64]()
+        test_input = List[Float64]()
         test_input.append(1.0)
         test_input.append(50.0)
         test_input.append(180.0)
         test_input.append(0.5)
         
-        var prediction = network.forward(test_input)
+        prediction = network.forward(test_input)
         
         # Step 5: Validation
         assert_true(network.trained)

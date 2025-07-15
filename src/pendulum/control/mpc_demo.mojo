@@ -56,7 +56,7 @@ struct MPCDemo:
         print("1. Testing Standalone MPC Controller")
         print("-" * 40)
         
-        var mpc_controller = MPCController()
+        mpc_controller = MPCController()
         
         if not mpc_controller.initialize_mpc():
             print("  ✗ MPC controller initialization failed")
@@ -65,21 +65,21 @@ struct MPCDemo:
         print("  ✓ MPC controller initialized successfully")
         
         # Test MPC with near-inverted state
-        var test_state = List[Float64]()
+        test_state = List[Float64]()
         test_state.append(0.5)    # la_position (slightly off-center)
         test_state.append(20.0)   # pend_velocity (small velocity)
         test_state.append(8.0)    # pend_angle (near inverted)
         test_state.append(0.0)    # cmd_volts
         
-        var start_time = 1.0
-        var mpc_cycles = 10  # Test 10 MPC cycles
+        start_time = 1.0
+        mpc_cycles = 10  # Test 10 MPC cycles
         var successful_optimizations = 0
-        var total_computation_time = 0.0
+        total_computation_time = 0.0
         
         for i in range(mpc_cycles):
-            var timestamp = start_time + Float64(i) * 0.04
+            timestamp = start_time + Float64(i) * 0.04
             
-            var command = mpc_controller.compute_mpc_control(test_state, timestamp)
+            command = mpc_controller.compute_mpc_control(test_state, timestamp)
             
             # Check if optimization was successful
             if not command.safety_override and abs(command.voltage) <= 10.0:
@@ -88,8 +88,8 @@ struct MPCDemo:
             # Simulate system response (simplified)
             test_state = MPCDemo._simulate_system_response(test_state, command)
         
-        var success_rate = Float64(successful_optimizations) / Float64(mpc_cycles) * 100.0
-        var performance = mpc_controller.get_mpc_performance()
+        success_rate = Float64(successful_optimizations) / Float64(mpc_cycles) * 100.0
+        performance = mpc_controller.get_mpc_performance()
         
         print("  MPC Optimization Results:")
         print("    Successful optimizations:", successful_optimizations, "/", mpc_cycles)
@@ -108,7 +108,7 @@ struct MPCDemo:
         print("2. Testing Enhanced AI Controller")
         print("-" * 40)
         
-        var enhanced_controller = EnhancedAIController()
+        enhanced_controller = EnhancedAIController()
         
         if not enhanced_controller.initialize_enhanced_controller():
             print("  ✗ Enhanced controller initialization failed")
@@ -117,10 +117,10 @@ struct MPCDemo:
         print("  ✓ Enhanced AI controller initialized successfully")
         
         # Test different scenarios
-        var scenarios = List[List[Float64]]()
+        scenarios = List[List[Float64]]()
         
         # Scenario 1: Near inverted (should use MPC stabilization)
-        var scenario1 = List[Float64]()
+        scenario1 = List[Float64]()
         scenario1.append(0.2)   # la_position
         scenario1.append(15.0)  # pend_velocity
         scenario1.append(5.0)   # pend_angle (near inverted)
@@ -128,7 +128,7 @@ struct MPCDemo:
         scenarios.append(scenario1)
         
         # Scenario 2: Transition region (should use MPC inversion)
-        var scenario2 = List[Float64]()
+        scenario2 = List[Float64]()
         scenario2.append(1.0)   # la_position
         scenario2.append(100.0) # pend_velocity
         scenario2.append(45.0)  # pend_angle (transition)
@@ -136,25 +136,25 @@ struct MPCDemo:
         scenarios.append(scenario2)
         
         # Scenario 3: Hanging (should use adaptive swing-up)
-        var scenario3 = List[Float64]()
+        scenario3 = List[Float64]()
         scenario3.append(0.0)   # la_position
         scenario3.append(5.0)   # pend_velocity
         scenario3.append(175.0) # pend_angle (hanging)
         scenario3.append(0.0)   # cmd_volts
         scenarios.append(scenario3)
         
-        var scenario_names = List[String]()
+        scenario_names = List[String]()
         scenario_names.append("Near Inverted")
         scenario_names.append("Transition Region")
         scenario_names.append("Hanging State")
         
         for i in range(len(scenarios)):
-            var scenario = scenarios[i]
-            var name = scenario_names[i]
+            scenario = scenarios[i]
+            name = scenario_names[i]
             
             print("  Testing scenario:", name)
             
-            var command = enhanced_controller.compute_enhanced_control(scenario, 2.0 + Float64(i))
+            command = enhanced_controller.compute_enhanced_control(scenario, 2.0 + Float64(i))
             
             print("    Control mode:", command.control_mode)
             print("    Control voltage:", command.voltage, "V")
@@ -167,7 +167,7 @@ struct MPCDemo:
                 print("    ⚠ Control output needs attention")
         
         # Test performance tracking
-        var performance = enhanced_controller.get_enhanced_performance()
+        performance = enhanced_controller.get_enhanced_performance()
         print("  Enhanced Controller Performance:")
         print("    Success rate:", performance.0, "%")
         print("    Average error:", performance.1, "degrees")
@@ -180,24 +180,24 @@ struct MPCDemo:
         print("3. Testing Performance Optimization")
         print("-" * 40)
         
-        var enhanced_controller = EnhancedAIController()
+        enhanced_controller = EnhancedAIController()
         enhanced_controller.initialize_enhanced_controller()
         
         # Simulate extended operation to test adaptation
-        var test_state = List[Float64]()
+        test_state = List[Float64]()
         test_state.append(0.0)   # la_position
         test_state.append(30.0)  # pend_velocity
         test_state.append(12.0)  # pend_angle (slightly off inverted)
         test_state.append(0.0)   # cmd_volts
         
-        var adaptation_cycles = 20
-        var initial_performance = enhanced_controller.get_enhanced_performance()
+        adaptation_cycles = 20
+        initial_performance = enhanced_controller.get_enhanced_performance()
         
         # Run control cycles to allow adaptation
         for i in range(adaptation_cycles):
-            var timestamp = 3.0 + Float64(i) * 0.04
+            timestamp = 3.0 + Float64(i) * 0.04
             
-            var command = enhanced_controller.compute_enhanced_control(test_state, timestamp)
+            command = enhanced_controller.compute_enhanced_control(test_state, timestamp)
             
             # Simulate system response with some disturbance
             test_state = MPCDemo._simulate_system_response(test_state, command)
@@ -205,7 +205,7 @@ struct MPCDemo:
             # Add small disturbance to test adaptation
             test_state[2] += (Float64(i % 3) - 1.0) * 2.0  # Angle disturbance
         
-        var final_performance = enhanced_controller.get_enhanced_performance()
+        final_performance = enhanced_controller.get_enhanced_performance()
         
         print("  Performance Adaptation Results:")
         print("    Initial success rate:", initial_performance.0, "%")
@@ -213,7 +213,7 @@ struct MPCDemo:
         print("    Initial average error:", initial_performance.1, "degrees")
         print("    Final average error:", final_performance.1, "degrees")
         
-        var performance_improvement = final_performance.0 - initial_performance.0
+        performance_improvement = final_performance.0 - initial_performance.0
         if performance_improvement > 0.0:
             print("    ✓ Performance improved by", performance_improvement, "%")
         else:
@@ -225,14 +225,14 @@ struct MPCDemo:
         print("4. Testing Constraint Handling")
         print("-" * 40)
         
-        var mpc_controller = MPCController()
+        mpc_controller = MPCController()
         mpc_controller.initialize_mpc()
         
         # Test with state near constraints
-        var extreme_states = List[List[Float64]]()
+        extreme_states = List[List[Float64]]()
         
         # Near position limit
-        var state1 = List[Float64]()
+        state1 = List[Float64]()
         state1.append(3.8)    # la_position (near +4 limit)
         state1.append(50.0)   # pend_velocity
         state1.append(20.0)   # pend_angle
@@ -240,7 +240,7 @@ struct MPCDemo:
         extreme_states.append(state1)
         
         # High velocity
-        var state2 = List[Float64]()
+        state2 = List[Float64]()
         state2.append(1.0)    # la_position
         state2.append(900.0)  # pend_velocity (near 1000 limit)
         state2.append(30.0)   # pend_angle
@@ -251,8 +251,8 @@ struct MPCDemo:
         var safe_responses = 0
         
         for i in range(len(extreme_states)):
-            var state = extreme_states[i]
-            var command = mpc_controller.compute_mpc_control(state, 4.0 + Float64(i))
+            state = extreme_states[i]
+            command = mpc_controller.compute_mpc_control(state, 4.0 + Float64(i))
             
             # Check if constraints are respected
             if abs(command.voltage) > 10.0:
@@ -277,17 +277,17 @@ struct MPCDemo:
     @staticmethod
     fn _simulate_system_response(current_state: List[Float64], command: ControlCommand) -> List[Float64]:
         """Simplified system response simulation for testing."""
-        var dt = 0.04  # 40ms time step
+        dt = 0.04  # 40ms time step
         
-        var la_pos = current_state[0]
-        var pend_vel = current_state[1]
-        var pend_angle = current_state[2]
-        var control_voltage = command.voltage
+        la_pos = current_state[0]
+        pend_vel = current_state[1]
+        pend_angle = current_state[2]
+        control_voltage = command.voltage
         
         # Simplified pendulum dynamics
-        var gravity_effect = sin(pend_angle * 3.14159 / 180.0) * 30.0
-        var control_effect = control_voltage * 0.2
-        var damping = pend_vel * 0.02
+        gravity_effect = sin(pend_angle * 3.14159 / 180.0) * 30.0
+        control_effect = control_voltage * 0.2
+        damping = pend_vel * 0.02
         
         # Update pendulum velocity
         var new_pend_vel = pend_vel + (gravity_effect + control_effect - damping) * dt
@@ -306,7 +306,7 @@ struct MPCDemo:
         var new_la_pos = la_pos + control_voltage * dt * 0.02
         new_la_pos = max(-4.0, min(4.0, new_la_pos))
         
-        var new_state = List[Float64]()
+        new_state = List[Float64]()
         new_state.append(new_la_pos)
         new_state.append(new_pend_vel)
         new_state.append(new_pend_angle)

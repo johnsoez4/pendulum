@@ -9,5 +9,6 @@ update = "sh update.sh"
 
 [dependencies]
 modular = ">=25.5.0.dev2025062815,<26"
-python = ">=3.10,<3.13"
 max = "*"
+python = ">=3.10,<3.13"
+pip = ">=24.3.1"

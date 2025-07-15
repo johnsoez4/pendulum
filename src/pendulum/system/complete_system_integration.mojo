@@ -40,7 +40,7 @@ struct SystemConfiguration(Copyable, Movable):
     
     fn is_valid_configuration(self) -> Bool:
         """Check if configuration is valid."""
-        var valid_control_modes = List[String]()
+        valid_control_modes = List[String]()
         valid_control_modes.append("enhanced_mpc")
         valid_control_modes.append("rl")
         valid_control_modes.append("hybrid")
@@ -78,7 +78,7 @@ struct SystemPerformanceMetrics(Copyable, Movable):
     
     fn calculate_overall_score(mut self):
         """Calculate overall system performance score."""
-        var weights = List[Float64]()
+        weights = List[Float64]()
         weights.append(0.25)  # Success rate
         weights.append(0.20)  # Stability time
         weights.append(0.15)  # Real-time compliance
@@ -124,10 +124,10 @@ struct CompleteSystemIntegration:
     fn __init__(out self):
         """Initialize complete system integration."""
         # Initialize digital twin
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
         self.digital_twin = PendulumNeuralNetwork(weights1, biases1, weights2, biases2, True, 0.0, 0.0)
         
         # Initialize control systems
@@ -218,16 +218,16 @@ struct CompleteSystemIntegration:
         self.system_config.validation_mode = True
         
         # Run validation scenarios
-        var validation_success = self._run_validation_scenarios()
+        validation_success = self._run_validation_scenarios()
         
         # Validate system performance
-        var performance_validation = self._validate_system_performance()
+        performance_validation = self._validate_system_performance()
         
         # Validate production readiness
-        var production_validation = self._validate_production_readiness()
+        production_validation = self._validate_production_readiness()
         
         # Calculate overall validation result
-        var overall_validation = (validation_success and performance_validation and production_validation)
+        overall_validation = (validation_success and performance_validation and production_validation)
         
         # Update system configuration
         self.system_config.production_ready = overall_validation
@@ -254,7 +254,7 @@ struct CompleteSystemIntegration:
         print("1. Running Validation Scenarios")
         print("-" * 35)
         
-        var scenario_names = List[String]()
+        scenario_names = List[String]()
         scenario_names.append("Near Inverted Precision")
         scenario_names.append("Large Angle Recovery")
         scenario_names.append("High Velocity Handling")
@@ -269,7 +269,7 @@ struct CompleteSystemIntegration:
         var successful_scenarios = 0
         
         for i in range(len(scenario_names)):
-            var scenario_name = scenario_names[i]
+            scenario_name = scenario_names[i]
             print("  Testing:", scenario_name)
             
             var scenario_result = self._test_validation_scenario(i, scenario_name)
@@ -281,7 +281,7 @@ struct CompleteSystemIntegration:
             else:
                 print("    Result: ✗ Needs improvement (", scenario_result * 100.0, "%)")
         
-        var scenario_success_rate = Float64(successful_scenarios) / Float64(len(scenario_names))
+        scenario_success_rate = Float64(successful_scenarios) / Float64(len(scenario_names))
         print("  Overall scenario success:", successful_scenarios, "/", len(scenario_names))
         print("  Scenario success rate:", scenario_success_rate * 100.0, "%")
         
@@ -342,7 +342,7 @@ struct CompleteSystemIntegration:
         print("    Safety compliance:", self.performance_metrics.safety_compliance * 100.0, "%")
         print("    Overall score:", self.performance_metrics.overall_system_score * 100.0, "%")
         
-        var meets_targets = self.performance_metrics.meets_production_targets()
+        meets_targets = self.performance_metrics.meets_production_targets()
         print("  Meets production targets:", "✓" if meets_targets else "✗")
         
         return meets_targets
@@ -353,7 +353,7 @@ struct CompleteSystemIntegration:
         print("-" * 35)
         
         # Production readiness checklist
-        var checklist_items = List[String]()
+        checklist_items = List[String]()
         checklist_items.append("Digital twin validation complete")
         checklist_items.append("Control algorithms tested")
         checklist_items.append("Safety systems operational")
@@ -382,10 +382,10 @@ struct CompleteSystemIntegration:
             else:
                 print("    ✗", checklist_items[i])
         
-        var readiness_percentage = Float64(completed_items) / Float64(len(checklist_items)) * 100.0
+        readiness_percentage = Float64(completed_items) / Float64(len(checklist_items)) * 100.0
         print("  Production readiness:", readiness_percentage, "%")
         
-        var production_ready = readiness_percentage >= 95.0
+        production_ready = readiness_percentage >= 95.0
         print("  Production ready:", "✓" if production_ready else "✗")
         
         return production_ready

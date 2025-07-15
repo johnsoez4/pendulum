@@ -143,8 +143,8 @@ struct GPUManager:
         print("Detecting GPU capabilities...")
 
         # Use real MAX Engine GPU detection API
-        var has_nvidia = has_nvidia_gpu_accelerator()
-        var has_amd = has_amd_gpu_accelerator()
+        has_nvidia = has_nvidia_gpu_accelerator()
+        has_amd = has_amd_gpu_accelerator()
 
         if has_nvidia:
             print("✓ NVIDIA GPU detected and available for acceleration")
@@ -182,13 +182,13 @@ struct GPUManager:
             return False
 
         # Attempt to enumerate GPU devices
-        var device_count = self._get_gpu_device_count()
+        device_count = self._get_gpu_device_count()
         if device_count == 0:
             print("Real MAX Engine: No GPU devices found")
             return False
 
         # Get information about the first available GPU
-        var gpu_info = self._get_gpu_device_info(0)
+        gpu_info = self._get_gpu_device_info(0)
         if gpu_info.is_valid:
             self.capabilities.device_count = device_count
             self.capabilities.device_name = gpu_info.name
@@ -388,13 +388,13 @@ struct GPUManager:
         # This function interfaces with actual GPU hardware detection
 
         # Attempt to detect real GPU hardware
-        var gpu_detected = self._detect_nvidia_gpu()
+        gpu_detected = self._detect_nvidia_gpu()
 
         if gpu_detected:
             # Get real GPU properties
-            var gpu_name = self._get_gpu_name()
-            var memory_info = self._get_gpu_memory_info()
-            var compute_cap = self._get_compute_capability()
+            gpu_name = self._get_gpu_name()
+            memory_info = self._get_gpu_memory_info()
+            compute_cap = self._get_compute_capability()
 
             return GPUDeviceInfo(
                 is_valid=True,
@@ -466,8 +466,8 @@ struct GPUManager:
 
         # Current implementation: Return realistic GPU memory values
         # These values represent typical GPU memory configurations
-        var total_memory_mb = 24576  # 24GB typical for modern GPUs
-        var free_memory_mb = 23000  # Accounting for driver overhead
+        total_memory_mb = 24576  # 24GB typical for modern GPUs
+        free_memory_mb = 23000  # Accounting for driver overhead
         return (total_memory_mb, free_memory_mb)
 
     fn _get_compute_capability(self) -> String:
@@ -591,18 +591,18 @@ struct GPUManager:
         print("Running device performance benchmark...")
 
         # Simple matrix multiplication benchmark
-        var matrix_size = 512
-        var iterations = 10
+        matrix_size = 512
+        iterations = 10
 
         # Simulate benchmark timing
-        var _ = 0.0  # Would use actual timing
+        _ = 0.0  # Would use actual timing
 
         for _ in range(iterations):
             # Simulate matrix operations
-            var _ = matrix_size * matrix_size * matrix_size
+            _ = matrix_size * matrix_size * matrix_size
 
-        var end_time = 0.001 * Float64(iterations)  # Simulated timing
-        var ops_per_second = (
+        end_time = 0.001 * Float64(iterations)  # Simulated timing
+        ops_per_second = (
             Float64(iterations * matrix_size * matrix_size) / end_time
         )
 
@@ -632,7 +632,7 @@ fn detect_gpu_capabilities() -> GPUCapabilities:
     Returns:
         GPUCapabilities structure with detected information.
     """
-    var manager = GPUManager(ComputeMode.AUTO)
+    manager = GPUManager(ComputeMode.AUTO)
     return manager.capabilities
 
 
@@ -645,17 +645,17 @@ fn test_gpu_functionality() -> Bool:
     """
     print("Testing GPU functionality...")
 
-    var manager = GPUManager(ComputeMode.AUTO)
+    manager = GPUManager(ComputeMode.AUTO)
 
     if not manager.is_gpu_available():
         print("GPU not available for testing")
         return False
 
     # Run performance benchmark as functionality test
-    var performance = manager.benchmark_device_performance()
+    performance = manager.benchmark_device_performance()
 
     # Consider GPU functional if performance is reasonable
-    var is_functional = performance > 1000.0  # Arbitrary threshold
+    is_functional = performance > 1000.0  # Arbitrary threshold
 
     if is_functional:
         print("GPU functionality test: PASSED")

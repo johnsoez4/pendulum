@@ -32,7 +32,7 @@ fn tanh_approx(x: Float64) -> Float64:
         return -1.0
     else:
         # Simple approximation: tanh(x) ≈ x for small x
-        var x2 = x * x
+        x2 = x * x
         return x * (1.0 - x2 / 3.0 + 2.0 * x2 * x2 / 15.0)
 
 
@@ -69,11 +69,11 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         """Initialize network weights with Xavier initialization."""
         # Initialize weights1 (INPUT_DIM x HIDDEN_SIZE)
         for i in range(INPUT_DIM):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(HIDDEN_SIZE):
                 # Xavier initialization with better scaling
-                var scale = 0.1 / (Float64(INPUT_DIM + HIDDEN_SIZE) ** 0.5)
-                var val = scale * (
+                scale = 0.1 / (Float64(INPUT_DIM + HIDDEN_SIZE) ** 0.5)
+                val = scale * (
                     Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5
                 )
                 row.append(val)
@@ -85,10 +85,10 @@ struct PendulumNeuralNetwork(Copyable, Movable):
 
         # Initialize weights2 (HIDDEN_SIZE x HIDDEN_SIZE)
         for i in range(HIDDEN_SIZE):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(HIDDEN_SIZE):
-                var scale = 0.1 / (Float64(HIDDEN_SIZE + HIDDEN_SIZE) ** 0.5)
-                var val = scale * (
+                scale = 0.1 / (Float64(HIDDEN_SIZE + HIDDEN_SIZE) ** 0.5)
+                val = scale * (
                     Float64((i * 11 + j * 17) % 1000) / 1000.0 - 0.5
                 )
                 row.append(val)
@@ -100,10 +100,10 @@ struct PendulumNeuralNetwork(Copyable, Movable):
 
         # Initialize weights3 (HIDDEN_SIZE x OUTPUT_DIM)
         for i in range(HIDDEN_SIZE):
-            var row = List[Float64]()
+            row = List[Float64]()
             for j in range(OUTPUT_DIM):
-                var scale = 0.1 / (Float64(HIDDEN_SIZE + OUTPUT_DIM) ** 0.5)
-                var val = scale * (
+                scale = 0.1 / (Float64(HIDDEN_SIZE + OUTPUT_DIM) ** 0.5)
+                val = scale * (
                     Float64((i * 19 + j * 23) % 1000) / 1000.0 - 0.5
                 )
                 row.append(val)
@@ -124,7 +124,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
             Output vector [next_la_position, next_pend_velocity, next_pend_position].
         """
         # Layer 1: Input to Hidden1
-        var hidden1 = List[Float64]()
+        hidden1 = List[Float64]()
         for j in range(HIDDEN_SIZE):
             var sum = self.biases1[j]
             for i in range(INPUT_DIM):
@@ -133,7 +133,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
             hidden1.append(tanh_approx(sum))
 
         # Layer 2: Hidden1 to Hidden2
-        var hidden2 = List[Float64]()
+        hidden2 = List[Float64]()
         for j in range(HIDDEN_SIZE):
             var sum = self.biases2[j]
             for i in range(HIDDEN_SIZE):
@@ -141,7 +141,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
             hidden2.append(tanh_approx(sum))
 
         # Layer 3: Hidden2 to Output
-        var output = List[Float64]()
+        output = List[Float64]()
         for j in range(OUTPUT_DIM):
             var sum = self.biases3[j]
             for i in range(HIDDEN_SIZE):
@@ -156,20 +156,20 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to predictions."""
-        var constrained = List[Float64]()
+        constrained = List[Float64]()
 
         # Constrain actuator position to [-4, 4] inches
-        var la_pos = max(-4.0, min(4.0, prediction[0]))
+        la_pos = max(-4.0, min(4.0, prediction[0]))
         constrained.append(la_pos)
 
         # Constrain pendulum velocity to [-1000, 1000] deg/s
-        var pend_vel = max(-1000.0, min(1000.0, prediction[1]))
+        pend_vel = max(-1000.0, min(1000.0, prediction[1]))
         constrained.append(pend_vel)
 
         # Handle angle continuity (no sudden jumps > 180 degrees)
-        var current_angle = input[2] if len(input) > 2 else 0.0
+        current_angle = input[2] if len(input) > 2 else 0.0
         var pred_angle = prediction[2]
-        var angle_diff = pred_angle - current_angle
+        angle_diff = pred_angle - current_angle
 
         if abs(angle_diff) > 180.0:
             if angle_diff > 180.0:
@@ -194,25 +194,25 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         Returns:
             Physics loss value.
         """
-        var physics_loss = 0.0
+        physics_loss = 0.0
 
         # Energy conservation check (simplified)
         if len(input) >= 4 and len(prediction) >= 3:
-            var current_vel = input[1]
-            var current_angle = input[2]
-            var pred_vel = prediction[1]
-            var pred_angle = prediction[2]
+            current_vel = input[1]
+            current_angle = input[2]
+            pred_vel = prediction[1]
+            pred_angle = prediction[2]
 
             # Approximate energy calculation
-            var current_energy = 0.5 * current_vel * current_vel + 9.81 * (
+            current_energy = 0.5 * current_vel * current_vel + 9.81 * (
                 1.0 - self.cos_approx(current_angle)
             )
-            var pred_energy = 0.5 * pred_vel * pred_vel + 9.81 * (
+            pred_energy = 0.5 * pred_vel * pred_vel + 9.81 * (
                 1.0 - self.cos_approx(pred_angle)
             )
 
-            var energy_diff = abs(pred_energy - current_energy)
-            var energy_scale = max(abs(current_energy), 1e-6)
+            energy_diff = abs(pred_energy - current_energy)
+            energy_scale = max(abs(current_energy), 1e-6)
             physics_loss += energy_diff / energy_scale
 
         # Constraint violation penalties
@@ -229,9 +229,9 @@ struct PendulumNeuralNetwork(Copyable, Movable):
 
     fn cos_approx(self, angle_deg: Float64) -> Float64:
         """Approximate cosine function for angles in degrees."""
-        var angle_rad = angle_deg * 3.14159 / 180.0
+        angle_rad = angle_deg * 3.14159 / 180.0
         # Taylor series approximation for cos(x)
-        var x2 = angle_rad * angle_rad
+        x2 = angle_rad * angle_rad
         return 1.0 - x2 / 2.0 + x2 * x2 / 24.0
 
 
@@ -250,14 +250,14 @@ struct IntegratedTrainer:
     @staticmethod
     fn create_network() -> PendulumNeuralNetwork:
         """Create and initialize a new neural network."""
-        var weights1 = List[List[Float64]]()
-        var biases1 = List[Float64]()
-        var weights2 = List[List[Float64]]()
-        var biases2 = List[Float64]()
-        var weights3 = List[List[Float64]]()
-        var biases3 = List[Float64]()
+        weights1 = List[List[Float64]]()
+        biases1 = List[Float64]()
+        weights2 = List[List[Float64]]()
+        biases2 = List[Float64]()
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
 
-        var network = PendulumNeuralNetwork(
+        network = PendulumNeuralNetwork(
             weights1,
             biases1,
             weights2,
@@ -284,31 +284,31 @@ struct IntegratedTrainer:
         Returns:
             Tuple of (input_data, target_data) for training.
         """
-        var inputs = List[List[Float64]]()
-        var targets = List[List[Float64]]()
+        inputs = List[List[Float64]]()
+        targets = List[List[Float64]]()
 
         for i in range(num_samples):
             # Generate diverse input states
-            var la_pos = (
+            la_pos = (
                 Float64(i % 100) / 100.0 - 0.5
             ) * 8.0  # -4 to 4 inches
-            var pend_vel = (
+            pend_vel = (
                 Float64((i * 7) % 200) / 200.0 - 0.5
             ) * 400.0  # -200 to 200 deg/s
-            var pend_angle = Float64((i * 13) % 360)  # 0 to 360 degrees
-            var cmd_volts = (
+            pend_angle = Float64((i * 13) % 360)  # 0 to 360 degrees
+            cmd_volts = (
                 Float64((i * 17) % 100) / 100.0 - 0.5
             ) * 20.0  # -10 to 10 volts
 
-            var input = List[Float64]()
+            input = List[Float64]()
             input.append(la_pos)
             input.append(pend_vel)
             input.append(pend_angle)
             input.append(cmd_volts)
 
             # Generate target using simplified physics (for demonstration)
-            var dt = 0.04  # 40ms time step
-            var next_la_pos = (
+            dt = 0.04  # 40ms time step
+            next_la_pos = (
                 la_pos + cmd_volts * dt * 0.1
             )  # Simple actuator model
             var next_pend_vel = (
@@ -328,7 +328,7 @@ struct IntegratedTrainer:
             elif next_pend_angle < 0.0:
                 next_pend_angle += 360.0
 
-            var target = List[Float64]()
+            target = List[Float64]()
             target.append(next_la_pos)
             target.append(next_pend_vel)
             target.append(next_pend_angle)
@@ -344,10 +344,10 @@ struct IntegratedTrainer:
     ) -> Float64:
         """Compute Mean Squared Error loss."""
         var total_error = 0.0
-        var num_elements = min(len(prediction), len(target))
+        num_elements = min(len(prediction), len(target))
 
         for i in range(num_elements):
-            var error = prediction[i] - target[i]
+            error = prediction[i] - target[i]
             total_error += error * error
 
         return (
@@ -363,14 +363,14 @@ struct IntegratedTrainer:
     ):
         """Simplified weight update (placeholder for actual backpropagation)."""
         # This is a simplified update - in practice would use proper gradients
-        var prediction = network.forward(input)
-        var error_scale = 0.0001  # Small adjustment factor
+        prediction = network.forward(input)
+        error_scale = 0.0001  # Small adjustment factor
 
         # Simple weight perturbation based on error
         for i in range(len(network.weights3)):
             for j in range(len(network.weights3[i])):
                 if j < len(prediction) and j < len(target):
-                    var error = target[j] - prediction[j]
+                    error = target[j] - prediction[j]
                     network.weights3[i][j] += (
                         learning_rate * error_scale * error
                     )
@@ -393,7 +393,7 @@ fn main():
 
     # Step 1: Create neural network
     print("Step 1: Creating neural network...")
-    var network = IntegratedTrainer.create_network()
+    network = IntegratedTrainer.create_network()
     print("✓ Neural network created:")
     print("  - Architecture: 4 → 64 → 64 → 3")
     print("  - Activation: tanh (hidden), linear (output)")
@@ -402,9 +402,9 @@ fn main():
 
     # Step 2: Generate training data
     print("Step 2: Generating training data...")
-    var data = IntegratedTrainer.generate_training_data(2000)
-    var train_inputs = data[0]
-    var train_targets = data[1]
+    data = IntegratedTrainer.generate_training_data(2000)
+    train_inputs = data[0]
+    train_targets = data[1]
     print("✓ Training data generated:")
     print("  - Samples:", len(train_inputs))
     print("  - Input features: 4 (la_pos, pend_vel, pend_angle, cmd_volts)")
@@ -417,9 +417,9 @@ fn main():
     # Step 3: Test network forward pass
     print("Step 3: Testing network forward pass...")
     if len(train_inputs) > 0:
-        var test_input = train_inputs[0]
-        var prediction = network.forward(test_input)
-        var target = train_targets[0]
+        test_input = train_inputs[0]
+        prediction = network.forward(test_input)
+        target = train_targets[0]
 
         print("✓ Forward pass successful:")
         print(
@@ -434,9 +434,9 @@ fn main():
         print("  Target: [", target[0], target[1], target[2], "]")
 
         # Compute initial loss
-        var mse_loss = IntegratedTrainer.compute_mse_loss(prediction, target)
-        var physics_loss = network.compute_physics_loss(test_input, prediction)
-        var total_loss = mse_loss + 0.1 * physics_loss
+        mse_loss = IntegratedTrainer.compute_mse_loss(prediction, target)
+        physics_loss = network.compute_physics_loss(test_input, prediction)
+        total_loss = mse_loss + 0.1 * physics_loss
 
         print("  MSE Loss:", mse_loss)
         print("  Physics Loss:", physics_loss)
@@ -447,26 +447,26 @@ fn main():
     print("Step 4: Training simulation...")
     print("Training neural network with physics-informed loss...")
 
-    var epochs = 100
-    var learning_rate = 0.001
-    var best_loss = 1000000.0
-    var patience = 20
+    epochs = 100
+    learning_rate = 0.001
+    best_loss = 1000000.0
+    patience = 20
     var patience_counter = 0
 
     for epoch in range(epochs):
-        var total_loss = 0.0
-        var num_samples = min(len(train_inputs), len(train_targets))
+        total_loss = 0.0
+        num_samples = min(len(train_inputs), len(train_targets))
 
         # Training loop (simplified - no actual backpropagation)
         for i in range(min(num_samples, 100)):  # Use subset for speed
-            var prediction = network.forward(train_inputs[i])
-            var mse_loss = IntegratedTrainer.compute_mse_loss(
+            prediction = network.forward(train_inputs[i])
+            mse_loss = IntegratedTrainer.compute_mse_loss(
                 prediction, train_targets[i]
             )
-            var physics_loss = network.compute_physics_loss(
+            physics_loss = network.compute_physics_loss(
                 train_inputs[i], prediction
             )
-            var sample_loss = mse_loss + 0.1 * physics_loss
+            sample_loss = mse_loss + 0.1 * physics_loss
 
             total_loss += sample_loss
 
@@ -475,7 +475,7 @@ fn main():
                 network, train_inputs[i], train_targets[i], learning_rate
             )
 
-        var avg_loss = total_loss / Float64(min(num_samples, 100))
+        avg_loss = total_loss / Float64(min(num_samples, 100))
 
         # Early stopping check
         if avg_loss < best_loss:
@@ -501,19 +501,19 @@ fn main():
     print("Step 5: Validation and performance assessment...")
 
     # Test on validation data
-    var val_data = IntegratedTrainer.generate_training_data(200)
-    var val_inputs = val_data[0]
-    var val_targets = val_data[1]
+    val_data = IntegratedTrainer.generate_training_data(200)
+    val_inputs = val_data[0]
+    val_targets = val_data[1]
 
-    var val_loss = 0.0
-    var physics_violations = 0
+    val_loss = 0.0
+    physics_violations = 0
 
     for i in range(len(val_inputs)):
-        var prediction = network.forward(val_inputs[i])
-        var mse_loss = IntegratedTrainer.compute_mse_loss(
+        prediction = network.forward(val_inputs[i])
+        mse_loss = IntegratedTrainer.compute_mse_loss(
             prediction, val_targets[i]
         )
-        var physics_loss = network.compute_physics_loss(
+        physics_loss = network.compute_physics_loss(
             val_inputs[i], prediction
         )
 

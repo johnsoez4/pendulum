@@ -13,7 +13,7 @@ fn test_gpu_tensor_creation():
     
     # Test tensor creation with different shapes
     print("1. Creating 2D tensor (3x3)...")
-    var shape_2d = List[Int]()
+    shape_2d = List[Int]()
     shape_2d.append(3)
     shape_2d.append(3)
     
@@ -23,7 +23,7 @@ fn test_gpu_tensor_creation():
     print("✓ Memory allocation pattern ready")
     
     print("\n2. Creating 1D tensor (10 elements)...")
-    var shape_1d = List[Int]()
+    shape_1d = List[Int]()
     shape_1d.append(10)
     
     print("✓ Tensor shape defined: 10")

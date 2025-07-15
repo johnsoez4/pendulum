@@ -33,15 +33,15 @@ struct AdvancedControlDemo:
         print()
         
         # Stage 1: Reinforcement Learning Development
-        var rl_performance = AdvancedControlDemo._demonstrate_rl_development()
+        rl_performance = AdvancedControlDemo._demonstrate_rl_development()
         print()
-        
+
         # Stage 2: Advanced Hybrid Control Development
-        var hybrid_performance = AdvancedControlDemo._demonstrate_hybrid_development()
+        hybrid_performance = AdvancedControlDemo._demonstrate_hybrid_development()
         print()
-        
+
         # Stage 3: Comprehensive Performance Validation
-        var validation_results = AdvancedControlDemo._demonstrate_performance_validation()
+        validation_results = AdvancedControlDemo._demonstrate_performance_validation()
         print()
         
         # Stage 4: Final Analysis and Task 4 Validation
@@ -54,8 +54,8 @@ struct AdvancedControlDemo:
         print("=" * 55)
         print("Developing RL controller with Deep Q-Network...")
         
-        var rl_controller = RLController()
-        
+        rl_controller = RLController()
+
         if not rl_controller.initialize_rl_controller():
             print("Failed to initialize RL controller")
             return (0.0, 0.0, 0, 0.0)
@@ -71,12 +71,12 @@ struct AdvancedControlDemo:
         print("Training RL Controller:")
         print("-" * 25)
         
-        var training_episodes = 50
-        var test_states = List[List[Float64]]()
+        training_episodes = 50
+        test_states = List[List[Float64]]()
         
         # Create diverse test states
         for i in range(10):
-            var state = List[Float64]()
+            state = List[Float64]()
             state.append(Float64(i - 5) * 0.5)   # Position
             state.append(Float64(i - 5) * 30.0)  # Velocity
             state.append(Float64(i) * 18.0)      # Angle 0° to 162°
@@ -92,20 +92,20 @@ struct AdvancedControlDemo:
             rl_controller.start_new_episode()
             
             # Simulate episode with random test state
-            var state_idx = episode % len(test_states)
-            var test_state = test_states[state_idx]
+            state_idx = episode % len(test_states)
+            test_state = test_states[state_idx]
             
             # Run control cycles for this episode
             for cycle in range(25):  # 1 second episodes
-                var timestamp = Float64(episode * 25 + cycle) * 0.04
-                var command = rl_controller.compute_rl_control(test_state, timestamp)
+                timestamp = Float64(episode * 25 + cycle) * 0.04
+                command = rl_controller.compute_rl_control(test_state, timestamp)
                 
                 # Simulate state evolution (simplified)
                 test_state[2] += command.voltage * 0.1  # Angle change
                 test_state[1] += command.voltage * 2.0  # Velocity change
         
         # Get final RL performance
-        var rl_performance = rl_controller.get_rl_performance()
+        rl_performance = rl_controller.get_rl_performance()
         
         print("RL Training Results:")
         print("-" * 20)
@@ -116,8 +116,8 @@ struct AdvancedControlDemo:
         print("  Success rate estimate:", rl_performance.3 * 100.0, "%")
         
         # Estimate advanced performance
-        var estimated_success_rate = 0.85  # RL typically achieves 85%+ with training
-        var estimated_stability_time = 25.0  # 25s average stability
+        estimated_success_rate = 0.85  # RL typically achieves 85%+ with training
+        estimated_stability_time = 25.0  # 25s average stability
         
         print("  Estimated performance:")
         print("    Success rate:", estimated_success_rate * 100.0, "%")
@@ -137,7 +137,7 @@ struct AdvancedControlDemo:
         print("=" * 55)
         print("Developing advanced hybrid controller with intelligent fusion...")
         
-        var hybrid_controller = AdvancedHybridController()
+        hybrid_controller = AdvancedHybridController()
         
         if not hybrid_controller.initialize_hybrid_controller():
             print("Failed to initialize hybrid controller")
@@ -154,10 +154,10 @@ struct AdvancedControlDemo:
         print("Testing Hybrid Controller:")
         print("-" * 30)
         
-        var test_scenarios = List[List[Float64]]()
+        test_scenarios = List[List[Float64]]()
         
         # Scenario 1: Near inverted
-        var scenario1 = List[Float64]()
+        scenario1 = List[Float64]()
         scenario1.append(0.5)
         scenario1.append(20.0)
         scenario1.append(8.0)
@@ -165,7 +165,7 @@ struct AdvancedControlDemo:
         test_scenarios.append(scenario1)
         
         # Scenario 2: Transition region
-        var scenario2 = List[Float64]()
+        scenario2 = List[Float64]()
         scenario2.append(1.0)
         scenario2.append(80.0)
         scenario2.append(45.0)
@@ -173,29 +173,29 @@ struct AdvancedControlDemo:
         test_scenarios.append(scenario2)
         
         # Scenario 3: Large angle
-        var scenario3 = List[Float64]()
+        scenario3 = List[Float64]()
         scenario3.append(0.0)
         scenario3.append(10.0)
         scenario3.append(160.0)
         scenario3.append(0.0)
         test_scenarios.append(scenario3)
         
-        var scenario_names = List[String]()
+        scenario_names = List[String]()
         scenario_names.append("Near Inverted")
         scenario_names.append("Transition Region")
         scenario_names.append("Large Angle")
         
         # Test each scenario
         for i in range(len(test_scenarios)):
-            var scenario = test_scenarios[i]
-            var name = scenario_names[i]
+            scenario = test_scenarios[i]
+            name = scenario_names[i]
             
             print("  Testing scenario:", name)
             
             # Run control cycles
             for cycle in range(50):  # 2 second test
-                var timestamp = Float64(i * 50 + cycle) * 0.04
-                var command = hybrid_controller.compute_hybrid_control(scenario, timestamp)
+                timestamp = Float64(i * 50 + cycle) * 0.04
+                command = hybrid_controller.compute_hybrid_control(scenario, timestamp)
                 
                 print("    Cycle", cycle + 1, "- Mode:", command.control_mode, 
                       "Voltage:", command.voltage, "V")
@@ -208,7 +208,7 @@ struct AdvancedControlDemo:
                     print("      State: angle =", scenario[2], "°, velocity =", scenario[1], "°/s")
         
         # Get hybrid performance
-        var hybrid_performance = hybrid_controller.get_hybrid_performance()
+        hybrid_performance = hybrid_controller.get_hybrid_performance()
         
         print("Hybrid Controller Results:")
         print("-" * 30)
@@ -232,7 +232,7 @@ struct AdvancedControlDemo:
         print("=" * 55)
         print("Validating advanced controllers against baseline performance...")
         
-        var validator = AdvancedPerformanceValidator()
+        validator = AdvancedPerformanceValidator()
         
         if not validator.initialize_validator():
             print("Failed to initialize performance validator")
@@ -245,7 +245,7 @@ struct AdvancedControlDemo:
         print()
         
         # Create optimized parameters from Task 3
-        var optimized_params = ParameterSet(
+        optimized_params = ParameterSet(
             150.0, 10.0, 1.0, 0.1, 0.5, 10, 5,  # MPC parameters (optimized)
             20.0, 2.5, 0.6, 1.2, 0.12,          # Adaptive gains (optimized)
             12.0, 100.0, 85.0, 145.0,           # Control thresholds (optimized)
@@ -284,22 +284,22 @@ struct AdvancedControlDemo:
         print()
         
         # Analyze performance improvements
-        var baseline_success = 0.70
-        var baseline_stability = 15.0
+        baseline_success = 0.70
+        baseline_stability = 15.0
         
         print("Performance Improvement Analysis:")
         print("-" * 35)
         
         # RL improvements
-        var rl_success_improvement = (rl_performance.3 - baseline_success) / baseline_success * 100.0
+        rl_success_improvement = (rl_performance.3 - baseline_success) / baseline_success * 100.0
         print("  RL Controller:")
         print("    Success rate improvement:", rl_success_improvement, "%")
         print("    Training episodes:", rl_performance.2)
         print("    Final exploration rate:", rl_performance.1 * 100.0, "%")
         
         # Hybrid improvements
-        var hybrid_success_improvement = (hybrid_performance.0 - baseline_success) / baseline_success * 100.0
-        var hybrid_stability_improvement = (hybrid_performance.1 - baseline_stability) / baseline_stability * 100.0
+        hybrid_success_improvement = (hybrid_performance.0 - baseline_success) / baseline_success * 100.0
+        hybrid_stability_improvement = (hybrid_performance.1 - baseline_stability) / baseline_stability * 100.0
         print("  Advanced Hybrid Controller:")
         print("    Success rate improvement:", hybrid_success_improvement, "%")
         print("    Stability time improvement:", hybrid_stability_improvement, "%")

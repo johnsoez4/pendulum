@@ -19,7 +19,7 @@ fn assert_near(
     actual: Float64, expected: Float64, tolerance: Float64 = 1e-6
 ) raises:
     """Assert that two floating point values are close."""
-    var diff = abs(actual - expected)
+    diff = abs(actual - expected)
     if diff > tolerance:
         print(
             "Assertion failed: expected",
@@ -54,10 +54,10 @@ struct PendulumState(Copyable, Movable):
     fn total_energy(self) -> Float64:
         """Calculate total energy of the system."""
         # Kinetic energy of cart
-        var cart_ke = 0.5 * CART_MASS * self.cart_velocity * self.cart_velocity
+        cart_ke = 0.5 * CART_MASS * self.cart_velocity * self.cart_velocity
 
         # Kinetic energy of pendulum
-        var pend_ke = (
+        pend_ke = (
             0.5
             * PENDULUM_MASS
             * self.pendulum_velocity
@@ -65,8 +65,8 @@ struct PendulumState(Copyable, Movable):
         )
 
         # Potential energy of pendulum
-        var height = PENDULUM_LENGTH * (1.0 - cos_approx(self.pendulum_angle))
-        var pend_pe = PENDULUM_MASS * GRAVITY * height
+        height = PENDULUM_LENGTH * (1.0 - cos_approx(self.pendulum_angle))
+        pend_pe = PENDULUM_MASS * GRAVITY * height
 
         return cart_ke + pend_ke + pend_pe
 
@@ -95,13 +95,13 @@ struct PendulumState(Copyable, Movable):
 
 fn cos_approx(angle: Float64) -> Float64:
     """Approximate cosine function using Taylor series."""
-    var x2 = angle * angle
+    x2 = angle * angle
     return 1.0 - x2 / 2.0 + x2 * x2 / 24.0
 
 
 fn sin_approx(angle: Float64) -> Float64:
     """Approximate sine function using Taylor series."""
-    var x2 = angle * angle
+    x2 = angle * angle
     return angle * (1.0 - x2 / 6.0 + x2 * x2 / 120.0)
 
 
@@ -113,11 +113,11 @@ struct PhysicsTests:
         """Test PendulumState creation and basic properties."""
         print("Testing PendulumState creation...")
 
-        var state = PendulumState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        state = PendulumState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         assert_true(state.is_valid())
 
         # Test energy calculation at rest
-        var energy = state.total_energy()
+        energy = state.total_energy()
         assert_near(energy, 0.0, 1e-6)
 
         print("✓ PendulumState creation test passed")
@@ -128,19 +128,19 @@ struct PhysicsTests:
         print("Testing energy conservation...")
 
         # Test pendulum at bottom (hanging down)
-        var state1 = PendulumState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-        var energy1 = state1.total_energy()
+        state1 = PendulumState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        energy1 = state1.total_energy()
 
         # Test pendulum at top (inverted)
-        var state2 = PendulumState(0.0, 0.0, 3.14159, 0.0, 0.0, 0.0)
-        var energy2 = state2.total_energy()
+        state2 = PendulumState(0.0, 0.0, 3.14159, 0.0, 0.0, 0.0)
+        energy2 = state2.total_energy()
 
         # Energy at top should be higher due to potential energy
         assert_true(energy2 > energy1)
 
         # Test with kinetic energy
-        var state3 = PendulumState(0.0, 1.0, 0.0, 2.0, 0.0, 0.0)
-        var energy3 = state3.total_energy()
+        state3 = PendulumState(0.0, 1.0, 0.0, 2.0, 0.0, 0.0)
+        energy3 = state3.total_energy()
         assert_true(energy3 > energy1)
 
         print("✓ Energy conservation test passed")
@@ -151,18 +151,18 @@ struct PhysicsTests:
         print("Testing state validation...")
 
         # Valid state
-        var valid_state = PendulumState(1.0, 0.5, 1.57, 0.1, 0.0, 0.0)
+        valid_state = PendulumState(1.0, 0.5, 1.57, 0.1, 0.0, 0.0)
         assert_true(valid_state.is_valid())
 
         # Invalid states - extreme positions
-        var invalid_pos = PendulumState(20.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        invalid_pos = PendulumState(20.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         assert_false(invalid_pos.is_valid())
 
         # Invalid states - extreme velocities
-        var invalid_vel = PendulumState(0.0, 200.0, 0.0, 0.0, 0.0, 0.0)
+        invalid_vel = PendulumState(0.0, 200.0, 0.0, 0.0, 0.0, 0.0)
         assert_false(invalid_vel.is_valid())
 
-        var invalid_pend_vel = PendulumState(0.0, 0.0, 0.0, 2000.0, 0.0, 0.0)
+        invalid_pend_vel = PendulumState(0.0, 0.0, 0.0, 2000.0, 0.0, 0.0)
         assert_false(invalid_pend_vel.is_valid())
 
         print("✓ State validation test passed")
@@ -192,15 +192,15 @@ struct PhysicsTests:
         print("Testing physics constraints...")
 
         # Test actuator position constraints (should be within [-4, 4] inches)
-        var actuator_pos_valid = 2.0  # inches
-        var actuator_pos_invalid = 6.0  # inches
+        actuator_pos_valid = 2.0  # inches
+        actuator_pos_invalid = 6.0  # inches
 
         assert_true(abs(actuator_pos_valid) <= 4.0)
         assert_false(abs(actuator_pos_invalid) <= 4.0)
 
         # Test velocity constraints (should be within [-1000, 1000] deg/s)
-        var velocity_valid = 500.0  # deg/s
-        var velocity_invalid = 1500.0  # deg/s
+        velocity_valid = 500.0  # deg/s
+        velocity_invalid = 1500.0  # deg/s
 
         assert_true(abs(velocity_valid) <= 1000.0)
         assert_false(abs(velocity_invalid) <= 1000.0)
@@ -213,15 +213,15 @@ struct PhysicsTests:
         print("Testing unit conversions...")
 
         # Test inches to meters conversion
-        var inches_to_meters = 0.0254
-        var pos_inches = 4.0
-        var pos_meters = pos_inches * inches_to_meters
+        inches_to_meters = 0.0254
+        pos_inches = 4.0
+        pos_meters = pos_inches * inches_to_meters
         assert_near(pos_meters, 0.1016, 1e-6)
 
         # Test degrees to radians conversion
-        var degrees_to_radians = 3.14159 / 180.0
-        var angle_degrees = 180.0
-        var angle_radians = angle_degrees * degrees_to_radians
+        degrees_to_radians = 3.14159 / 180.0
+        angle_degrees = 180.0
+        angle_radians = angle_degrees * degrees_to_radians
         assert_near(angle_radians, 3.14159, 1e-4)
 
         print("✓ Unit conversion test passed")

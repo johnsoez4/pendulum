@@ -14,8 +14,8 @@ fn test_gpu_hardware_for_neural_network():
     print("Testing GPU Hardware for Neural Network...")
     print("-" * 50)
     
-    var has_nvidia = has_nvidia_gpu_accelerator()
-    var has_amd = has_amd_gpu_accelerator()
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
     
     print("GPU Hardware Detection:")
     print("- NVIDIA GPU available:", has_nvidia)
@@ -37,7 +37,7 @@ fn test_neural_network_gpu_operations():
     print("-" * 50)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for neural network")
         
         # Simulate neural network layer operations
@@ -45,21 +45,21 @@ fn test_neural_network_gpu_operations():
         # Hidden: 8 neurons
         # Output: 3 predictions
         
-        var input_size = 4
-        var hidden_size = 8
-        var output_size = 3
+        input_size = 4
+        hidden_size = 8
+        output_size = 3
         
         # Create GPU buffers for neural network matrices
-        var input_buffer = ctx.enqueue_create_buffer[DType.float64](input_size)
-        var weights1_buffer = ctx.enqueue_create_buffer[DType.float64](input_size * hidden_size)
-        var hidden_buffer = ctx.enqueue_create_buffer[DType.float64](hidden_size)
-        var weights2_buffer = ctx.enqueue_create_buffer[DType.float64](hidden_size * output_size)
-        var output_buffer = ctx.enqueue_create_buffer[DType.float64](output_size)
+        input_buffer = ctx.enqueue_create_buffer[DType.float64](input_size)
+        weights1_buffer = ctx.enqueue_create_buffer[DType.float64](input_size * hidden_size)
+        hidden_buffer = ctx.enqueue_create_buffer[DType.float64](hidden_size)
+        weights2_buffer = ctx.enqueue_create_buffer[DType.float64](hidden_size * output_size)
+        output_buffer = ctx.enqueue_create_buffer[DType.float64](output_size)
         
         print("✓ GPU buffers created for neural network layers")
         
         # Test input data (pendulum state)
-        var input_data = List[Float64](1.0, 0.5, 0.2, 0.1)  # [la_pos, pend_vel, pend_pos, cmd_volts]
+        input_data = List[Float64](1.0, 0.5, 0.2, 0.1)  # [la_pos, pend_vel, pend_pos, cmd_volts]
         
         # Transfer input to GPU
         for i in range(input_size):
@@ -109,16 +109,16 @@ fn test_activation_functions_for_neural_network():
     print("-" * 50)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         
         # Test activation functions on neural network layer outputs
-        var layer_size = 8  # Hidden layer size
-        var test_values = List[Float64](-2.0, -1.0, 0.0, 1.0, 2.0, 0.5, -0.5, 1.5)
+        layer_size = 8  # Hidden layer size
+        test_values = List[Float64](-2.0, -1.0, 0.0, 1.0, 2.0, 0.5, -0.5, 1.5)
         
         # Create GPU buffers for activation functions
-        var input_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
-        var tanh_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
-        var relu_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
+        input_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
+        tanh_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
+        relu_buffer = ctx.enqueue_create_buffer[DType.float64](layer_size)
         
         print("✓ GPU buffers created for activation functions")
         
@@ -136,7 +136,7 @@ fn test_activation_functions_for_neural_network():
         
         # Simulate GPU ReLU activation (alternative)
         for i in range(layer_size):
-            var activated = test_values[i] if test_values[i] > 0.0 else 0.0
+            activated = test_values[i] if test_values[i] > 0.0 else 0.0
             _ = relu_buffer.enqueue_fill(activated)
         print("✓ GPU ReLU activation completed for hidden layer")
         
@@ -157,22 +157,22 @@ fn test_complete_neural_network_pipeline():
     print("-" * 50)
     
     try:
-        var ctx = DeviceContext()
+        ctx = DeviceContext()
         print("✓ DeviceContext created for complete pipeline")
         
         # Complete neural network: 4 -> 8 -> 8 -> 3
-        var input_size = 4
-        var hidden1_size = 8
-        var hidden2_size = 8
-        var output_size = 3
+        input_size = 4
+        hidden1_size = 8
+        hidden2_size = 8
+        output_size = 3
         
         # Test pendulum input
-        var pendulum_input = List[Float64](1.2, -0.5, 0.3, 0.8)  # Real pendulum state
+        pendulum_input = List[Float64](1.2, -0.5, 0.3, 0.8)  # Real pendulum state
         
         print("Input: [la_pos=1.2, pend_vel=-0.5, pend_pos=0.3, cmd_volts=0.8]")
         
         # Layer 1: 4 -> 8
-        var layer1_buffer = ctx.enqueue_create_buffer[DType.float64](hidden1_size)
+        layer1_buffer = ctx.enqueue_create_buffer[DType.float64](hidden1_size)
         for i in range(hidden1_size):
             var sum = 0.0
             for j in range(input_size):
@@ -181,7 +181,7 @@ fn test_complete_neural_network_pipeline():
         print("✓ Layer 1 (4->8) GPU computation completed")
         
         # Layer 2: 8 -> 8
-        var layer2_buffer = ctx.enqueue_create_buffer[DType.float64](hidden2_size)
+        layer2_buffer = ctx.enqueue_create_buffer[DType.float64](hidden2_size)
         for i in range(hidden2_size):
             var sum = 0.0
             for j in range(hidden1_size):
@@ -190,7 +190,7 @@ fn test_complete_neural_network_pipeline():
         print("✓ Layer 2 (8->8) GPU computation completed")
         
         # Output Layer: 8 -> 3
-        var output_buffer = ctx.enqueue_create_buffer[DType.float64](output_size)
+        output_buffer = ctx.enqueue_create_buffer[DType.float64](output_size)
         for i in range(output_size):
             var sum = 0.0
             for j in range(hidden2_size):
@@ -220,10 +220,10 @@ fn main():
     print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
     
     # Run all tests
-    var hardware_ok = test_gpu_hardware_for_neural_network()
-    var operations_ok = test_neural_network_gpu_operations()
-    var activation_ok = test_activation_functions_for_neural_network()
-    var pipeline_ok = test_complete_neural_network_pipeline()
+    hardware_ok = test_gpu_hardware_for_neural_network()
+    operations_ok = test_neural_network_gpu_operations()
+    activation_ok = test_activation_functions_for_neural_network()
+    pipeline_ok = test_complete_neural_network_pipeline()
     
     print("\n" + "=" * 70)
     print("REAL GPU NEURAL NETWORK TEST RESULTS:")
