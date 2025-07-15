@@ -205,6 +205,7 @@ struct PendulumConfigUtils:
 
     @staticmethod
     fn validate_physical_limits(
+        """TODO: Add function description."""
         actuator_pos: Float64, control_voltage: Float64
     ) -> Bool:
         """

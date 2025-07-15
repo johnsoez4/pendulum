@@ -94,6 +94,7 @@ struct AdamOptimizer(Copyable, Movable):
     var t: Int  # Time step counter
 
     fn update_parameters(
+        """TODO: Add function description."""
         mut self, gradients: List[Float64], parameters: List[Float64]
     ) -> List[Float64]:
         """
@@ -170,6 +171,7 @@ struct LossFunctions:
 
     @staticmethod
     fn physics_informed_loss(
+        """TODO: Add function description."""
         current_state: List[Float64], predicted_state: List[Float64]
     ) -> Float64:
         """
@@ -230,6 +232,7 @@ struct DataSplitter:
 
     @staticmethod
     fn split_data(
+        """TODO: Add function description."""
         data: List[List[Float64]], validation_ratio: Float64
     ) -> (List[List[Float64]], List[List[Float64]]):
         """
@@ -264,6 +267,7 @@ struct BatchGenerator:
 
     @staticmethod
     fn create_batches(
+        """TODO: Add function description."""
         inputs: List[List[Float64]],
         targets: List[List[Float64]],
         batch_size: Int,
@@ -321,6 +325,7 @@ struct PendulumTrainer(Copyable, Movable):
     var is_training: Bool
 
     fn train_model(
+        """TODO: Add function description."""
         mut self,
         train_data: List[List[Float64]],
         target_data: List[List[Float64]],
@@ -487,6 +492,7 @@ struct PendulumTrainer(Copyable, Movable):
         return batch_loss / Float64(batch.size) if batch.size > 0 else 0.0
 
     fn _validate_epoch(
+        """TODO: Add function description."""
         self, val_inputs: List[List[Float64]], val_targets: List[List[Float64]]
     ) -> Float64:
         """Validate for one epoch."""
@@ -505,6 +511,7 @@ struct PendulumTrainer(Copyable, Movable):
         )
 
     fn _compute_physics_loss(
+        """TODO: Add function description."""
         self, inputs: List[List[Float64]], targets: List[List[Float64]]
     ) -> Float64:
         """Compute physics-informed loss component."""
@@ -581,6 +588,7 @@ struct TrainingUtils:
 
     @staticmethod
     fn prepare_training_data(
+        """TODO: Add function description."""
         raw_data: List[List[Float64]],
     ) -> (List[List[Float64]], List[List[Float64]]):
         """
@@ -619,6 +627,7 @@ struct TrainingUtils:
 
     @staticmethod
     fn validate_training_data(
+        """TODO: Add function description."""
         inputs: List[List[Float64]], targets: List[List[Float64]]
     ) -> Bool:
         """

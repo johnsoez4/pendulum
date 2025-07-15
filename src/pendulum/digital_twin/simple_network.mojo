@@ -152,6 +152,7 @@ struct SimpleNeuralNetwork(Copyable, Movable):
         return self.apply_constraints(input, output)
 
     fn apply_constraints(
+        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to predictions."""
@@ -181,6 +182,7 @@ struct SimpleNeuralNetwork(Copyable, Movable):
         return constrained
 
     fn compute_physics_loss(
+        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> Float64:
         """
@@ -255,6 +257,7 @@ struct NetworkTrainer:
 
     @staticmethod
     fn train_network(
+        """TODO: Add function description."""
         mut network: SimpleNeuralNetwork,
         train_inputs: List[List[Float64]],
         train_targets: List[List[Float64]],
@@ -316,6 +319,7 @@ struct NetworkTrainer:
 
     @staticmethod
     fn compute_mse_loss(
+        """TODO: Add function description."""
         prediction: List[Float64], target: List[Float64]
     ) -> Float64:
         """Compute Mean Squared Error loss."""
@@ -332,6 +336,7 @@ struct NetworkTrainer:
 
     @staticmethod
     fn update_weights(
+        """TODO: Add function description."""
         mut network: SimpleNeuralNetwork,
         input: List[Float64],
         target: List[Float64],

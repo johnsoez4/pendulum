@@ -153,6 +153,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         return self.apply_physics_constraints(input, output)
 
     fn apply_physics_constraints(
+        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to predictions."""
@@ -182,6 +183,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         return constrained
 
     fn compute_physics_loss(
+        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> Float64:
         """
@@ -273,6 +275,7 @@ struct IntegratedTrainer:
 
     @staticmethod
     fn generate_training_data(
+        """TODO: Add function description."""
         num_samples: Int = 1000,
     ) -> (List[List[Float64]], List[List[Float64]]):
         """
@@ -340,6 +343,7 @@ struct IntegratedTrainer:
 
     @staticmethod
     fn compute_mse_loss(
+        """TODO: Add function description."""
         prediction: List[Float64], target: List[Float64]
     ) -> Float64:
         """Compute Mean Squared Error loss."""
@@ -356,6 +360,7 @@ struct IntegratedTrainer:
 
     @staticmethod
     fn update_weights_simplified(
+        """TODO: Add function description."""
         mut network: PendulumNeuralNetwork,
         input: List[Float64],
         target: List[Float64],

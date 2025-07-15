@@ -95,6 +95,7 @@ struct NeuralLayer:
     var output_size: Int
 
     fn __init__(
+        """TODO: Add function description."""
         out self, input_size: Int, output_size: Int, activation: String = "tanh"
     ):
         """Initialize layer with random weights."""
@@ -255,6 +256,7 @@ struct PendulumNeuralNetwork:
         return self._apply_physics_constraints(input, final_output)
 
     fn _apply_physics_constraints(
+        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """
@@ -302,6 +304,7 @@ struct PendulumNeuralNetwork:
         return constrained
 
     fn predict_next_state(
+        """TODO: Add function description."""
         self, current_state: List[Float64], dt: Float64 = 0.04
     ) -> List[Float64]:
         """
@@ -317,6 +320,7 @@ struct PendulumNeuralNetwork:
         return self.forward(current_state)
 
     fn compute_physics_loss(
+        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> Float64:
         """
@@ -352,6 +356,7 @@ struct PendulumNeuralNetwork:
         return energy_loss + constraint_loss
 
     fn set_normalization_parameters(
+        """TODO: Add function description."""
         mut self,
         input_means: List[Float64],
         input_stds: List[Float64],
