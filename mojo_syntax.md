@@ -779,7 +779,7 @@ This pattern resolves the common compilation error:
 cannot implicitly convert 'SIMD[float32, __init__[::Origin[::Bool(IntTuple(1), IntTuple(1)).size:]' value to 'SIMD[float32, 1]'
 ```
 
-**Related Files**: `src/pendulum/utils/gpu_utils.mojo`, `src/pendulum/utils/gpu_matrix.mojo`, `src/pendulum/digital_twin/gpu_neural_network.mojo`
+**Related Files**: `src/utils/gpu_utils.mojo`, `src/utils/gpu_matrix.mojo`, `src/digital_twin/gpu_neural_network.mojo`
 
 ---
 
@@ -854,6 +854,14 @@ struct Resource:
         This method will raise a RuntimeError if called more than once on the
         same resource object.
         """
+
+    fn get_id(self) -> Int:
+        """Get the resource ID."""
+        return self._id
+
+    fn is_active(self) -> Bool:
+        """Check if the resource is currently active."""
+        return self._active
 ```
 
 ### 📋 **Documentation Rules**
@@ -865,6 +873,79 @@ struct Resource:
 5. **Include examples** for complex functions
 6. **Document error conditions** and exceptions
 7. **Code Examples in Docstrings**: By default, do not include code usage examples in docstrings unless explicitly requested by the user or required for complex APIs. The Mojo LSP server currently has issues parsing code examples within docstring blocks and may incorrectly flag valid Mojo code as errors, causing IDE warnings.
+
+### 🎯 **Docstring Length Guidelines**
+
+**One-Line Docstrings** are appropriate for:
+- Simple functions with clear, self-explanatory names and parameters
+- Functions with obvious behavior and no complex return values
+- Utility functions with straightforward operations
+- Getter/setter methods with clear purpose
+
+**Multi-Line Docstrings** are required for:
+- Complex functions with multiple parameters or return values
+- Functions that can raise exceptions
+- Functions with non-obvious behavior or side effects
+- Public API functions that need detailed documentation
+
+#### **✅ Appropriate One-Line Docstring Examples**
+
+```mojo
+fn get_id(self) -> Int:
+    """Get the resource ID."""
+    return self._id
+
+fn is_active(self) -> Bool:
+    """Check if the resource is currently active."""
+    return self._active
+
+fn add(a: Int, b: Int) -> Int:
+    """Add two integers and return the result."""
+    return a + b
+
+fn clear_cache(mut self):
+    """Clear the internal cache."""
+    self._cache.clear()
+```
+
+#### **✅ Required Multi-Line Docstring Examples**
+
+```mojo
+fn process_data(mut self, data: List[Float64], threshold: Float64) raises -> ProcessResult:
+    """
+    Process input data with the specified threshold.
+
+    Args:
+        data: List of floating-point values to process
+        threshold: Minimum value threshold for processing
+
+    Returns:
+        ProcessResult containing processed data and statistics
+
+    Raises:
+        ValueError: If data is empty or threshold is negative
+        ProcessingError: If processing fails due to invalid data
+    """
+    # Implementation...
+
+fn initialize_system(config: SystemConfig, debug_mode: Bool = False) raises:
+    """
+    Initialize the system with the given configuration.
+
+    This function sets up all necessary components, validates the configuration,
+    and prepares the system for operation. It must be called before any other
+    system operations.
+
+    Args:
+        config: System configuration object with all required settings
+        debug_mode: Enable debug logging and additional validation checks
+
+    Raises:
+        ConfigurationError: If the configuration is invalid
+        SystemError: If system initialization fails
+    """
+    # Implementation...
+```
 
 **Related Files**: All source files in any Mojo project
 
@@ -1021,6 +1102,195 @@ fn test_basic_functionality() raises:
         print_test_footer("Basic Functionality - FAILED")
         raise e
 ```
+
+### 🔗 **Test File Organization & Source Code Accessibility**
+
+#### 📁 **Project Directory Structure Requirements**
+
+**IMPORTANT**: This section clarifies the correct directory structure to avoid confusion about nested subdirectories.
+
+**✅ STANDARD STRUCTURE (Recommended for all projects):**
+```
+project_root/
+├── src/                    # Main source code directory
+│   ├── __init__.mojo      # Makes src/ a Mojo package
+│   ├── benchmarks/        # Performance measurement modules
+│   ├── control/           # Control system modules
+│   ├── digital_twin/      # Neural network and AI modules
+│   ├── utils/             # Utility and helper modules
+│   └── validation/        # Validation and testing utilities
+├── tests/                 # All test files
+│   ├── src -> ../src      # Symbolic link for imports
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   └── performance/       # Performance tests
+├── mojo_syntax.md         # This documentation
+└── update_mojo_syntax.mojo # Automation script for syntax validation
+```
+
+**🤖 Automation Support**: Use `update_mojo_syntax.mojo` to validate and maintain compliance with these structure requirements:
+```bash
+# Validate entire project structure
+mojo update_mojo_syntax.mojo --scan src/
+
+# Validate specific files
+mojo update_mojo_syntax.mojo --validate src/utils/gpu_matrix.mojo
+```
+
+**❌ AVOID: Extra nesting levels like `src/project_name/`**
+- Do NOT create `src/pendulum/utils/` - use `src/utils/` directly
+- Do NOT create `src/project_name/` subdirectories unless you have multiple independent projects
+
+When test files are located in a different directory from their corresponding source code files (e.g., tests in `tests/` directory while source code is in `src/` or root directory), proper organization is essential for reliable test execution and module imports.
+
+#### ✅ **Required Design Pattern: Symbolic Links for Test Imports**
+
+```bash
+# Create symbolic links from test directory to source code directories
+# This ensures proper module imports and test execution
+
+# Example: If source code is in src/ and tests are in tests/
+cd tests/
+ln -s ../src src
+
+# Example: If source code is in root directory and tests are in tests/
+cd tests/
+ln -s ../mojo_src mojo_src  # Link to root source directory
+
+# Example: For utilities in a separate directory
+cd tests/
+ln -s ../utils utils
+```
+
+#### 🎯 **Implementation Guidelines**
+
+```mojo
+# Test file structure with symbolic link imports
+# File: tests/test_my_module.mojo
+
+fn main() raises:
+    """Main test entry point."""
+    test_basic_functionality()
+    test_error_handling()
+
+# Standard library imports
+from testing import assert_equal, assert_true, assert_false
+
+# Project imports via symbolic link (REQUIRED PATTERN)
+from src.my_module import MyClass, my_function  # Via src/ symlink
+# OR
+from mojo_src.my_module import MyClass, my_function  # Via mojo_src/ symlink
+
+# Test utilities via symbolic link
+from test_utils import (
+    TestLocation,
+    TestTimer,
+    g_test_results,
+)
+
+fn test_basic_functionality() raises:
+    """Test basic functionality using imported source modules."""
+    test_loc = TestLocation("test_basic_functionality")
+
+    # Test can now reliably import and use source code modules
+    instance = MyClass()
+    result = my_function(42)
+
+    assert_equal(result, 42, test_loc("function_result"))
+    g_test_results.record_pass()
+```
+
+#### 📋 **Symbolic Link Organization Rules**
+
+1. **Create symbolic links** from test directory to source code directories
+2. **Use consistent naming** for symbolic links across all test directories
+3. **Link to parent directories** containing source modules, not individual files
+4. **Maintain clean separation** between test and source directory structures
+5. **Document symbolic links** in project README or test documentation
+6. **Use relative paths** in symbolic links for portability
+7. **Verify symbolic links** work correctly before committing tests
+
+#### 🚫 **Anti-Patterns to Avoid**
+
+```mojo
+# DON'T: Complex path manipulation in test files
+import sys
+sys.path.append("../src")  # Fragile and platform-dependent
+
+# DON'T: Relative imports without proper structure
+from ..src.my_module import MyClass  # May fail in different contexts
+
+# DON'T: Hardcoded absolute paths
+from /home/user/project/src.my_module import MyClass  # Not portable
+
+# DON'T: Copying source files to test directory
+# This creates maintenance issues and version conflicts
+```
+
+#### 🎯 **Benefits of Symbolic Link Approach**
+
+1. **Clean Directory Structure**: Maintains separation between tests and source code
+2. **Reliable Imports**: Tests can import source modules without complex path manipulation
+3. **Standard Mojo Patterns**: Follows standard Mojo project organization conventions
+4. **Maintainability**: Easy to update and maintain test imports
+5. **Portability**: Works consistently across different development environments
+6. **IDE Support**: Better IDE integration and code completion for test files
+
+#### 🔧 **Setup Commands for Common Project Structures**
+
+```bash
+# STANDARD STRUCTURE: For projects with src/ directory structure (RECOMMENDED)
+# Source code organization: src/benchmarks/, src/control/, src/utils/, etc.
+# Import pattern: from src.utils.module import Class
+cd tests/
+ln -s ../src src
+ln -s ../test_utils test_utils
+
+# ALTERNATIVE: For projects with root-level source files
+# Source code organization: benchmarks/, control/, utils/ (in project root)
+# Import pattern: from utils.module import Class
+cd tests/
+ln -s .. mojo_src
+ln -s ../test_utils test_utils
+
+# Verify symbolic links are created correctly
+ls -la tests/
+# Should show symbolic links pointing to source directories
+```
+
+#### 📁 **Directory Structure Clarification**
+
+**✅ CORRECT Structure for Pendulum Project:**
+```
+project_root/
+├── src/
+│   ├── __init__.mojo
+│   ├── benchmarks/
+│   ├── control/
+│   ├── digital_twin/
+│   ├── utils/
+│   └── validation/
+├── tests/
+│   ├── src -> ../src (symbolic link)
+│   ├── unit/
+│   ├── integration/
+│   └── performance/
+└── mojo_syntax.md
+```
+
+**❌ INCORRECT Structure (avoid extra nesting):**
+```
+project_root/
+├── src/
+│   └── pendulum/  # ← Unnecessary extra level
+│       ├── benchmarks/
+│       ├── control/
+│       └── utils/
+```
+
+**Import Examples:**
+- ✅ Correct: `from src.utils.gpu_matrix import GPUTensor`
+- ❌ Incorrect: `from src.pendulum.utils.gpu_matrix import GPUTensor`
 
 **Related Files**: `tests/test_utils.mojo`, `tests/test_mojo_threading.mojo`, `tests/run_all_tests.mojo`
 
@@ -1393,7 +1663,7 @@ When implementing actual MAX Engine GPU operations:
 4. **Documentation**: Self-documenting code showing implementation status
 5. **Migration**: Smooth transition to real MAX Engine GPU operations
 
-**Related Files**: All GPU-related files in `src/pendulum/utils/`, `src/pendulum/digital_twin/`, `tests/`, `src/pendulum/benchmarks/`
+**Related Files**: All GPU-related files in `src/utils/`, `src/digital_twin/`, `tests/`, `src/benchmarks/`
 
 ---
 
@@ -1523,8 +1793,8 @@ The project includes a comprehensive automation script (`update_mojo_syntax.mojo
 ```bash
 # Usage examples
 mojo update_mojo_syntax.mojo --scan src/
-mojo update_mojo_syntax.mojo --validate src/pendulum/utils/gpu_matrix.mojo
-mojo update_mojo_syntax.mojo --fix src/pendulum/utils/gpu_matrix.mojo --enable-auto-fix
+mojo update_mojo_syntax.mojo --validate src/utils/gpu_matrix.mojo
+mojo update_mojo_syntax.mojo --fix src/utils/gpu_matrix.mojo --enable-auto-fix
 ```
 
 #### **Pattern Detection Features**
@@ -1589,7 +1859,7 @@ SUMMARY:
 DETAILED RESULTS:
 --------------------------------------------------------------------------------
 
-File: src/pendulum/utils/gpu_matrix.mojo
+File: src/utils/gpu_matrix.mojo
 Compliance Score: 99.6 %
 Lines: 2545
 Violations: 26
@@ -1705,10 +1975,10 @@ fn matrix_multiply(a: GPUMatrix, b: GPUMatrix) raises -> GPUMatrix:
 
 ```bash
 # 1. Validate current work
-mojo update_mojo_syntax.mojo --validate src/pendulum/utils/new_feature.mojo
+mojo update_mojo_syntax.mojo --validate src/utils/new_feature.mojo
 
 # 2. Apply automatic fixes
-mojo update_mojo_syntax.mojo --fix src/pendulum/utils/new_feature.mojo --enable-auto-fix
+mojo update_mojo_syntax.mojo --fix src/utils/new_feature.mojo --enable-auto-fix
 
 # 3. Generate project-wide report
 mojo update_mojo_syntax.mojo --scan src/ > compliance_report.txt
@@ -1769,7 +2039,7 @@ echo "✅ Syntax compliance check passed"
 mojo update_mojo_syntax.mojo --scan src/ --summary-only
 
 # Before starting new feature
-mojo update_mojo_syntax.mojo --validate src/pendulum/utils/new_feature.mojo
+mojo update_mojo_syntax.mojo --validate src/utils/new_feature.mojo
 
 # During development: Quick validation
 mojo update_mojo_syntax.mojo --validate-changes --git-diff
@@ -1781,7 +2051,7 @@ mojo update_mojo_syntax.mojo --pre-commit-check
 **Example 2: Code Review Process**
 ```bash
 # Generate review-ready compliance report
-mojo update_mojo_syntax.mojo --review-report src/pendulum/feature/ \
+mojo update_mojo_syntax.mojo --review-report src/feature/ \
     --output-format markdown \
     --include-suggestions \
     --highlight-critical
@@ -2469,11 +2739,11 @@ This comprehensive guide delivers:
 - **💾 Memory System**: `code_assistant_memories.md` - Memory #3 (Import Path Management)
 
 #### **Implementation Files**
-- **🎯 GPU Matrix**: `src/pendulum/utils/gpu_matrix.mojo` - Real GPU acceleration patterns
-- **⚡ GPU Utils**: `src/pendulum/utils/gpu_utils.mojo` - GPU hardware detection and management
-- **🧠 Neural Networks**: `src/pendulum/digital_twin/gpu_neural_network.mojo` - GPU neural acceleration
-- **📊 Benchmarking**: `src/pendulum/benchmarks/gpu_cpu_benchmark.mojo` - Performance measurement
-- **📈 Reporting**: `src/pendulum/benchmarks/report_generator.mojo` - Compliance reporting
+- **🎯 GPU Matrix**: `src/utils/gpu_matrix.mojo` - Real GPU acceleration patterns
+- **⚡ GPU Utils**: `src/utils/gpu_utils.mojo` - GPU hardware detection and management
+- **🧠 Neural Networks**: `src/digital_twin/gpu_neural_network.mojo` - GPU neural acceleration
+- **📊 Benchmarking**: `src/benchmarks/gpu_cpu_benchmark.mojo` - Performance measurement
+- **📈 Reporting**: `src/benchmarks/report_generator.mojo` - Compliance reporting
 
 #### **External Resources**
 - **🔗 Mojo Documentation**: Official language documentation and best practices

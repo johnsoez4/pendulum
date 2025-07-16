@@ -33,7 +33,7 @@ struct SyntaxViolation(Copyable, Movable):
     var violation_type: String
     var description: String
     var suggested_fix: String
-    var severity: String  # "error", "warning", "info"
+    var severity: String  # "error", "warning", "info", "suggestion"
 
     fn __init__(
         out self,
@@ -91,8 +91,9 @@ struct ComplianceReport(Copyable, Movable):
                 total_penalty += error_weight
             elif violation.severity == "warning":
                 total_penalty += warning_weight
-            else:
+            elif violation.severity == "info":
                 total_penalty += info_weight
+            # Note: "suggestion" items are excluded from compliance calculation
 
         # Calculate score as percentage (simple penalty-based approach)
         # Start with 100% and subtract penalties
@@ -224,7 +225,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         "import_organization",
                         "Standard library imports should be grouped together",
                         "Group all standard library imports in one section",
-                        "info",
+                        "suggestion",
                     )
                     violations.append(violation)
                     break  # Only report once per file
@@ -283,7 +284,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         "struct_traits",
                         "Struct may need traits specification",
                         "Consider adding (Copyable, Movable) if appropriate",
-                        "info",
+                        "suggestion",
                     )
                     violations.append(violation)
 
@@ -437,15 +438,16 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
     fn assess_docstring_quality(
         self, lines: List[String], start_line: Int
-    ) -> (Bool, String):
+    ) -> (Bool, String, String):
         """
         Assess the quality of a docstring starting at the given line.
 
         Returns:
-            Tuple of (is_comprehensive, quality_issue_description).
+            Tuple of (is_good_quality, issue_description, classification).
+            Classification can be: "One-line docstring", "Multi-line docstring", or "Violation".
         """
         if start_line >= len(lines):
-            return (False, "Docstring not found")
+            return (False, "Docstring not found", "Violation")
 
         # Build full docstring content by scanning lines
         full_content = ""
@@ -488,7 +490,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         # Analyze docstring quality
         if docstring_line_count == 0 or len(full_content.strip()) == 0:
-            return (False, "Empty docstring")
+            return (False, "Empty docstring", "Violation")
 
         full_content = String(full_content.strip())
 
@@ -499,6 +501,19 @@ struct MojoSyntaxChecker(Copyable, Movable):
         has_returns = "Returns:" in full_content or "Return:" in full_content
         has_raises = "Raises:" in full_content or "Raise:" in full_content
 
+        # For single-line docstrings, check if they're appropriate
+        if docstring_line_count == 1:
+            if len(full_content) >= 10:
+                # Appropriate one-line docstring for simple functions
+                return (
+                    True,
+                    "Appropriate one-line docstring",
+                    "One-line docstring",
+                )
+            else:
+                return (False, "Single-line docstring too brief", "Violation")
+
+        # For multi-line docstrings, expect more comprehensive content
         # Calculate quality score (excluding examples per new guidelines)
         quality_indicators = 0
         if has_description:
@@ -521,16 +536,21 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         if not is_comprehensive:
             if len(full_content) < 10:
-                return (False, "Docstring too brief")
+                return (False, "Docstring too brief", "Violation")
             elif not has_description:
-                return (False, "Missing meaningful description")
+                return (False, "Missing meaningful description", "Violation")
             else:
                 return (
                     False,
                     "Consider adding Args, Returns, or Raises sections",
+                    "Violation",
                 )
 
-        return (True, "")
+        return (
+            True,
+            "Good quality multi-line docstring",
+            "Multi-line docstring",
+        )
 
     fn check_struct_traits(self, struct_line: String) -> Bool:
         """
@@ -611,19 +631,40 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         docstring_found = True
                         # Assess docstring quality
                         quality_result = self.assess_docstring_quality(lines, k)
-                        if not quality_result[0]:
-                            violation = SyntaxViolation(
-                                file_path,
-                                k + 1,
-                                "documentation_quality",
-                                "Docstring quality issue: " + quality_result[1],
-                                (
-                                    "Add comprehensive description with"
-                                    " purpose and parameters"
-                                ),
-                                "warning",
-                            )
-                            violations.append(violation)
+                        is_good = quality_result[0]
+                        issue_desc = quality_result[1]
+                        classification = quality_result[2]
+
+                        if not is_good:
+                            # Only create violations for actual problems, not observations
+                            if classification == "Violation":
+                                violation = SyntaxViolation(
+                                    file_path,
+                                    k + 1,
+                                    "documentation_quality",
+                                    "Docstring quality issue: " + issue_desc,
+                                    (
+                                        "Add comprehensive description with"
+                                        " purpose and parameters"
+                                    ),
+                                    "warning",
+                                )
+                                violations.append(violation)
+                        else:
+                            # Create suggestion for observations (one-line docstrings, etc.)
+                            if classification == "One-line docstring":
+                                violation = SyntaxViolation(
+                                    file_path,
+                                    k + 1,
+                                    "documentation_style",
+                                    issue_desc,
+                                    (
+                                        "Consider if multi-line format would be"
+                                        " more appropriate"
+                                    ),
+                                    "suggestion",
+                                )
+                                violations.append(violation)
                     break
 
                 if not docstring_found:
@@ -645,7 +686,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         "struct_traits",
                         "Struct may need traits specification",
                         "Consider adding (Copyable, Movable) if appropriate",
-                        "info",
+                        "suggestion",
                     )
                     violations.append(violation)
 
@@ -675,19 +716,40 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         docstring_found = True
                         # Assess docstring quality
                         quality_result = self.assess_docstring_quality(lines, k)
-                        if not quality_result[0]:
-                            violation = SyntaxViolation(
-                                file_path,
-                                k + 1,
-                                "documentation_quality",
-                                "Docstring quality issue: " + quality_result[1],
-                                (
-                                    "Add comprehensive description with"
-                                    " purpose and parameters"
-                                ),
-                                "warning",
-                            )
-                            violations.append(violation)
+                        is_good = quality_result[0]
+                        issue_desc = quality_result[1]
+                        classification = quality_result[2]
+
+                        if not is_good:
+                            # Only create violations for actual problems, not observations
+                            if classification == "Violation":
+                                violation = SyntaxViolation(
+                                    file_path,
+                                    k + 1,
+                                    "documentation_quality",
+                                    "Docstring quality issue: " + issue_desc,
+                                    (
+                                        "Add comprehensive description with"
+                                        " purpose and parameters"
+                                    ),
+                                    "warning",
+                                )
+                                violations.append(violation)
+                        else:
+                            # Create suggestion for observations (one-line docstrings, etc.)
+                            if classification == "One-line docstring":
+                                violation = SyntaxViolation(
+                                    file_path,
+                                    k + 1,
+                                    "documentation_style",
+                                    issue_desc,
+                                    (
+                                        "Consider if multi-line format would be"
+                                        " more appropriate"
+                                    ),
+                                    "suggestion",
+                                )
+                                violations.append(violation)
                     break
 
                 if not docstring_found:
@@ -774,7 +836,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     "error_handling_message",
                     "Error without descriptive message",
                     "Add descriptive error message with context",
-                    "info",
+                    "suggestion",
                 )
                 violations.append(violation)
 
@@ -802,7 +864,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         "Consider pre-allocating list size or using list"
                         " comprehension"
                     ),
-                    "info",
+                    "suggestion",
                 )
                 violations.append(violation)
 
@@ -822,7 +884,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         "Consider using GPU-accelerated matrix operations for"
                         " better performance"
                     ),
-                    "info",
+                    "suggestion",
                 )
                 violations.append(violation)
 
@@ -857,7 +919,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         "Use StringBuilder or collect strings and join for"
                         " better performance"
                     ),
-                    "info",
+                    "suggestion",
                 )
                 violations.append(violation)
 
@@ -1106,28 +1168,47 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         # Summary statistics
         total_files = len(reports)
-        total_violations = 0
+        total_violations = (
+            0  # Only actual violations (errors + warnings + info)
+        )
         total_errors = 0
         total_warnings = 0
         total_info = 0
+        total_one_line_docstrings = 0
+        total_suggestions = 0
         average_score = 0.0
 
         for i in range(len(reports)):
             report = reports[i]
-            total_violations += len(report.violations)
             average_score += report.compliance_score
 
             for j in range(len(report.violations)):
                 violation = report.violations[j]
                 if violation.severity == "error":
                     total_errors += 1
+                    total_violations += 1
                 elif violation.severity == "warning":
                     total_warnings += 1
-                else:
+                    total_violations += 1
+                elif violation.severity == "info":
                     total_info += 1
+                    total_violations += 1
+                elif violation.severity == "suggestion":
+                    # Check if it's a one-line docstring observation
+                    if (
+                        "Appropriate one-line docstring"
+                        in violation.description
+                    ):
+                        total_one_line_docstrings += 1
+                    else:
+                        total_suggestions += 1
 
         if total_files > 0:
             average_score /= Float64(total_files)
+
+        total_observations = (
+            total_one_line_docstrings + total_suggestions + total_info
+        )
 
         print("SUMMARY:")
         print("- Files scanned:", total_files)
@@ -1135,6 +1216,9 @@ struct MojoSyntaxChecker(Copyable, Movable):
         print("- Errors:", total_errors)
         print("- Warnings:", total_warnings)
         print("- Info:", total_info)
+        print("- Observations:", total_observations)
+        print("  - Suggestions:", total_suggestions)
+        print("  - One-line docstrings:", total_one_line_docstrings)
         print("- Average compliance score:", average_score, "%")
         print("")
 
@@ -1151,25 +1235,89 @@ struct MojoSyntaxChecker(Copyable, Movable):
             print("Violations:", len(report.violations))
 
             if len(report.violations) > 0:
-                print("")
-                print("Issues found:")
+                # Separate violations into Issues and Observations
+                issues = List[SyntaxViolation]()
+                observations = List[SyntaxViolation]()
 
                 for j in range(len(report.violations)):
                     violation = report.violations[j]
-                    severity_marker = (
-                        "❌" if violation.severity
-                        == "error" else "⚠️" if violation.severity
-                        == "warning" else "ℹ️"
-                    )
-                    print(
-                        "  " + severity_marker + " Line",
-                        violation.line_number,
-                        ":",
-                        violation.description,
-                    )
-                    print("    Type:", violation.violation_type)
-                    print("    Fix:", violation.suggested_fix)
+                    if (
+                        violation.severity == "error"
+                        or violation.severity == "warning"
+                        or violation.severity == "info"
+                    ):
+                        issues.append(violation)
+                    else:  # suggestion
+                        observations.append(violation)
+
+                # Display Issues first
+                if len(issues) > 0:
                     print("")
+                    print("Issues found:")
+
+                    for j in range(len(issues)):
+                        violation = issues[j]
+                        severity_marker = (
+                            "❌" if violation.severity
+                            == "error" else "⚠️" if violation.severity
+                            == "warning" else "ℹ️"
+                        )
+                        print(
+                            "  " + severity_marker + " Line",
+                            violation.line_number,
+                            ":",
+                            violation.description,
+                        )
+                        print("    Type:", violation.violation_type)
+                        print("    Fix:", violation.suggested_fix)
+                        print("")
+
+                # Display Observations second
+                if len(observations) > 0:
+                    print("Observations:")
+
+                    # Separate suggestions from one-line docstrings
+                    suggestions = List[SyntaxViolation]()
+                    one_line_docstrings = List[SyntaxViolation]()
+
+                    for j in range(len(observations)):
+                        violation = observations[j]
+                        if (
+                            "Appropriate one-line docstring"
+                            in violation.description
+                        ):
+                            one_line_docstrings.append(violation)
+                        else:
+                            suggestions.append(violation)
+
+                    # Display suggestions first
+                    for j in range(len(suggestions)):
+                        violation = suggestions[j]
+                        print(
+                            "  ℹ️ Line",
+                            violation.line_number,
+                            ":",
+                            violation.description,
+                        )
+                        print("    Type:", violation.violation_type)
+                        print("    Fix:", violation.suggested_fix)
+                        print("")
+
+                    # Display one-line docstrings second
+                    for j in range(len(one_line_docstrings)):
+                        violation = one_line_docstrings[j]
+                        print(
+                            "  ℹ️ Line",
+                            violation.line_number,
+                            ":",
+                            violation.description,
+                        )
+                        print("    Type:", violation.violation_type)
+                        print("    Fix:", violation.suggested_fix)
+                        print("")
+
+                if len(issues) == 0 and len(observations) == 0:
+                    print("✅ No violations found!")
             else:
                 print("✅ No violations found!")
 
