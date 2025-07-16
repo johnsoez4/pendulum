@@ -28,7 +28,7 @@ This prevents false positives from test/example code and aligns with mojo_syntax
 guidelines about avoiding code examples in docstrings due to Mojo LSP parsing issues.
 """
 
-from collections import List, Dict
+from collections import List
 from time import perf_counter_ns as now
 from sys.arg import argv
 from pathlib import Path
@@ -701,19 +701,6 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
             # Check for function definitions
             if line.startswith("fn ") and "(" in line:
-                # Check for missing raises annotation where needed
-                if "Error(" in file_content and "raises" not in line:
-                    # Function might need raises annotation
-                    violation = SyntaxViolation(
-                        file_path,
-                        line_num,
-                        "error_handling",
-                        "Function may need 'raises' annotation",
-                        "Add 'raises' annotation if function can throw errors",
-                        "warning",
-                    )
-                    violations.append(violation)
-
                 # Check for missing docstring - improved logic to handle multi-line function signatures
                 docstring_found = False
                 # Find the end of the function signature (look for the closing colon)
