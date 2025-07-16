@@ -696,46 +696,8 @@ struct MojoSyntaxChecker(Copyable, Movable):
             if self._should_skip_line_for_violations(lines, i):
                 continue
 
-            line = lines[i].strip()
-            line_num = i + 1
-
-            # Check for function definitions
-            if line.startswith("fn ") and "(" in line:
-                # Check for missing docstring - improved logic to handle multi-line function signatures
-                docstring_found = False
-                # Find the end of the function signature (look for the closing colon)
-                j = i
-                while j < len(lines):
-                    current_line = lines[j].strip()
-                    if current_line.endswith(":") and (
-                        ")" in current_line or j > i
-                    ):
-                        # Found end of function signature, check next non-empty line for docstring
-                        k = j + 1
-                        while k < len(lines):
-                            next_line = lines[k].strip()
-                            if next_line == "":
-                                k += 1
-                                continue
-                            if next_line.startswith('"""'):
-                                docstring_found = True
-                            break
-                        break
-                    j += 1
-
-                if not docstring_found:
-                    violation = SyntaxViolation(
-                        file_path,
-                        line_num,
-                        "function_documentation",
-                        "Function missing docstring",
-                        (
-                            "Add comprehensive docstring describing"
-                            " function purpose"
-                        ),
-                        "warning",
-                    )
-                    violations.append(violation)
+            # Note: Function pattern checking (docstrings, etc.) is handled by check_documentation_patterns()
+            # This function is reserved for future function-specific patterns that don't overlap
 
         return violations
 
