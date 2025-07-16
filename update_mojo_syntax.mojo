@@ -17,6 +17,14 @@ Features:
 - Compliance checking and scoring
 - Comprehensive reporting system
 - GPU acceleration pattern preservation
+- Docstring content exclusion (by default, use --check-docstring-code to enable)
+
+Docstring Handling:
+By default, the script excludes content within triple-quoted docstrings from syntax
+violation detection to prevent false positives from example code. Use the
+--check-docstring-code flag to enable syntax checking within docstring code examples.
+This aligns with mojo_syntax.md guidelines about avoiding code examples in docstrings
+due to Mojo LSP parsing issues.
 """
 
 from collections import List, Dict
@@ -138,6 +146,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
     var auto_fix_enabled: Bool
     var preserve_gpu_patterns: Bool
     var show_observations: Bool
+    var check_docstring_code: Bool
 
     fn __init__(out self):
         """Initialize the syntax checker."""
@@ -146,6 +155,54 @@ struct MojoSyntaxChecker(Copyable, Movable):
         self.auto_fix_enabled = False
         self.preserve_gpu_patterns = True
         self.show_observations = False
+        self.check_docstring_code = False
+
+    fn _is_inside_docstring(self, lines: List[String], line_index: Int) -> Bool:
+        """
+        Check if the given line index is inside a docstring.
+
+        Args:
+            lines: List of all lines in the file
+            line_index: Zero-based index of the line to check
+
+        Returns:
+            True if the line is inside a docstring, False otherwise
+        """
+        # Count triple quotes before this line
+        triple_quote_count = 0
+
+        for i in range(line_index + 1):  # Include current line
+            line = lines[i]
+            # Count occurrences of triple quotes in this line
+            quote_pos = 0
+            while True:
+                pos = line.find('"""', quote_pos)
+                if pos == -1:
+                    break
+                triple_quote_count += 1
+                quote_pos = pos + 3
+
+        # If odd number of triple quotes, we're inside a docstring
+        return (triple_quote_count % 2) == 1
+
+    fn _should_skip_line_for_violations(
+        self, lines: List[String], line_index: Int
+    ) -> Bool:
+        """
+        Determine if a line should be skipped for violation detection.
+
+        Args:
+            lines: List of all lines in the file
+            line_index: Zero-based index of the line to check
+
+        Returns:
+            True if the line should be skipped, False if it should be checked
+        """
+        # Skip docstring content unless explicitly enabled
+        if not self.check_docstring_code:
+            return self._is_inside_docstring(lines, line_index)
+
+        return False
 
     fn check_import_patterns(
         self, file_content: String, file_path: String
@@ -162,6 +219,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         # First pass: categorize imports and find first non-comment line
         for i in range(len(lines)):
+            # Skip docstring content unless explicitly enabled
+            if self._should_skip_line_for_violations(lines, i):
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
@@ -271,6 +332,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
         lines = file_content.split("\n")
 
         for i in range(len(lines)):
+            # Skip docstring content unless explicitly enabled
+            if self._should_skip_line_for_violations(lines, i):
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
@@ -589,6 +654,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
         lines = file_content.split("\n")
 
         for i in range(len(lines)):
+            # Skip docstring content unless explicitly enabled
+            if self._should_skip_line_for_violations(lines, i):
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
@@ -653,6 +722,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
         lines = file_content.split("\n")
 
         for i in range(len(lines)):
+            # Skip docstring content unless explicitly enabled
+            if self._should_skip_line_for_violations(lines, i):
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
@@ -682,6 +755,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
         has_gpu_kernels = False
 
         for i in range(len(lines)):
+            # Skip docstring content unless explicitly enabled
+            if self._should_skip_line_for_violations(lines, i):
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
@@ -1071,16 +1148,25 @@ struct MojoSyntaxChecker(Copyable, Movable):
         lines = file_content.split("\n")
 
         for i in range(len(lines)):
+            # Skip docstring content unless explicitly enabled
+            if self._should_skip_line_for_violations(lines, i):
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
             # Check for functions that should have raises annotations
             if line.startswith("fn ") and "(" in line:
-                # Look ahead for error-prone patterns
+                # Look ahead for error-prone patterns (excluding docstring content)
                 function_content = ""
                 j = i
                 while j < len(lines) and j < i + 20:  # Look ahead 20 lines
-                    function_content += lines[j] + "\n"
+                    # Only include non-docstring lines in analysis
+                    if (
+                        self.check_docstring_code
+                        or not self._is_inside_docstring(lines, j)
+                    ):
+                        function_content += lines[j] + "\n"
                     j += 1
 
                 needs_raises = (
@@ -1141,6 +1227,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
         lines = file_content.split("\n")
 
         for i in range(len(lines)):
+            # Skip docstring content unless explicitly enabled
+            if self._should_skip_line_for_violations(lines, i):
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
@@ -1781,6 +1871,10 @@ fn print_usage():
     print("  --enable-auto-fix  Enable automatic fixing (with backups)")
     print("  --disable-backup   Disable backup creation")
     print("  --show-observations Show suggestions and style recommendations")
+    print(
+        "  --check-docstring-code Enable syntax checking within docstring code"
+        " examples"
+    )
     print("  --help             Show this help message")
     print("")
     print("Examples:")
@@ -1796,6 +1890,10 @@ fn print_usage():
     print(
         "  mojo update_mojo_syntax.mojo --fix"
         " src/pendulum/utils/gpu_matrix.mojo --enable-auto-fix"
+    )
+    print(
+        "  mojo update_mojo_syntax.mojo --validate"
+        " src/utils/gpu_matrix.mojo --check-docstring-code"
     )
 
 
@@ -1886,6 +1984,8 @@ fn main() raises:
         arg = String(args[i])
         if arg == "--show-observations":
             checker.show_observations = True
+        elif arg == "--check-docstring-code":
+            checker.check_docstring_code = True
 
     # If no arguments provided, show usage and run demo
     if len(args) < 2:
