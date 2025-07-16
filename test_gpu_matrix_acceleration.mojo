@@ -11,11 +11,6 @@ from gpu.host import DeviceContext
 from time import perf_counter_ns as now
 
 
-fn abs(x: Float64) -> Float64:
-    """Absolute value function."""
-    return x if x >= 0 else -x
-
-
 fn test_simple_matrix_operations():
     """Test basic matrix operations without complex imports."""
     print("Testing Simple Matrix Operations...")

@@ -10,9 +10,6 @@ from testing import assert_equal, assert_true, assert_false
 
 
 # Helper functions for testing
-fn abs(x: Float64) -> Float64:
-    """Return absolute value of x."""
-    return x if x >= 0.0 else -x
 
 
 fn assert_near(

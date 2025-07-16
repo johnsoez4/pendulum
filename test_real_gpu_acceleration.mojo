@@ -14,11 +14,6 @@ from time import perf_counter_ns as now
 from math import exp, tanh
 
 
-fn abs(x: Float64) -> Float64:
-    """Absolute value function."""
-    return x if x >= 0 else -x
-
-
 fn gpu_test_kernel(
     output: UnsafePointer[Scalar[DType.float64]],
     input: UnsafePointer[Scalar[DType.float64]],

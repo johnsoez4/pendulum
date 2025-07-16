@@ -1,0 +1,3 @@
+"""
+System integration components package.
+"""

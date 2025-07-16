@@ -122,9 +122,32 @@ struct MojoSyntaxChecker(Copyable, Movable):
         violations = List[SyntaxViolation]()
         lines = file_content.split("\n")
 
+        # Track import sections for proper organization checking
+        var stdlib_imports = List[Int]()  # Line numbers of stdlib imports
+        var project_imports = List[Int]()  # Line numbers of project imports
+        var gpu_imports = List[Int]()  # Line numbers of GPU imports
+        var first_non_comment_line = -1
+
+        # First pass: categorize imports and find first non-comment line
         for i in range(len(lines)):
             line = lines[i].strip()
             line_num = i + 1
+
+            # Skip empty lines and comments, but track first substantial line
+            if (
+                line == ""
+                or line.startswith("#")
+                or line.startswith('"""')
+                or line.startswith("'''")
+            ):
+                continue
+
+            if (
+                first_non_comment_line == -1
+                and not line.startswith("from ")
+                and not line.startswith("import ")
+            ):
+                first_non_comment_line = line_num
 
             # Check for relative imports (violation)
             if line.startswith("from .") or line.startswith("from .."):
@@ -138,28 +161,73 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 )
                 violations.append(violation)
 
-            # Check for missing standard library grouping
-            if (
-                line.startswith("from sys")
-                or line.startswith("from collections")
-                or line.startswith("from memory")
-            ):
-                # Should be grouped at top
-                if i > 10:  # Allow some flexibility for file header
+            # Categorize imports by type
+            if line.startswith("from ") or line.startswith("import "):
+                # Standard library imports
+                if (
+                    line.startswith("from sys")
+                    or line.startswith("from collections")
+                    or line.startswith("from memory")
+                    or line.startswith("from math")
+                    or line.startswith("from time")
+                    or line.startswith("from testing")
+                ):
+                    stdlib_imports.append(line_num)
+
+                # GPU/MAX Engine imports (special category)
+                elif (
+                    "gpu.host" in line
+                    or "gpu" in line
+                    or "layout" in line
+                    or "has_nvidia_gpu_accelerator" in line
+                    or "has_amd_gpu_accelerator" in line
+                ):
+                    gpu_imports.append(line_num)
+
+                # Project imports (src.* patterns)
+                elif line.startswith("from src.") or "src." in line:
+                    project_imports.append(line_num)
+
+        # Second pass: Check import organization
+        # Standard library imports should come before project imports
+        if len(stdlib_imports) > 0 and len(project_imports) > 0:
+            last_stdlib = stdlib_imports[-1] if len(stdlib_imports) > 0 else 0
+            first_project = (
+                project_imports[0] if len(project_imports) > 0 else 999999
+            )
+
+            if last_stdlib > first_project:
+                violation = SyntaxViolation(
+                    file_path,
+                    last_stdlib,
+                    "import_organization",
+                    (
+                        "Standard library imports should come before project"
+                        " imports"
+                    ),
+                    (
+                        "Move standard library imports to top of file, before"
+                        " project imports"
+                    ),
+                    "warning",
+                )
+                violations.append(violation)
+
+        # Check for scattered standard library imports (should be grouped)
+        if len(stdlib_imports) > 1:
+            for i in range(1, len(stdlib_imports)):
+                gap = stdlib_imports[i] - stdlib_imports[i - 1]
+                if gap > 5:  # Allow reasonable gaps for comments
                     violation = SyntaxViolation(
                         file_path,
-                        line_num,
+                        stdlib_imports[i],
                         "import_organization",
-                        "Standard library import not at top of file",
-                        "Move standard library imports to top of file",
-                        "warning",
+                        "Standard library imports should be grouped together",
+                        "Group all standard library imports in one section",
+                        "info",
                     )
                     violations.append(violation)
-
-            # Check for GPU import patterns (preserve these)
-            if "gpu.host" in line or "has_nvidia_gpu_accelerator" in line:
-                # These are correct GPU patterns - no violation
-                pass
+                    break  # Only report once per file
 
         return violations
 
@@ -176,22 +244,36 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
             # Check for struct definitions
             if line.startswith("struct "):
-                # Check for missing docstring
-                if i + 1 < len(lines):
-                    next_line = lines[i + 1].strip()
-                    if not next_line.startswith('"""'):
-                        violation = SyntaxViolation(
-                            file_path,
-                            line_num,
-                            "struct_documentation",
-                            "Struct missing docstring",
-                            (
-                                "Add comprehensive docstring after struct"
-                                " definition"
-                            ),
-                            "warning",
-                        )
-                        violations.append(violation)
+                # Check for missing docstring - improved logic to handle struct inheritance/traits
+                docstring_found = False
+                # Find the end of the struct definition line (look for the closing colon)
+                j = i
+                while j < len(lines):
+                    current_line = lines[j].strip()
+                    if current_line.endswith(":"):
+                        # Found end of struct definition, check next non-empty line for docstring
+                        k = j + 1
+                        while k < len(lines):
+                            next_line = lines[k].strip()
+                            if next_line == "":
+                                k += 1
+                                continue
+                            if next_line.startswith('"""'):
+                                docstring_found = True
+                            break
+                        break
+                    j += 1
+
+                if not docstring_found:
+                    violation = SyntaxViolation(
+                        file_path,
+                        line_num,
+                        "struct_documentation",
+                        "Struct missing docstring",
+                        "Add comprehensive docstring after struct definition",
+                        "warning",
+                    )
+                    violations.append(violation)
 
                 # Check for proper traits (Copyable, Movable)
                 if "(" not in line:
@@ -233,22 +315,41 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     )
                     violations.append(violation)
 
-                # Check for missing docstring
-                if i + 1 < len(lines):
-                    next_line = lines[i + 1].strip()
-                    if not next_line.startswith('"""'):
-                        violation = SyntaxViolation(
-                            file_path,
-                            line_num,
-                            "function_documentation",
-                            "Function missing docstring",
-                            (
-                                "Add comprehensive docstring describing"
-                                " function purpose"
-                            ),
-                            "warning",
-                        )
-                        violations.append(violation)
+                # Check for missing docstring - improved logic to handle multi-line function signatures
+                docstring_found = False
+                # Find the end of the function signature (look for the closing colon)
+                j = i
+                while j < len(lines):
+                    current_line = lines[j].strip()
+                    if current_line.endswith(":") and (
+                        ")" in current_line or j > i
+                    ):
+                        # Found end of function signature, check next non-empty line for docstring
+                        k = j + 1
+                        while k < len(lines):
+                            next_line = lines[k].strip()
+                            if next_line == "":
+                                k += 1
+                                continue
+                            if next_line.startswith('"""'):
+                                docstring_found = True
+                            break
+                        break
+                    j += 1
+
+                if not docstring_found:
+                    violation = SyntaxViolation(
+                        file_path,
+                        line_num,
+                        "function_documentation",
+                        "Function missing docstring",
+                        (
+                            "Add comprehensive docstring describing"
+                            " function purpose"
+                        ),
+                        "warning",
+                    )
+                    violations.append(violation)
 
         return violations
 
@@ -334,6 +435,151 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         return violations
 
+    fn assess_docstring_quality(
+        self, lines: List[String], start_line: Int
+    ) -> (Bool, String):
+        """
+        Assess the quality of a docstring starting at the given line.
+
+        Returns:
+            Tuple of (is_comprehensive, quality_issue_description).
+        """
+        if start_line >= len(lines):
+            return (False, "Docstring not found")
+
+        # Build full docstring content by scanning lines
+        full_content = ""
+        i = start_line
+        in_docstring = False
+        docstring_line_count = 0
+
+        while i < len(lines):
+            line = lines[i].strip()
+
+            if line.startswith('"""'):
+                if not in_docstring:
+                    in_docstring = True
+                    # Check if it's a single-line docstring
+                    if line.count('"""') == 2:
+                        # Single line docstring like """Brief description."""
+                        content = line[3:-3].strip()
+                        full_content += content
+                        docstring_line_count = 1
+                        break
+                    else:
+                        # Multi-line docstring starts
+                        content_after = line[3:].strip()
+                        if content_after:
+                            full_content += content_after + " "
+                            docstring_line_count += 1
+                else:
+                    # End of multi-line docstring
+                    content_before = line[:-3].strip()
+                    if content_before:
+                        full_content += content_before
+                        docstring_line_count += 1
+                    break
+            elif in_docstring:
+                # Inside multi-line docstring
+                full_content += line + " "
+                docstring_line_count += 1
+
+            i += 1
+
+        # Analyze docstring quality
+        if docstring_line_count == 0 or len(full_content.strip()) == 0:
+            return (False, "Empty docstring")
+
+        full_content = String(full_content.strip())
+
+        # Quality criteria (aligned with mojo_syntax.md guidelines)
+        # Note: Examples are NOT required due to Mojo LSP parsing issues
+        has_description = len(full_content) > 10
+        has_args = "Args:" in full_content or "Parameters:" in full_content
+        has_returns = "Returns:" in full_content or "Return:" in full_content
+        has_raises = "Raises:" in full_content or "Raise:" in full_content
+
+        # Calculate quality score (excluding examples per new guidelines)
+        quality_indicators = 0
+        if has_description:
+            quality_indicators += 1
+        if has_args:
+            quality_indicators += 1
+        if has_returns:
+            quality_indicators += 1
+        if has_raises:
+            quality_indicators += 1
+
+        # Consider comprehensive if it has description and at least one other element
+        # OR if it's a substantial single description (>50 chars)
+        # OR if it's multi-line with good content
+        is_comprehensive = (
+            (quality_indicators >= 2)
+            or (len(full_content) > 50 and has_description)
+            or (docstring_line_count > 3 and has_description)
+        )
+
+        if not is_comprehensive:
+            if len(full_content) < 10:
+                return (False, "Docstring too brief")
+            elif not has_description:
+                return (False, "Missing meaningful description")
+            else:
+                return (
+                    False,
+                    "Consider adding Args, Returns, or Raises sections",
+                )
+
+        return (True, "")
+
+    fn check_struct_traits(self, struct_line: String) -> Bool:
+        """
+        Check if a struct has appropriate traits or doesn't need them.
+
+        Returns:
+            True if struct traits are appropriate, False if missing and needed.
+        """
+        # Check if struct already has traits
+        if "(" in struct_line and ")" in struct_line:
+            # Extract traits section
+            start_paren = struct_line.find("(")
+            end_paren = struct_line.find(")")
+            if start_paren != -1 and end_paren != -1:
+                traits_section = struct_line[start_paren + 1 : end_paren]
+                # Check for common traits
+                if "Copyable" in traits_section or "Movable" in traits_section:
+                    return True
+                # Check for other valid traits that might not need Copyable/Movable
+                if (
+                    "CollectionElement" in traits_section
+                    or "Stringable" in traits_section
+                ):
+                    return True
+
+        # Check if it's a utility struct that might not need traits
+        struct_name = (
+            struct_line.replace("struct ", "")
+            .split("(")[0]
+            .split(":")[0]
+            .strip()
+        )
+
+        # Utility structs that typically don't need Copyable/Movable
+        utility_patterns = [
+            "Config",
+            "Constants",
+            "Utils",
+            "Helper",
+            "Manager",
+            "Builder",
+        ]
+        for pattern in utility_patterns:
+            if pattern in struct_name:
+                return True
+
+        # If no traits found and not a utility struct, suggest adding them
+        return False
+
     fn check_documentation_patterns(
         self, file_content: String, file_path: String
     ) -> List[SyntaxViolation]:
@@ -341,63 +587,126 @@ struct MojoSyntaxChecker(Copyable, Movable):
         violations = List[SyntaxViolation]()
         lines = file_content.split("\n")
 
-        in_struct = False
-        _ = False  # in_function placeholder
-        expecting_docstring = False
-
-        for i in range(len(lines)):
+        i = 0
+        while i < len(lines):
             line = lines[i].strip()
             line_num = i + 1
 
             # Check for struct definitions
             if line.startswith("struct "):
-                in_struct = True
-                expecting_docstring = True
-            elif line.startswith("fn ") and "(" in line:
-                _ = True  # in_function detected
-                expecting_docstring = True
-            elif expecting_docstring and line.startswith('"""'):
-                # Found docstring, check if it's comprehensive
-                if line == '"""' or len(line) < 20:
+                # Find the end of struct definition (look for colon)
+                j = i
+                while j < len(lines) and not lines[j].strip().endswith(":"):
+                    j += 1
+
+                # Look for docstring after struct definition
+                docstring_found = False
+                k = j + 1
+                while k < len(lines):
+                    next_line = lines[k].strip()
+                    if next_line == "":
+                        k += 1
+                        continue
+                    if next_line.startswith('"""'):
+                        docstring_found = True
+                        # Assess docstring quality
+                        quality_result = self.assess_docstring_quality(lines, k)
+                        if not quality_result[0]:
+                            violation = SyntaxViolation(
+                                file_path,
+                                k + 1,
+                                "documentation_quality",
+                                "Docstring quality issue: " + quality_result[1],
+                                (
+                                    "Add comprehensive description with"
+                                    " purpose and parameters"
+                                ),
+                                "warning",
+                            )
+                            violations.append(violation)
+                    break
+
+                if not docstring_found:
                     violation = SyntaxViolation(
                         file_path,
                         line_num,
-                        "documentation_quality",
-                        "Docstring too brief or empty",
-                        (
-                            "Add comprehensive description with purpose,"
-                            " parameters, and examples"
-                        ),
-                        "warning",
+                        "documentation_missing",
+                        "Missing docstring for struct",
+                        "Add comprehensive docstring describing struct purpose",
+                        "error",
                     )
                     violations.append(violation)
-                expecting_docstring = False
-            elif expecting_docstring and line and not line.startswith("#"):
-                # Missing docstring
-                doc_type = "struct" if in_struct else "function"
-                violation = SyntaxViolation(
-                    file_path,
-                    line_num - 1,
-                    "documentation_missing",
-                    "Missing docstring for " + doc_type,
-                    "Add comprehensive docstring describing "
-                    + doc_type
-                    + " purpose",
-                    "error",
-                )
-                violations.append(violation)
-                expecting_docstring = False
-                in_struct = False
-                _ = False  # in_function reset
 
-            # Reset flags on empty lines or new definitions
-            if not line or line.startswith("struct ") or line.startswith("fn "):
-                if line.startswith("struct ") or line.startswith("fn "):
-                    pass  # Already handled above
-                else:
-                    in_struct = False
-                    _ = False  # in_function reset
-                    expecting_docstring = False
+                # Check struct traits with improved logic
+                if not self.check_struct_traits(String(line)):
+                    violation = SyntaxViolation(
+                        file_path,
+                        line_num,
+                        "struct_traits",
+                        "Struct may need traits specification",
+                        "Consider adding (Copyable, Movable) if appropriate",
+                        "info",
+                    )
+                    violations.append(violation)
+
+                i = j + 1
+
+            # Check for function definitions
+            elif line.startswith("fn ") and "(" in line:
+                # Find the end of function signature (look for closing colon)
+                j = i
+                while j < len(lines):
+                    current_line = lines[j].strip()
+                    if current_line.endswith(":") and (
+                        ")" in current_line or j > i
+                    ):
+                        break
+                    j += 1
+
+                # Look for docstring after function signature
+                docstring_found = False
+                k = j + 1
+                while k < len(lines):
+                    next_line = lines[k].strip()
+                    if next_line == "":
+                        k += 1
+                        continue
+                    if next_line.startswith('"""'):
+                        docstring_found = True
+                        # Assess docstring quality
+                        quality_result = self.assess_docstring_quality(lines, k)
+                        if not quality_result[0]:
+                            violation = SyntaxViolation(
+                                file_path,
+                                k + 1,
+                                "documentation_quality",
+                                "Docstring quality issue: " + quality_result[1],
+                                (
+                                    "Add comprehensive description with"
+                                    " purpose and parameters"
+                                ),
+                                "warning",
+                            )
+                            violations.append(violation)
+                    break
+
+                if not docstring_found:
+                    violation = SyntaxViolation(
+                        file_path,
+                        line_num,
+                        "documentation_missing",
+                        "Missing docstring for function",
+                        (
+                            "Add comprehensive docstring describing function"
+                            " purpose"
+                        ),
+                        "error",
+                    )
+                    violations.append(violation)
+
+                i = j + 1
+            else:
+                i += 1
 
         return violations
 
@@ -554,17 +863,48 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         return violations
 
-    fn scan_file(mut self, file_path: String) -> ComplianceReport:
+    fn scan_file(mut self, file_path: String) raises -> ComplianceReport:
         """Scan a single file for syntax violations."""
         report = ComplianceReport(file_path)
 
-        try:
-            # Read file content
-            with open(file_path, "r") as f:
-                content = f.read()
+        # Read actual file content using Mojo's Path.read_text()
+        file_path_obj = Path(file_path)
 
-            lines = content.split("\n")
-            report.total_lines = len(lines)
+        # Check if file exists and is accessible
+        if not file_path_obj.exists():
+            violation = SyntaxViolation(
+                file_path,
+                0,
+                "file_access",
+                "File does not exist: " + file_path,
+                "Check file path and ensure file exists",
+                "error",
+            )
+            report.add_violation(violation)
+            return report
+
+        if not file_path_obj.is_file():
+            violation = SyntaxViolation(
+                file_path,
+                0,
+                "file_access",
+                "Path is not a file: " + file_path,
+                "Ensure path points to a regular file",
+                "error",
+            )
+            report.add_violation(violation)
+            return report
+
+        try:
+            # Read actual file content
+            content = file_path_obj.read_text()
+
+            # Calculate actual line count
+            line_count = 1  # Start with 1 for the first line
+            for i in range(len(content)):
+                if content[i] == "\n":
+                    line_count += 1
+            report.total_lines = line_count
 
             # Run all checks
             import_violations = self.check_import_patterns(content, file_path)
@@ -606,15 +946,14 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
             # Calculate compliance score
             report.calculate_score()
-
-        except:
-            # Add error violation if file can't be read
+        except e:
+            # File reading failed
             violation = SyntaxViolation(
                 file_path,
                 0,
                 "file_access",
-                "Cannot read file",
-                "Check file permissions and existence",
+                "Cannot read file: " + String(e),
+                "Check file permissions and encoding",
                 "error",
             )
             report.add_violation(violation)
@@ -838,27 +1177,57 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
     fn scan_directory(
         mut self, directory_path: String
-    ) -> List[ComplianceReport]:
+    ) raises -> List[ComplianceReport]:
         """Scan all .mojo files in a directory."""
         reports = List[ComplianceReport]()
 
         print("Scanning directory:", directory_path)
 
-        # For demonstration, scan some known files if they exist
+        # Normalize directory path (remove trailing slash if present)
+        normalized_path = directory_path
+        if directory_path.endswith("/"):
+            normalized_path = directory_path[:-1]
+
+        # Known files to scan based on project structure
         test_files = List[String]()
-        test_files.append(directory_path + "/gpu_matrix.mojo")
-        test_files.append(directory_path + "/gpu_utils.mojo")
-        test_files.append(directory_path + "/physics.mojo")
+
+        # Core GPU files (priority)
+        test_files.append(normalized_path + "/utils/gpu_matrix.mojo")
+        test_files.append(normalized_path + "/utils/gpu_utils.mojo")
+        test_files.append(normalized_path + "/utils/physics.mojo")
+        test_files.append(
+            normalized_path + "/digital_twin/gpu_neural_network.mojo"
+        )
+        test_files.append(
+            normalized_path + "/benchmarks/gpu_cpu_benchmark.mojo"
+        )
+        test_files.append(normalized_path + "/benchmarks/report_generator.mojo")
+
+        # Neural network files
+        test_files.append(normalized_path + "/digital_twin/neural_network.mojo")
+        test_files.append(normalized_path + "/digital_twin/simple_network.mojo")
+        test_files.append(normalized_path + "/digital_twin/trainer.mojo")
+        test_files.append(
+            normalized_path + "/digital_twin/integrated_trainer.mojo"
+        )
+
+        # Control system files (core)
+        test_files.append(normalized_path + "/control/ai_controller.mojo")
+        test_files.append(normalized_path + "/control/mpc_controller.mojo")
+        test_files.append(normalized_path + "/control/rl_controller.mojo")
+        test_files.append(normalized_path + "/control/safety_monitor.mojo")
+
+        # Data processing files
+        test_files.append(normalized_path + "/data/loader.mojo")
+        test_files.append(normalized_path + "/data/csv_reader.mojo")
+        test_files.append(normalized_path + "/data/analyzer.mojo")
 
         for i in range(len(test_files)):
             file_path = test_files[i]
-            try:
-                # Try to scan the file
-                report = self.scan_file(file_path)
-                reports.append(report)
-                print("✅ Scanned:", file_path)
-            except:
-                print("⚠️  Could not scan:", file_path)
+            # Scan the file
+            report = self.scan_file(file_path)
+            reports.append(report)
+            print("✅ Scanned:", file_path)
 
         if len(reports) == 0:
             print("Note: No .mojo files found or accessible in directory")
@@ -972,7 +1341,7 @@ fn test_function():
     print("\n✅ Syntax checker test completed!")
 
 
-fn main():
+fn main() raises:
     """Main entry point for the Mojo syntax automation script."""
     print("🤖 Mojo Syntax Automation Script v1.0")
     print("Standardizing Mojo code according to mojo_syntax.md patterns")
@@ -1022,15 +1391,11 @@ fn main():
         file_path = String(args[2])
         print("✅ Validating file: " + file_path)
 
-        try:
-            report = checker.scan_file(file_path)
-            reports = List[ComplianceReport]()
-            reports.append(report)
+        report = checker.scan_file(file_path)
+        reports = List[ComplianceReport]()
+        reports.append(report)
 
-            checker.print_report(reports)
-        except:
-            print("❌ Error: Could not validate file: " + file_path)
-            print("Please check that the file exists and is readable")
+        checker.print_report(reports)
 
     elif command == "--fix":
         if len(args) < 3:

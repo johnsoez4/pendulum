@@ -10,19 +10,6 @@ from time import perf_counter_ns as now
 
 
 # Helper functions for performance testing
-fn abs(x: Float64) -> Float64:
-    """Return absolute value of x."""
-    return x if x >= 0.0 else -x
-
-
-fn max(a: Float64, b: Float64) -> Float64:
-    """Return maximum of two values."""
-    return a if a > b else b
-
-
-fn min(a: Float64, b: Float64) -> Float64:
-    """Return minimum of two values."""
-    return a if a < b else b
 
 
 fn tanh_approx(x: Float64) -> Float64:
@@ -302,9 +289,7 @@ struct PerformanceTests:
             current_state[3] = 0.1 * Float64(cycle % 10)  # Varying command
 
             cycle_end = now()
-            cycle_latency = (
-                Float64(cycle_end - cycle_start) / 1_000_000.0
-            )  # ms
+            cycle_latency = Float64(cycle_end - cycle_start) / 1_000_000.0  # ms
 
             max_latency = max(max_latency, cycle_latency)
             total_latency += cycle_latency

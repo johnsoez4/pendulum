@@ -1,0 +1,3 @@
+"""
+Pendulum project source package.
+"""

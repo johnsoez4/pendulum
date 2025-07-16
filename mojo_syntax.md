@@ -864,6 +864,7 @@ struct Resource:
 4. **Use triple quotes** for all docstrings
 5. **Include examples** for complex functions
 6. **Document error conditions** and exceptions
+7. **Code Examples in Docstrings**: By default, do not include code usage examples in docstrings unless explicitly requested by the user or required for complex APIs. The Mojo LSP server currently has issues parsing code examples within docstring blocks and may incorrectly flag valid Mojo code as errors, causing IDE warnings.
 
 **Related Files**: All source files in any Mojo project
 

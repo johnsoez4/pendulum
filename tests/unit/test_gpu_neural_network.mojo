@@ -9,23 +9,6 @@ from collections import List
 from math import exp, tanh, sqrt
 
 
-# Define abs function
-fn abs(x: Float64) -> Float64:
-    """Return absolute value."""
-    return x if x >= 0.0 else -x
-
-
-# Define max and min functions
-fn max(a: Float64, b: Float64) -> Float64:
-    """Return maximum of two values."""
-    return a if a > b else b
-
-
-fn min(a: Float64, b: Float64) -> Float64:
-    """Return minimum of two values."""
-    return a if a < b else b
-
-
 # Define constants for testing
 alias MODEL_INPUT_DIM = 4
 alias MODEL_OUTPUT_DIM = 3
