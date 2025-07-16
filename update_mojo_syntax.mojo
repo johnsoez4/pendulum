@@ -33,7 +33,7 @@ struct SyntaxViolation(Copyable, Movable):
     var violation_type: String
     var description: String
     var suggested_fix: String
-    var severity: String  # "error", "warning", "info", "suggestion"
+    var severity: String  # "error", "warning", "suggestion"
 
     fn __init__(
         out self,
@@ -82,7 +82,6 @@ struct ComplianceReport(Copyable, Movable):
 
         error_weight = 10.0
         warning_weight = 5.0
-        info_weight = 1.0
 
         total_penalty = 0.0
         for i in range(len(self.violations)):
@@ -91,8 +90,6 @@ struct ComplianceReport(Copyable, Movable):
                 total_penalty += error_weight
             elif violation.severity == "warning":
                 total_penalty += warning_weight
-            elif violation.severity == "info":
-                total_penalty += info_weight
             # Note: "suggestion" items are excluded from compliance calculation
 
         # Calculate score as percentage (simple penalty-based approach)
@@ -1551,7 +1548,6 @@ struct MojoSyntaxChecker(Copyable, Movable):
         )
         total_errors = 0
         total_warnings = 0
-        total_info = 0
         total_one_line_docstrings = 0
         total_suggestions = 0
         average_score = 0.0
@@ -1568,9 +1564,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 elif violation.severity == "warning":
                     total_warnings += 1
                     total_violations += 1
-                elif violation.severity == "info":
-                    total_info += 1
-                    total_violations += 1
+
                 elif violation.severity == "suggestion":
                     # Check if it's a one-line docstring observation
                     if (
@@ -1584,16 +1578,13 @@ struct MojoSyntaxChecker(Copyable, Movable):
         if total_files > 0:
             average_score /= Float64(total_files)
 
-        total_observations = (
-            total_one_line_docstrings + total_suggestions + total_info
-        )
+        total_observations = total_one_line_docstrings + total_suggestions
 
         print("SUMMARY:")
         print("- Files scanned:", total_files)
         print("- Total violations:", total_violations)
         print("- Errors:", total_errors)
         print("- Warnings:", total_warnings)
-        print("- Info:", total_info)
         print("- Observations:", total_observations)
         print("  - Suggestions:", total_suggestions)
         print("  - One-line docstrings:", total_one_line_docstrings)
@@ -1620,7 +1611,6 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 if (
                     violation.severity == "error"
                     or violation.severity == "warning"
-                    or violation.severity == "info"
                 ):
                     issues.append(violation)
                 else:
@@ -1638,8 +1628,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     violation = issues[j]
                     severity_marker = (
                         "❌" if violation.severity
-                        == "error" else "⚠️" if violation.severity
-                        == "warning" else "ℹ️"
+                        == "error" else "⚠️"  # warning
                     )
                     print(
                         "  " + severity_marker + " Line",
