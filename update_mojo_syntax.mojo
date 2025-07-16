@@ -140,6 +140,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
     var backup_enabled: Bool
     var auto_fix_enabled: Bool
     var preserve_gpu_patterns: Bool
+    var show_observations: Bool
 
     fn __init__(out self):
         """Initialize the syntax checker."""
@@ -147,6 +148,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
         self.backup_enabled = True
         self.auto_fix_enabled = False
         self.preserve_gpu_patterns = True
+        self.show_observations = False
 
     fn check_import_patterns(
         self, file_content: String, file_path: String
@@ -1630,7 +1632,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
             # Display Issues first
             if len(issues) > 0:
                 print("")
-                print("Issues found:")
+                print("Issues found (" + String(len(issues)) + "):")
 
                 for j in range(len(issues)):
                     violation = issues[j]
@@ -1649,9 +1651,9 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     print("    Fix:", violation.suggested_fix)
                     print("")
 
-            # Display Observations second
-            if len(observations) > 0:
-                print("Observations:")
+            # Display Observations second (only if enabled)
+            if len(observations) > 0 and self.show_observations:
+                print("Observations (" + String(len(observations)) + "):")
 
                 # Separate suggestions from one-line docstrings
                 suggestions = List[SyntaxViolation]()
@@ -1692,6 +1694,15 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     print("    Type:", violation.violation_type)
                     print("    Fix:", violation.suggested_fix)
                     print("")
+
+            # Show usage hint when observations are hidden
+            if len(observations) > 0 and not self.show_observations:
+                print("")
+                print(
+                    "Use --show-observations to display "
+                    + String(len(observations))
+                    + " suggestions and style recommendations"
+                )
 
             if len(issues) == 0 and len(observations) == 0:
                 print("✅ No violations found!")
@@ -1780,6 +1791,7 @@ fn print_usage():
     print("  --report [dir]     Generate compliance report")
     print("  --enable-auto-fix  Enable automatic fixing (with backups)")
     print("  --disable-backup   Disable backup creation")
+    print("  --show-observations Show suggestions and style recommendations")
     print("  --help             Show this help message")
     print("")
     print("Examples:")
@@ -1787,6 +1799,10 @@ fn print_usage():
     print(
         "  mojo update_mojo_syntax.mojo --validate"
         " src/pendulum/utils/gpu_matrix.mojo"
+    )
+    print(
+        "  mojo update_mojo_syntax.mojo --validate"
+        " src/utils/gpu_matrix.mojo --show-observations"
     )
     print(
         "  mojo update_mojo_syntax.mojo --fix"
@@ -1875,6 +1891,12 @@ fn main() raises:
 
     # Get command-line arguments
     args = argv()
+
+    # Parse global flags
+    for i in range(len(args)):
+        arg = String(args[i])
+        if arg == "--show-observations":
+            checker.show_observations = True
 
     # If no arguments provided, show usage and run demo
     if len(args) < 2:
