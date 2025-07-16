@@ -19,12 +19,13 @@ Features:
 - GPU acceleration pattern preservation
 - Docstring content exclusion (by default, use --check-docstring-code to enable)
 
-Docstring Handling:
-By default, the script excludes content within triple-quoted docstrings from syntax
-violation detection to prevent false positives from example code. Use the
---check-docstring-code flag to enable syntax checking within docstring code examples.
-This aligns with mojo_syntax.md guidelines about avoiding code examples in docstrings
-due to Mojo LSP parsing issues.
+Content Exclusion:
+The script automatically excludes certain content from syntax violation detection:
+1. Variable-assigned strings (sample code assignments) - always excluded
+2. Docstring content (triple-quoted strings) - excluded by default, use --check-docstring-code to enable
+
+This prevents false positives from test/example code and aligns with mojo_syntax.md
+guidelines about avoiding code examples in docstrings due to Mojo LSP parsing issues.
 """
 
 from collections import List, Dict
@@ -185,6 +186,39 @@ struct MojoSyntaxChecker(Copyable, Movable):
         # If odd number of triple quotes, we're inside a docstring
         return (triple_quote_count % 2) == 1
 
+    fn _is_inside_variable_string(
+        self, lines: List[String], line_index: Int
+    ) -> Bool:
+        """
+        Check if the given line index is inside a variable-assigned string literal.
+
+        Args:
+            lines: List of all lines in the file
+            line_index: Zero-based index of the line to check
+
+        Returns:
+            True if the line is inside a variable-assigned string, False otherwise
+        """
+        # Track if we're inside a variable-assigned string
+        in_variable_string = False
+
+        for i in range(line_index + 1):  # Include current line
+            line = lines[i].strip()
+
+            # Check for variable assignment with triple quotes
+            if "=" in line and '"""' in line:
+                # Pattern: variable_name = """
+                equals_pos = line.find("=")
+                triple_quote_pos = line.find('"""')
+                if equals_pos < triple_quote_pos:
+                    # This starts or ends a variable-assigned string
+                    in_variable_string = not in_variable_string
+            elif '"""' in line and in_variable_string:
+                # This ends the variable-assigned string
+                in_variable_string = False
+
+        return in_variable_string
+
     fn _should_skip_line_for_violations(
         self, lines: List[String], line_index: Int
     ) -> Bool:
@@ -198,6 +232,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
         Returns:
             True if the line should be skipped, False if it should be checked
         """
+        # Always skip variable-assigned string content (sample code)
+        if self._is_inside_variable_string(lines, line_index):
+            return True
+
         # Skip docstring content unless explicitly enabled
         if not self.check_docstring_code:
             return self._is_inside_docstring(lines, line_index)
@@ -1157,15 +1195,12 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
             # Check for functions that should have raises annotations
             if line.startswith("fn ") and "(" in line:
-                # Look ahead for error-prone patterns (excluding docstring content)
+                # Look ahead for error-prone patterns (excluding docstring and variable string content)
                 function_content = ""
                 j = i
                 while j < len(lines) and j < i + 20:  # Look ahead 20 lines
-                    # Only include non-docstring lines in analysis
-                    if (
-                        self.check_docstring_code
-                        or not self._is_inside_docstring(lines, j)
-                    ):
+                    # Skip variable-assigned strings and optionally docstrings
+                    if not self._should_skip_line_for_violations(lines, j):
                         function_content += lines[j] + "\n"
                     j += 1
 
