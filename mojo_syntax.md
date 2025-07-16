@@ -361,41 +361,396 @@ fn __copyinit__(out self, other: Self):
 
 ## ⚠️ Error Handling Patterns
 
-### ✅ **Proper Error Handling**
+### 🎯 **Core Principles**
+
+Mojo's error handling system is designed for performance and safety. Functions that can raise errors must be explicitly annotated with `raises`, and error propagation follows strict rules for maintaining error context and stack traces.
+
+### ✅ **Exception Propagation Best Practices**
+
+#### **Preserving Original Exceptions**
 
 ```mojo
-# Function that can raise errors
-fn wait_for_completion(mut self) raises:
-    """Wait for the resource to complete."""
-    if not self._active:
-        raise Error("cannot wait for resource before it is started")
-
-    if self._completed:
-        return  # Already completed
-
-    # Actual wait operation would go here
-    self._completed = True
-
-# Calling functions that raise
-fn test_basic_functionality() raises:
-    """Test basic resource creation and management."""
-    var resource = Resource(test_handler, name="TestResource")
-
+# ✅ PREFERRED: Bare raise preserves original exception and stack trace
+fn process_file(file_path: String) raises -> String:
+    """Process file with proper exception propagation."""
     try:
-        resource.start()
-        resource.wait_for_completion()
+        var content = read_file(file_path)  # Can raise FileError
+        return validate_content(content)    # Can raise ValidationError
     except e:
-        print("Resource operation failed:", e)
-        raise e  # Re-raise if needed
+        print("Failed to process file:", file_path)
+        raise  # ← Preserves original exception and stack trace
 ```
 
-### 📋 **Error Handling Rules**
+#### **Adding Context While Preserving Exception Chain**
 
-1. **Use `raises` annotation** for functions that can throw
-2. **Provide descriptive error messages** with context
-3. **Use try/except blocks** when handling recoverable errors
-4. **Re-raise errors** when caller should handle them
-5. **Check preconditions** and fail fast with clear messages
+```mojo
+# ✅ GOOD: Add context while preserving original error
+fn initialize_gpu_context(device_id: Int) raises -> GPUContext:
+    """Initialize GPU context with enhanced error context."""
+    try:
+        var device = get_gpu_device(device_id)  # Can raise DeviceError
+        return create_context(device)           # Can raise ContextError
+    except e:
+        # Add context but preserve original exception
+        var context_msg = "Failed to initialize GPU context for device " + String(device_id)
+        print("ERROR:", context_msg, "- Original error:", e)
+        raise  # Preserves original exception chain
+```
+
+#### **When to Use `raises` Annotations**
+
+```mojo
+# ✅ REQUIRED: Function explicitly raises errors
+fn validate_input(data: List[Float64]) raises:
+    """Validate input data with explicit error conditions."""
+    if len(data) == 0:
+        raise Error("Input data cannot be empty")
+
+    for i in range(len(data)):
+        if data[i] < 0:
+            raise Error("Negative values not allowed at index " + String(i))
+
+# ✅ REQUIRED: Function calls other raising functions
+fn process_pipeline(input_data: List[Float64]) raises -> ProcessResult:
+    """Process data through validation and computation pipeline."""
+    validate_input(input_data)        # This function has 'raises'
+    var normalized = normalize(input_data)  # This function has 'raises'
+    return compute_result(normalized)       # This function has 'raises'
+
+# ✅ NOT REQUIRED: Function handles all errors internally
+fn safe_process(input_data: List[Float64]) -> Optional[ProcessResult]:
+    """Process data with internal error handling."""
+    try:
+        validate_input(input_data)
+        var result = process_pipeline(input_data)
+        return Optional(result)
+    except e:
+        print("Processing failed:", e)
+        return Optional[ProcessResult]()  # Return empty optional
+```
+
+### 🔧 **Mojo-Specific Exception Syntax**
+
+#### **Try/Except Blocks with Proper Mojo Syntax**
+
+```mojo
+# ✅ CORRECT: Specific exception handling
+fn load_configuration(config_path: String) raises -> Config:
+    """Load configuration with specific exception handling."""
+    try:
+        var file_content = read_file(config_path)
+        return parse_config(file_content)
+    except FileNotFoundError as e:
+        print("Configuration file not found:", config_path)
+        raise Error("Missing configuration file: " + config_path)
+    except ParseError as e:
+        print("Invalid configuration format:", e)
+        raise Error("Configuration parsing failed: " + String(e))
+
+# ✅ CORRECT: Generic exception handling when specific types unknown
+fn robust_operation(data: String) raises -> Result:
+    """Perform operation with robust error handling."""
+    try:
+        return perform_complex_operation(data)
+    except e:
+        print("Operation failed with error:", e)
+        # Log error details for debugging
+        log_error("robust_operation", data, String(e))
+        raise  # Preserve original exception
+```
+
+#### **Exception Handling with Resource Cleanup**
+
+```mojo
+# ✅ MOJO PATTERN: Resource cleanup with proper exception handling
+fn process_with_resources(file_path: String) raises -> ProcessResult:
+    """Process file with proper resource management."""
+    var file_handle: Optional[FileHandle] = None
+    var gpu_context: Optional[GPUContext] = None
+
+    try:
+        # Acquire resources
+        file_handle = open_file(file_path)
+        gpu_context = initialize_gpu()
+
+        # Perform operations
+        var data = read_data(file_handle.value())
+        var result = gpu_process(gpu_context.value(), data)
+
+        return result
+
+    except e:
+        print("Processing failed:", e)
+        raise  # Propagate error after cleanup
+    finally:
+        # Cleanup resources (Mojo equivalent of Python's finally)
+        if gpu_context:
+            cleanup_gpu(gpu_context.value())
+        if file_handle:
+            close_file(file_handle.value())
+
+# ✅ ALTERNATIVE: RAII pattern for automatic cleanup
+struct ResourceManager:
+    """RAII-style resource management for automatic cleanup."""
+    var file_handle: FileHandle
+    var gpu_context: GPUContext
+
+    fn __init__(out self, file_path: String) raises:
+        """Initialize resources with automatic cleanup on destruction."""
+        self.file_handle = open_file(file_path)  # Can raise
+        self.gpu_context = initialize_gpu()     # Can raise
+
+    fn __del__(owned self):
+        """Automatic cleanup when object is destroyed."""
+        cleanup_gpu(self.gpu_context)
+        close_file(self.file_handle)
+
+    fn process(self) raises -> ProcessResult:
+        """Process data using managed resources."""
+        var data = read_data(self.file_handle)
+        return gpu_process(self.gpu_context, data)
+```
+
+#### **Specific Exception Types vs Generic Handling**
+
+```mojo
+# ✅ PREFERRED: Catch specific exception types
+fn network_operation(url: String) raises -> Response:
+    """Perform network operation with specific error handling."""
+    try:
+        return http_request(url)
+    except NetworkTimeoutError as e:
+        print("Request timed out for:", url)
+        raise Error("Network timeout: " + url)
+    except ConnectionError as e:
+        print("Connection failed for:", url)
+        raise Error("Connection failed: " + url)
+    except HTTPError as e:
+        print("HTTP error for:", url, "Status:", e.status_code)
+        raise Error("HTTP " + String(e.status_code) + ": " + url)
+
+# ❌ AVOID: Bare except clauses (flagged by automation script)
+fn unsafe_operation(data: String) raises -> Result:
+    """Example of what NOT to do."""
+    try:
+        return risky_operation(data)
+    except:  # ← BAD: Catches all exceptions, including system errors
+        print("Something went wrong")
+        raise Error("Unknown error occurred")
+
+# ✅ BETTER: Generic exception with error preservation
+fn safe_operation(data: String) raises -> Result:
+    """Safe operation with proper generic exception handling."""
+    try:
+        return risky_operation(data)
+    except e:  # ← GOOD: Captures exception object for inspection
+        print("Operation failed:", e)
+        # Can inspect exception type and message
+        raise  # Preserves original exception
+```
+
+### 📋 **Exception Handling Rules**
+
+#### **1. Catching Specific Exception Types**
+
+```mojo
+# ✅ PREFERRED: Specific exception handling
+fn database_operation(query: String) raises -> QueryResult:
+    """Execute database query with specific error handling."""
+    try:
+        return execute_query(query)
+    except DatabaseConnectionError as e:
+        # Handle connection issues specifically
+        print("Database connection failed:", e)
+        attempt_reconnection()
+        raise  # Re-raise after attempted recovery
+    except QuerySyntaxError as e:
+        # Handle syntax errors specifically
+        print("Invalid query syntax:", query)
+        raise Error("Query syntax error: " + String(e))
+    except DatabaseTimeoutError as e:
+        # Handle timeout specifically
+        print("Query timed out:", query)
+        raise Error("Database timeout for query: " + query)
+
+# ❌ AVOID: Bare except clauses
+fn bad_database_operation(query: String) raises -> QueryResult:
+    """Example of poor exception handling."""
+    try:
+        return execute_query(query)
+    except:  # ← VIOLATION: Automation script flags this
+        print("Database error occurred")
+        raise Error("Database operation failed")
+```
+
+#### **2. When to Handle vs When to Propagate**
+
+```mojo
+# ✅ HANDLE: When you can meaningfully recover
+fn load_config_with_fallback(primary_path: String, fallback_path: String) -> Config:
+    """Load configuration with fallback handling."""
+    try:
+        return load_configuration(primary_path)
+    except FileNotFoundError:
+        print("Primary config not found, using fallback:", fallback_path)
+        try:
+            return load_configuration(fallback_path)
+        except e:
+            print("Fallback config also failed:", e)
+            return get_default_config()  # Final fallback
+    except e:
+        print("Config loading failed:", e)
+        return get_default_config()
+
+# ✅ PROPAGATE: When caller should decide how to handle
+fn validate_user_input(input_data: UserInput) raises:
+    """Validate user input - let caller handle validation failures."""
+    if input_data.username.length() < 3:
+        raise ValidationError("Username must be at least 3 characters")
+
+    if not is_valid_email(input_data.email):
+        raise ValidationError("Invalid email format: " + input_data.email)
+
+    if input_data.password.length() < 8:
+        raise ValidationError("Password must be at least 8 characters")
+
+# ✅ MIXED: Handle some errors, propagate others
+fn process_user_request(request: UserRequest) raises -> Response:
+    """Process user request with mixed error handling."""
+    try:
+        validate_user_input(request.input)  # Propagate validation errors
+        var result = perform_operation(request)
+        return create_response(result)
+    except NetworkError as e:
+        # Handle network errors with retry
+        print("Network error, retrying:", e)
+        return retry_operation(request)  # Handle internally
+    except ValidationError:
+        # Propagate validation errors to caller
+        raise  # Let caller handle user input errors
+```
+
+#### **3. Resource Cleanup Patterns**
+
+```mojo
+# ✅ PATTERN 1: Manual cleanup with proper exception handling
+fn manual_resource_cleanup(file_path: String) raises -> ProcessResult:
+    """Manual resource cleanup with exception safety."""
+    var file_handle: Optional[FileHandle] = None
+    var buffer: Optional[UnsafePointer[UInt8]] = None
+
+    try:
+        # Acquire resources
+        file_handle = open_file(file_path)
+        buffer = UnsafePointer[UInt8].alloc(BUFFER_SIZE)
+
+        # Use resources
+        var data = read_with_buffer(file_handle.value(), buffer.value())
+        var result = process_data(data)
+
+        # Cleanup on success
+        buffer.value().free()
+        close_file(file_handle.value())
+
+        return result
+
+    except e:
+        # Cleanup on error
+        if buffer:
+            buffer.value().free()
+        if file_handle:
+            close_file(file_handle.value())
+
+        print("Resource processing failed:", e)
+        raise  # Propagate error after cleanup
+
+# ✅ PATTERN 2: RAII-style automatic cleanup
+struct FileProcessor:
+    """RAII-style file processor with automatic cleanup."""
+    var file_handle: FileHandle
+    var buffer: UnsafePointer[UInt8]
+
+    fn __init__(out self, file_path: String) raises:
+        """Initialize with automatic resource acquisition."""
+        self.file_handle = open_file(file_path)  # Can raise
+        self.buffer = UnsafePointer[UInt8].alloc(BUFFER_SIZE)
+
+    fn __del__(owned self):
+        """Automatic cleanup when object is destroyed."""
+        self.buffer.free()
+        close_file(self.file_handle)
+
+    fn process(self) raises -> ProcessResult:
+        """Process file data."""
+        var data = read_with_buffer(self.file_handle, self.buffer)
+        return process_data(data)  # Can raise, cleanup automatic
+```
+
+#### **4. Exception Propagation with `raises` Annotation System**
+
+```mojo
+# ✅ PROPAGATION CHAIN: Each level must have 'raises' if calling raising functions
+fn level_3_operation(data: String) raises -> Result:
+    """Lowest level - explicitly raises errors."""
+    if data.length() == 0:
+        raise Error("Empty data not allowed")
+    return process_string(data)
+
+fn level_2_operation(input: Input) raises -> Result:
+    """Middle level - calls raising function, must have 'raises'."""
+    var data = input.get_data()
+    return level_3_operation(data)  # This can raise
+
+fn level_1_operation(request: Request) raises -> Response:
+    """Top level - calls raising function, must have 'raises'."""
+    var input = parse_request(request)
+    var result = level_2_operation(input)  # This can raise
+    return create_response(result)
+
+# ✅ TERMINATION: Handle errors to stop propagation
+fn api_endpoint(request: Request) -> Response:
+    """API endpoint - handles all errors, no 'raises' needed."""
+    try:
+        return level_1_operation(request)  # This can raise
+    except ValidationError as e:
+        return error_response(400, "Validation failed: " + String(e))
+    except ProcessingError as e:
+        return error_response(500, "Processing failed: " + String(e))
+    except e:
+        return error_response(500, "Internal error: " + String(e))
+```
+
+### 📋 **Comprehensive Error Handling Guidelines**
+
+1. **✅ Use `raises` annotation** for any function that:
+   - Contains `raise` statements
+   - Calls other functions with `raises` annotations
+   - Performs operations that can fail (file I/O, network, external calls)
+
+2. **✅ Catch specific exception types** rather than using bare `except:` clauses:
+   - Use `except SpecificError as e:` for known error types
+   - Use `except e:` for generic handling when specific types are unknown
+   - **Never use bare `except:`** (flagged as violation by automation script)
+
+3. **✅ Preserve exception context** when re-raising:
+   - Use bare `raise` to preserve original exception and stack trace
+   - Add context with logging before re-raising
+   - Avoid creating new generic errors that lose original context
+
+4. **✅ Handle vs Propagate decision matrix**:
+   - **Handle**: When you can recover, provide fallbacks, or convert to user-friendly errors
+   - **Propagate**: When caller is better positioned to decide recovery strategy
+   - **Mixed**: Handle specific recoverable errors, propagate others
+
+5. **✅ Resource cleanup patterns**:
+   - Use RAII-style structs with `__del__` for automatic cleanup
+   - Use manual cleanup with proper exception handling for complex scenarios
+   - Always ensure cleanup happens in both success and error paths
+
+6. **✅ Documentation requirements**:
+   - Functions with `raises` must have multi-line docstrings
+   - Include `Raises:` section documenting specific exception types and conditions
+   - Document error recovery strategies and cleanup behavior
 
 ---
 
