@@ -1608,93 +1608,92 @@ struct MojoSyntaxChecker(Copyable, Movable):
             print("File:", report.file_path)
             print("Compliance Score:", report.compliance_score, "%")
             print("Lines:", report.total_lines)
-            print("Violations:", len(report.violations))
 
-            if len(report.violations) > 0:
-                # Separate violations into Issues and Observations
-                issues = List[SyntaxViolation]()
-                observations = List[SyntaxViolation]()
+            # Separate violations into Issues and Observations first
+            issues = List[SyntaxViolation]()
+            observations = List[SyntaxViolation]()
 
-                for j in range(len(report.violations)):
-                    violation = report.violations[j]
-                    if (
-                        violation.severity == "error"
-                        or violation.severity == "warning"
-                        or violation.severity == "info"
-                    ):
-                        issues.append(violation)
-                    else:  # suggestion
-                        observations.append(violation)
+            for j in range(len(report.violations)):
+                violation = report.violations[j]
+                if (
+                    violation.severity == "error"
+                    or violation.severity == "warning"
+                    or violation.severity == "info"
+                ):
+                    issues.append(violation)
+                else:
+                    observations.append(violation)
 
-                # Display Issues first
-                if len(issues) > 0:
+            # Print correct violation count (only actual violations, not observations)
+            print("Violations:", len(issues))
+
+            # Display Issues first
+            if len(issues) > 0:
+                print("")
+                print("Issues found:")
+
+                for j in range(len(issues)):
+                    violation = issues[j]
+                    severity_marker = (
+                        "❌" if violation.severity
+                        == "error" else "⚠️" if violation.severity
+                        == "warning" else "ℹ️"
+                    )
+                    print(
+                        "  " + severity_marker + " Line",
+                        violation.line_number,
+                        ":",
+                        violation.description,
+                    )
+                    print("    Type:", violation.violation_type)
+                    print("    Fix:", violation.suggested_fix)
                     print("")
-                    print("Issues found:")
 
-                    for j in range(len(issues)):
-                        violation = issues[j]
-                        severity_marker = (
-                            "❌" if violation.severity
-                            == "error" else "⚠️" if violation.severity
-                            == "warning" else "ℹ️"
-                        )
-                        print(
-                            "  " + severity_marker + " Line",
-                            violation.line_number,
-                            ":",
-                            violation.description,
-                        )
-                        print("    Type:", violation.violation_type)
-                        print("    Fix:", violation.suggested_fix)
-                        print("")
+            # Display Observations second
+            if len(observations) > 0:
+                print("Observations:")
 
-                # Display Observations second
-                if len(observations) > 0:
-                    print("Observations:")
+                # Separate suggestions from one-line docstrings
+                suggestions = List[SyntaxViolation]()
+                one_line_docstrings = List[SyntaxViolation]()
 
-                    # Separate suggestions from one-line docstrings
-                    suggestions = List[SyntaxViolation]()
-                    one_line_docstrings = List[SyntaxViolation]()
+                for j in range(len(observations)):
+                    violation = observations[j]
+                    if (
+                        "Appropriate one-line docstring"
+                        in violation.description
+                    ):
+                        one_line_docstrings.append(violation)
+                    else:
+                        suggestions.append(violation)
 
-                    for j in range(len(observations)):
-                        violation = observations[j]
-                        if (
-                            "Appropriate one-line docstring"
-                            in violation.description
-                        ):
-                            one_line_docstrings.append(violation)
-                        else:
-                            suggestions.append(violation)
+                # Display suggestions first
+                for j in range(len(suggestions)):
+                    violation = suggestions[j]
+                    print(
+                        "  ℹ️ Line",
+                        violation.line_number,
+                        ":",
+                        violation.description,
+                    )
+                    print("    Type:", violation.violation_type)
+                    print("    Fix:", violation.suggested_fix)
+                    print("")
 
-                    # Display suggestions first
-                    for j in range(len(suggestions)):
-                        violation = suggestions[j]
-                        print(
-                            "  ℹ️ Line",
-                            violation.line_number,
-                            ":",
-                            violation.description,
-                        )
-                        print("    Type:", violation.violation_type)
-                        print("    Fix:", violation.suggested_fix)
-                        print("")
+                # Display one-line docstrings second
+                for j in range(len(one_line_docstrings)):
+                    violation = one_line_docstrings[j]
+                    print(
+                        "  ℹ️ Line",
+                        violation.line_number,
+                        ":",
+                        violation.description,
+                    )
+                    print("    Type:", violation.violation_type)
+                    print("    Fix:", violation.suggested_fix)
+                    print("")
 
-                    # Display one-line docstrings second
-                    for j in range(len(one_line_docstrings)):
-                        violation = one_line_docstrings[j]
-                        print(
-                            "  ℹ️ Line",
-                            violation.line_number,
-                            ":",
-                            violation.description,
-                        )
-                        print("    Type:", violation.violation_type)
-                        print("    Fix:", violation.suggested_fix)
-                        print("")
-
-                if len(issues) == 0 and len(observations) == 0:
-                    print("✅ No violations found!")
-            else:
+            if len(issues) == 0 and len(observations) == 0:
                 print("✅ No violations found!")
 
             print("-" * 40)
