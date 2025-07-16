@@ -1117,7 +1117,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                             "Add comprehensive docstring describing function"
                             " purpose"
                         ),
-                        "error",
+                        "warning",
                     )
                     violations.append(violation)
 
