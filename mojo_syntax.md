@@ -261,64 +261,101 @@ struct Resource(Copyable, Movable):
 ### 📋 **Struct Definition Rules**
 
 1. **Include comprehensive docstrings** for structs and methods
-2. **Use traits** (Copyable, Movable) when appropriate
-3. **Define type aliases** within structs for clarity
-4. **Use `_` prefix** for private methods and variables
-5. **Group related methods** together logically
-6. **Use `@staticmethod`** for utility functions that don't need instance data
+2. **Use traits** (Copyable, Movable) ONLY when custom lifecycle behavior is needed
+3. **Let compiler auto-generate** copy/move operations for simple structs
+4. **Define type aliases** within structs for clarity
+5. **Use `_` prefix** for private methods and variables
+6. **Group related methods** together logically
+7. **Use `@staticmethod`** for utility functions that don't need instance data
 
-### 🔄 **Modern Struct Traits (Copy & Move Semantics)**
+### 🔄 **Struct Lifecycle Management (Copy & Move Semantics)**
 
-**✅ PREFERRED: Use trait-based approach**
+#### 🎯 **Core Principle: Compiler Auto-Generation vs Explicit Implementation**
 
-```mojo
-# For copyable structs
-struct MyStruct(Copyable):
-    var data: Int
+**Mojo's compiler automatically generates copy and move operations when needed.** Explicit traits and lifecycle methods should only be used when custom behavior is required.
 
-    fn __init__(out self, value: Int):
-        self.data = value
-
-# For movable structs
-struct MyStruct(Movable):
-    var data: Int
-
-    fn __init__(out self, value: Int):
-        self.data = value
-
-# For both copyable and movable
-struct MyStruct(Copyable & Movable):
-    var data: Int
-
-    fn __init__(out self, value: Int):
-        self.data = value
-```
-
-**❌ DEPRECATED: Explicit dunder methods**
+#### ✅ **PREFERRED: Let Compiler Handle Defaults**
 
 ```mojo
-# Don't use explicit __copyinit__ and __moveinit__
-struct MyStruct:
+# ✅ BEST: Simple struct - no traits needed
+# Compiler auto-generates copy/move when required
+struct SimpleStruct:
     var data: Int
+    var name: String
 
-    fn __init__(out self, value: Int):
-        self.data = value
+    fn __init__(out self, data: Int, name: String):
+        self.data = data
+        self.name = name
 
-    # ❌ Don't implement these manually
+# ✅ GOOD: Struct with resource management needs explicit control
+struct ResourceManager(Copyable, Movable):
+    var file_handle: FileHandle
+    var buffer: UnsafePointer[UInt8]
+
+    fn __init__(out self, filename: String):
+        self.file_handle = open(filename)
+        self.buffer = UnsafePointer[UInt8].alloc(1024)
+
     fn __copyinit__(out self, other: Self):
-        self.data = other.data
+        # Custom copy logic: duplicate file handle
+        self.file_handle = other.file_handle.duplicate()
+        self.buffer = UnsafePointer[UInt8].alloc(1024)
+        memcpy(self.buffer, other.buffer, 1024)
 
     fn __moveinit__(out self, owned other: Self):
-        self.data = other.data^
+        # Custom move logic: transfer ownership
+        self.file_handle = other.file_handle^
+        self.buffer = other.buffer^
 ```
 
-### 📋 **Trait Selection Guidelines**
+#### ❌ **AVOID: Unnecessary Explicit Implementation**
 
-1. **Use `Copyable`** when struct instances need to be copied
-2. **Use `Movable`** when struct instances need to be moved efficiently
-3. **Use `Copyable & Movable`** for maximum flexibility (most common)
-4. **Let Mojo handle** the implementation automatically via traits
-5. **Avoid manual dunder methods** for copy/move semantics
+```mojo
+# ❌ DON'T: Redundant traits for simple structs
+struct SimpleData(Copyable, Movable):  # ← Unnecessary
+    var value: Int
+
+# ❌ DON'T: Trivial lifecycle methods that duplicate defaults
+struct BasicStruct:
+    var data: Int
+
+    fn __copyinit__(out self, other: Self):  # ← Redundant
+        self.data = other.data  # Just copies field - compiler does this
+
+    fn __moveinit__(out self, owned other: Self):  # ← Redundant
+        self.data = other.data^  # Just moves field - compiler does this
+```
+
+### 📋 **When to Use Explicit Traits and Methods**
+
+#### ✅ **Use Explicit Traits When:**
+1. **Custom Resource Management**: File handles, memory allocation, GPU contexts
+2. **Reference Counting**: Shared ownership semantics
+3. **Validation Logic**: Copy/move operations need validation
+4. **Performance Optimization**: Custom memory layout or SIMD operations
+5. **External Resource Coordination**: Network connections, database handles
+
+#### ❌ **DON'T Use Explicit Traits When:**
+1. **Simple Data Containers**: Basic structs with primitive fields
+2. **Default Behavior Sufficient**: No custom logic needed
+3. **Compiler Auto-Generation Works**: Standard copy/move semantics are adequate
+
+### 🔍 **Detection Criteria for Automation**
+
+#### **Trivial Methods (Remove + Add Trait):**
+```mojo
+fn __copyinit__(out self, other: Self):
+    self.field1 = other.field1  # ← Just field copying
+    self.field2 = other.field2  # ← No custom logic
+```
+
+#### **Custom Methods (Keep Explicit):**
+```mojo
+fn __copyinit__(out self, other: Self):
+    self.field1 = other.field1
+    self.ref_count = other.ref_count + 1  # ← Custom logic
+    validate_copy_operation()             # ← Additional behavior
+```
 
 ---
 
@@ -1806,7 +1843,8 @@ mojo update_mojo_syntax.mojo --fix src/utils/gpu_matrix.mojo --enable-auto-fix
 
 2. **Struct Definition Issues**
    - Missing docstrings
-   - Missing trait specifications (Copyable, Movable)
+   - Redundant trait specifications (when compiler auto-generation is sufficient)
+   - Trivial lifecycle methods that duplicate compiler defaults
    - Inconsistent naming patterns
 
 3. **Function Definition Problems**
@@ -1822,6 +1860,34 @@ mojo update_mojo_syntax.mojo --fix src/utils/gpu_matrix.mojo --enable-auto-fix
    - Ensures real GPU implementations
    - Detects simulation labels that should be removed
    - Validates DeviceContext usage consistency
+
+6. **Intelligent Trait Analysis**
+   - Analyzes struct lifecycle methods (`__copyinit__`, `__moveinit__`)
+   - Distinguishes between trivial and custom implementations
+   - Suggests trait removal when compiler auto-generation is sufficient
+   - Identifies redundant explicit methods that duplicate defaults
+   - Preserves custom logic in lifecycle methods
+
+#### **Trait Detection Logic**
+
+The automation script uses sophisticated analysis to determine trait requirements:
+
+**✅ Trivial Method Detection:**
+```mojo
+fn __copyinit__(out self, other: Self):
+    self.field1 = other.field1  # ← Simple field copy
+    self.field2 = other.field2  # ← No custom logic
+# → Suggests: Remove method, let compiler auto-generate
+```
+
+**✅ Custom Method Preservation:**
+```mojo
+fn __copyinit__(out self, other: Self):
+    self.field1 = other.field1
+    self.ref_count += 1         # ← Custom logic
+    validate_copy()             # ← Additional behavior
+# → Keeps: Explicit method with custom behavior
+```
 
 #### **Compliance Scoring System**
 

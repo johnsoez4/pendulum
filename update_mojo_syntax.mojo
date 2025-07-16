@@ -101,6 +101,38 @@ struct ComplianceReport(Copyable, Movable):
         self.compliance_score = max(0.0, 100.0 - penalty_percentage)
 
 
+struct StructInfo:
+    """Information about a struct definition."""
+
+    var name: String
+    var has_copyable: Bool
+    var has_movable: Bool
+
+    fn __init__(out self, name: String, has_copyable: Bool, has_movable: Bool):
+        self.name = name
+        self.has_copyable = has_copyable
+        self.has_movable = has_movable
+
+
+struct LifecycleAnalysis(Copyable, Movable):
+    """Analysis results for struct lifecycle methods."""
+
+    var has_trivial_copyinit: Bool
+    var has_trivial_moveinit: Bool
+    var needs_custom_copy: Bool
+    var needs_custom_move: Bool
+    var copyinit_line: Int
+    var moveinit_line: Int
+
+    fn __init__(out self):
+        self.has_trivial_copyinit = False
+        self.has_trivial_moveinit = False
+        self.needs_custom_copy = False
+        self.needs_custom_move = False
+        self.copyinit_line = 0
+        self.moveinit_line = 0
+
+
 struct MojoSyntaxChecker(Copyable, Movable):
     """Main syntax checker and automation engine."""
 
@@ -276,19 +308,279 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     )
                     violations.append(violation)
 
-                # Check for proper traits (Copyable, Movable)
-                if "(" not in line:
-                    violation = SyntaxViolation(
-                        file_path,
-                        line_num,
-                        "struct_traits",
-                        "Struct may need traits specification",
-                        "Consider adding (Copyable, Movable) if appropriate",
-                        "suggestion",
-                    )
+                # Analyze struct for trait requirements
+                struct_violations = self._analyze_struct_traits(
+                    lines, i, file_path
+                )
+                for violation in struct_violations:
                     violations.append(violation)
 
         return violations
+
+    fn _analyze_struct_traits(
+        self, lines: List[String], struct_line_idx: Int, file_path: String
+    ) -> List[SyntaxViolation]:
+        """Analyze struct for trait requirements based on lifecycle methods."""
+        violations = List[SyntaxViolation]()
+        struct_line = lines[struct_line_idx].strip()
+        line_num = struct_line_idx + 1
+
+        # Extract struct name and existing traits
+        struct_info = self._parse_struct_definition(String(struct_line))
+        _ = struct_info.name  # struct_name not used in current implementation
+        has_copyable = struct_info.has_copyable
+        has_movable = struct_info.has_movable
+
+        # Find struct body and analyze lifecycle methods
+        struct_body = self._extract_struct_body(lines, struct_line_idx)
+        lifecycle_analysis = self._analyze_lifecycle_methods(struct_body)
+
+        # Check for redundant traits
+        if has_copyable and not lifecycle_analysis.needs_custom_copy:
+            violation = SyntaxViolation(
+                file_path,
+                line_num,
+                "redundant_trait",
+                "Copyable trait unnecessary - compiler auto-generates copy",
+                (
+                    "Remove (Copyable) trait - let compiler handle default copy"
+                    " behavior"
+                ),
+                "suggestion",
+            )
+            violations.append(violation)
+
+        if has_movable and not lifecycle_analysis.needs_custom_move:
+            violation = SyntaxViolation(
+                file_path,
+                line_num,
+                "redundant_trait",
+                "Movable trait unnecessary - compiler auto-generates move",
+                (
+                    "Remove (Movable) trait - let compiler handle default move"
+                    " behavior"
+                ),
+                "suggestion",
+            )
+            violations.append(violation)
+
+        # Check for redundant lifecycle methods
+        if lifecycle_analysis.has_trivial_copyinit:
+            violation = SyntaxViolation(
+                file_path,
+                lifecycle_analysis.copyinit_line,
+                "redundant_method",
+                "Trivial __copyinit__ method duplicates compiler default",
+                "Remove __copyinit__ method and add Copyable trait if needed",
+                "suggestion",
+            )
+            violations.append(violation)
+
+        if lifecycle_analysis.has_trivial_moveinit:
+            violation = SyntaxViolation(
+                file_path,
+                lifecycle_analysis.moveinit_line,
+                "redundant_method",
+                "Trivial __moveinit__ method duplicates compiler default",
+                "Remove __moveinit__ method and add Movable trait if needed",
+                "suggestion",
+            )
+            violations.append(violation)
+
+        return violations
+
+    fn _parse_struct_definition(self, struct_line: String) -> StructInfo:
+        """Parse struct definition line to extract name and traits."""
+        # Extract struct name (between "struct " and "(" or ":")
+        var name = ""
+        var has_copyable = False
+        var has_movable = False
+
+        # Find struct name
+        if "struct " in struct_line:
+            var start_idx = struct_line.find("struct ") + 7
+            var end_idx = len(struct_line)
+
+            if "(" in struct_line:
+                end_idx = struct_line.find("(")
+                # Check for traits in parentheses
+                var traits_section = struct_line[
+                    struct_line.find("(") : struct_line.find(")") + 1
+                ]
+                has_copyable = "Copyable" in traits_section
+                has_movable = "Movable" in traits_section
+            elif ":" in struct_line:
+                end_idx = struct_line.find(":")
+
+            # Extract name by building string character by character
+            for idx in range(start_idx, end_idx):
+                name += struct_line[idx]
+            # name is already a String, just strip whitespace manually
+            while name.startswith(" ") or name.startswith("\t"):
+                name = name[1:]
+            while name.endswith(" ") or name.endswith("\t"):
+                name = name[:-1]
+
+        return StructInfo(name, has_copyable, has_movable)
+
+    fn _extract_struct_body(
+        self, lines: List[String], struct_start: Int
+    ) -> List[String]:
+        """Extract the body of a struct definition."""
+        body = List[String]()
+        var i = struct_start + 1
+        var indent_level = 0
+        var found_body = False
+
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+
+            # Skip empty lines
+            if stripped == "":
+                i += 1
+                continue
+
+            # Calculate indentation
+            var current_indent = len(line) - len(line.lstrip())
+
+            # If we haven't found the body yet, look for first indented content
+            if not found_body:
+                if current_indent > 0:
+                    indent_level = current_indent
+                    found_body = True
+                    body.append(line)
+                i += 1
+                continue
+
+            # If we're in the body, check if we've reached the end
+            if (
+                current_indent <= indent_level
+                and String(stripped) != ""
+                and not String(stripped).startswith("#")
+            ):
+                # We've reached the end of the struct
+                break
+
+            body.append(line)
+            i += 1
+
+        return body
+
+    fn _analyze_lifecycle_methods(
+        self, struct_body: List[String]
+    ) -> LifecycleAnalysis:
+        """Analyze lifecycle methods in struct body."""
+        analysis = LifecycleAnalysis()
+
+        var i = 0
+        while i < len(struct_body):
+            line = struct_body[i].strip()
+
+            # Look for __copyinit__ method
+            if "fn __copyinit__" in line:
+                analysis.copyinit_line = i + 1
+                # Analyze if this is a trivial implementation
+                method_body = self._extract_method_body(struct_body, i)
+                analysis.has_trivial_copyinit = self._is_trivial_copyinit(
+                    method_body
+                )
+                analysis.needs_custom_copy = not analysis.has_trivial_copyinit
+
+            # Look for __moveinit__ method
+            elif "fn __moveinit__" in line:
+                analysis.moveinit_line = i + 1
+                # Analyze if this is a trivial implementation
+                method_body = self._extract_method_body(struct_body, i)
+                analysis.has_trivial_moveinit = self._is_trivial_moveinit(
+                    method_body
+                )
+                analysis.needs_custom_move = not analysis.has_trivial_moveinit
+
+            i += 1
+
+        return analysis
+
+    fn _extract_method_body(
+        self, lines: List[String], method_start: Int
+    ) -> List[String]:
+        """Extract the body of a method definition."""
+        body = List[String]()
+        var i = method_start + 1
+        var method_indent = 0
+        _ = False  # found_body not used in current implementation
+
+        # Find the method's indentation level
+        if method_start < len(lines):
+            method_line = lines[method_start]
+            method_indent = len(method_line) - len(method_line.lstrip())
+
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+
+            # Skip empty lines and comments
+            if stripped == "" or String(stripped).startswith("#"):
+                i += 1
+                continue
+
+            # Calculate current indentation
+            var current_indent = len(line) - len(line.lstrip())
+
+            # If we're back to method level or less, we've reached the end
+            if current_indent <= method_indent and String(stripped) != "":
+                break
+
+            body.append(line)
+            i += 1
+
+        return body
+
+    fn _is_trivial_copyinit(self, method_body: List[String]) -> Bool:
+        """Check if __copyinit__ method is trivial (just copies fields)."""
+        # A trivial copyinit only contains field assignments like: self.field = other.field
+        var non_trivial_lines = 0
+
+        for i in range(len(method_body)):
+            line = method_body[i]
+            stripped = line.strip()
+            if stripped == "" or String(stripped).startswith("#"):
+                continue  # Skip empty lines and comments
+
+            # Check if this is a simple field assignment
+            if "self." in stripped and "=" in stripped and "other." in stripped:
+                # This looks like a field copy: self.field = other.field
+                continue
+            else:
+                # This is non-trivial logic
+                non_trivial_lines += 1
+
+        return non_trivial_lines == 0
+
+    fn _is_trivial_moveinit(self, method_body: List[String]) -> Bool:
+        """Check if __moveinit__ method is trivial (just moves fields)."""
+        # A trivial moveinit only contains field moves like: self.field = other.field^
+        var non_trivial_lines = 0
+
+        for i in range(len(method_body)):
+            line = method_body[i]
+            stripped = line.strip()
+            if stripped == "" or String(stripped).startswith("#"):
+                continue  # Skip empty lines and comments
+
+            # Check if this is a simple field move
+            if (
+                "self." in stripped
+                and "=" in stripped
+                and ("other." in stripped and "^" in stripped)
+            ):
+                # This looks like a field move: self.field = other.field^
+                continue
+            else:
+                # This is non-trivial logic
+                non_trivial_lines += 1
+
+        return non_trivial_lines == 0
 
     fn check_function_patterns(
         self, file_content: String, file_path: String
@@ -1045,6 +1337,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
             fixed_content = self.fix_import_patterns(content)
             fixed_content = self.fix_variable_declarations(fixed_content)
             fixed_content = self.fix_documentation_issues(fixed_content)
+            fixed_content = self.fix_trait_issues(fixed_content)
 
             # Write fixed content
             with open(file_path, "w") as f:
@@ -1158,6 +1451,89 @@ struct MojoSyntaxChecker(Copyable, Movable):
             i += 1
 
         return "\n".join(fixed_lines)
+
+    fn fix_trait_issues(self, content: String) -> String:
+        """Fix trait-related violations based on lifecycle method analysis."""
+        lines = content.split("\n")
+        fixed_lines = List[String]()
+        var i = 0
+
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+
+            # Check for struct definitions
+            if String(stripped).startswith("struct "):
+                # Analyze this struct for trait issues
+                struct_violations = self._analyze_struct_traits(
+                    lines, i, "temp_file"
+                )
+
+                # Apply fixes based on violations
+                if len(struct_violations) > 0:
+                    fixed_line = self._apply_struct_trait_fixes(
+                        line, struct_violations
+                    )
+                    fixed_lines.append(fixed_line)
+
+                    # Skip redundant lifecycle methods if found
+                    i = self._skip_redundant_methods(
+                        lines, i, struct_violations
+                    )
+                else:
+                    fixed_lines.append(line)
+            else:
+                fixed_lines.append(line)
+
+            i += 1
+
+        return "\n".join(fixed_lines)
+
+    fn _apply_struct_trait_fixes(
+        self, struct_line: String, violations: List[SyntaxViolation]
+    ) -> String:
+        """Apply trait fixes to a struct definition line."""
+        fixed_line = struct_line
+
+        for i in range(len(violations)):
+            violation = violations[i]
+            if violation.violation_type == "redundant_trait":
+                # Remove redundant traits
+                if "Copyable" in violation.description:
+                    fixed_line = self._remove_trait_from_line(
+                        fixed_line, "Copyable"
+                    )
+                elif "Movable" in violation.description:
+                    fixed_line = self._remove_trait_from_line(
+                        fixed_line, "Movable"
+                    )
+
+        return fixed_line
+
+    fn _remove_trait_from_line(
+        self, line: String, trait_name: String
+    ) -> String:
+        """Remove a specific trait from a struct definition line."""
+        # This is a simplified implementation - in practice would need more robust parsing
+        if "(" + trait_name + ")" in line:
+            return line.replace("(" + trait_name + ")", "")
+        elif "(" + trait_name + "," in line:
+            return line.replace("(" + trait_name + ",", "(")
+        elif "," + trait_name + ")" in line:
+            return line.replace("," + trait_name + ")", ")")
+        elif trait_name in line:
+            return line.replace(trait_name, "")
+        return line
+
+    fn _skip_redundant_methods(
+        self,
+        lines: List[String],
+        struct_start: Int,
+        violations: List[SyntaxViolation],
+    ) -> Int:
+        """Skip redundant lifecycle methods that should be removed."""
+        # For now, just return the current position - full implementation would skip method blocks
+        return struct_start
 
     fn print_report(self, reports: List[ComplianceReport]):
         """Print a comprehensive compliance report."""
