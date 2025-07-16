@@ -115,6 +115,14 @@ struct StructInfo:
     var has_movable: Bool
 
     fn __init__(out self, name: String, has_copyable: Bool, has_movable: Bool):
+        """
+        Initialize StructInfo with struct metadata.
+
+        Args:
+            name: Name of the struct.
+            has_copyable: Whether the struct has Copyable trait.
+            has_movable: Whether the struct has Movable trait.
+        """
         self.name = name
         self.has_copyable = has_copyable
         self.has_movable = has_movable
@@ -131,6 +139,11 @@ struct LifecycleAnalysis(Copyable, Movable):
     var moveinit_line: Int
 
     fn __init__(out self):
+        """
+        Initialize LifecycleAnalysis with default values.
+
+        Sets all analysis flags to False and line numbers to 0.
+        """
         self.has_trivial_copyinit = False
         self.has_trivial_moveinit = False
         self.needs_custom_copy = False
@@ -199,25 +212,33 @@ struct MojoSyntaxChecker(Copyable, Movable):
         Returns:
             True if the line is inside a variable-assigned string, False otherwise
         """
-        # Track if we're inside a variable-assigned string
-        in_variable_string = False
+        # Simple approach: scan backwards to find variable assignment start,
+        # then scan forwards to find the end
 
-        for i in range(line_index + 1):  # Include current line
+        # Find the most recent variable assignment with triple quotes before current line
+        assignment_start = -1
+        for i in range(line_index - 1, -1, -1):  # Scan backwards
             line = lines[i].strip()
-
-            # Check for variable assignment with triple quotes
             if "=" in line and '"""' in line:
-                # Pattern: variable_name = """
                 equals_pos = line.find("=")
                 triple_quote_pos = line.find('"""')
                 if equals_pos < triple_quote_pos:
-                    # This starts or ends a variable-assigned string
-                    in_variable_string = not in_variable_string
-            elif '"""' in line and in_variable_string:
-                # This ends the variable-assigned string
-                in_variable_string = False
+                    assignment_start = i
+                    break
 
-        return in_variable_string
+        if assignment_start == -1:
+            return False  # No variable assignment found before current line
+
+        # Find the closing triple quotes after the assignment
+        for i in range(assignment_start + 1, len(lines)):
+            line = lines[i].strip()
+            if line == '"""':
+                # Found closing triple quotes
+                if assignment_start < line_index < i:
+                    return True
+                break
+
+        return False
 
     fn _should_skip_line_for_violations(
         self, lines: List[String], line_index: Int
@@ -762,8 +783,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
             if "thread_idx" in line or "block_idx" in line:
                 has_gpu_kernels = True
 
-            # Check for simulation labels that should be removed
-            if "SIMULATED GPU:" in line or "PLACEHOLDER:" in line:
+            # Check for simulation labels that should be removed (exclude detection logic itself)
+            if ("SIMULATED GPU:" in line or "PLACEHOLDER:" in line) and not (
+                '"SIMULATED GPU:"' in line or '"PLACEHOLDER:"' in line
+            ):
                 violation = SyntaxViolation(
                     file_path,
                     line_num,
@@ -964,6 +987,11 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         i = 0
         while i < len(lines):
+            # Skip lines that should be excluded from violation detection
+            if self._should_skip_line_for_violations(lines, i):
+                i += 1
+                continue
+
             line = lines[i].strip()
             line_num = i + 1
 
@@ -1388,7 +1416,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         return report
 
-    fn apply_automatic_fixes(mut self, file_path: String) -> Bool:
+    fn apply_automatic_fixes(mut self, file_path: String) raises -> Bool:
         """Apply automatic fixes to a file with safety backups."""
         if not self.auto_fix_enabled:
             print("Automatic fixes disabled. Use --enable-auto-fix to enable.")
@@ -1428,11 +1456,11 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     print("Consider rolling back changes")
                 return False
 
-        except:
+        except Error:
             print("Error applying fixes to", file_path)
             return False
 
-    fn validate_compilation(self, file_path: String) -> Bool:
+    fn validate_compilation(self, file_path: String) raises -> Bool:
         """Validate that a file compiles successfully."""
         # For now, return True as compilation validation requires subprocess
         # In a full implementation, this would run: mojo build --check-only file_path
@@ -1442,7 +1470,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
         )
         return True
 
-    fn rollback_changes(self, file_path: String) -> Bool:
+    fn rollback_changes(self, file_path: String) raises -> Bool:
         """Rollback changes using backup file."""
         backup_path = file_path + ".backup"
         try:
@@ -1452,7 +1480,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 original.write(content)
             print("Successfully rolled back changes for:", file_path)
             return True
-        except:
+        except Error:
             print("Failed to rollback changes for:", file_path)
             return False
 
