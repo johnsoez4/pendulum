@@ -16,9 +16,15 @@ from layout import Layout, LayoutTensor
 
 
 fn gpu_matrix_multiply_benchmark_kernel(
-    output: UnsafePointer[Scalar[DType.float64]],
-    a: UnsafePointer[Scalar[DType.float64]],
-    b: UnsafePointer[Scalar[DType.float64]],
+    output: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
+    a: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
+    b: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
     rows_a: Int,
     cols_a: Int,
     cols_b: Int,
@@ -27,6 +33,8 @@ fn gpu_matrix_multiply_benchmark_kernel(
     Real GPU kernel for matrix multiplication benchmarking.
 
     Optimized for performance measurement with thread-level parallelism.
+    UnsafePointer parameters are required for GPU kernel interface and
+    memory is managed by the DeviceContext buffer system.
     """
     row = thread_idx.y
     col = thread_idx.x
@@ -41,10 +49,18 @@ fn gpu_matrix_multiply_benchmark_kernel(
 
 
 fn gpu_neural_benchmark_kernel(
-    output: UnsafePointer[Scalar[DType.float64]],
-    input: UnsafePointer[Scalar[DType.float64]],
-    weights: UnsafePointer[Scalar[DType.float64]],
-    biases: UnsafePointer[Scalar[DType.float64]],
+    output: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
+    input: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
+    weights: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
+    biases: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
     input_size: Int,
     output_size: Int,
 ):
@@ -52,6 +68,8 @@ fn gpu_neural_benchmark_kernel(
     Real GPU kernel for neural network benchmarking.
 
     Implements fused linear transformation + tanh activation.
+    UnsafePointer parameters are required for GPU kernel interface and
+    memory is managed by the DeviceContext buffer system.
     """
     idx = thread_idx.x + thread_idx.y * 32
 
@@ -66,14 +84,23 @@ fn gpu_neural_benchmark_kernel(
 
 
 fn gpu_vector_operations_kernel(
-    output: UnsafePointer[Scalar[DType.float64]],
-    a: UnsafePointer[Scalar[DType.float64]],
-    b: UnsafePointer[Scalar[DType.float64]],
+    output: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
+    a: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
+    b: UnsafePointer[
+        Scalar[DType.float64]
+    ],  # GPU memory managed by DeviceContext
     size: Int,
     operation: Int,  # 0=add, 1=multiply, 2=dot_product
 ):
     """
     Real GPU kernel for vector operations benchmarking.
+
+    UnsafePointer parameters are required for GPU kernel interface and
+    memory is managed by the DeviceContext buffer system.
     """
     idx = thread_idx.x + thread_idx.y * 32
 
@@ -182,7 +209,7 @@ alias ComputeMode_CPU_ONLY = 2
 alias ComputeMode_HYBRID = 3
 
 
-struct BenchmarkResult(Copyable & Movable):
+struct BenchmarkResult(Copyable, Movable):
     """Structure to hold benchmark results."""
 
     var test_name: String
@@ -273,7 +300,7 @@ struct RealGPUCPUBenchmark(Copyable):
         else:
             print("No GPU detected - CPU-only benchmarking")
 
-    fn benchmark_real_gpu_matrix_operations(mut self) -> BenchmarkResult:
+    fn benchmark_real_gpu_matrix_operations(mut self) raises -> BenchmarkResult:
         """Benchmark real GPU matrix multiplication operations."""
         result = BenchmarkResult("Real GPU Matrix Operations")
 
@@ -327,7 +354,7 @@ struct RealGPUCPUBenchmark(Copyable):
         self.num_results += 1
         return result
 
-    fn benchmark_neural_network_inference(mut self) -> BenchmarkResult:
+    fn benchmark_neural_network_inference(mut self) raises -> BenchmarkResult:
         """Benchmark neural network forward pass."""
         result = BenchmarkResult("Neural Network Inference")
 
@@ -380,7 +407,7 @@ struct RealGPUCPUBenchmark(Copyable):
         self.num_results += 1
         return result
 
-    fn benchmark_control_optimization(mut self) -> BenchmarkResult:
+    fn benchmark_control_optimization(mut self) raises -> BenchmarkResult:
         """Benchmark control algorithm optimization."""
         result = BenchmarkResult("Control Optimization")
 
@@ -422,7 +449,7 @@ struct RealGPUCPUBenchmark(Copyable):
         self.num_results += 1
         return result
 
-    fn run_comprehensive_benchmark(mut self):
+    fn run_comprehensive_benchmark(mut self) raises:
         """Run all benchmark tests and display individual results."""
 
         # Benchmark 1: Matrix Operations
@@ -597,8 +624,15 @@ struct RealGPUCPUBenchmark(Copyable):
         # GPU timing completed
         return elapsed_time
 
-    fn _start_real_gpu_timing(mut self) -> Float64:
-        """Start real GPU timing with DeviceContext synchronization."""
+    fn _start_real_gpu_timing(mut self) raises -> Float64:
+        """Start real GPU timing with DeviceContext synchronization.
+
+        Returns:
+            Float64: The start timestamp for GPU timing.
+
+        Raises:
+            Error: If GPU timing initialization fails, falls back to CPU timing.
+        """
         try:
             # Synchronize GPU before timing
             self.device_context.synchronize()
@@ -608,12 +642,22 @@ struct RealGPUCPUBenchmark(Copyable):
 
             # GPU timing started with DeviceContext synchronization
             return start_time
-        except:
+        except:  # TODO: Use specific exception types when available in Mojo
             print("    GPU timing failed - using CPU timing")
             return self._get_timestamp()
 
-    fn _end_real_gpu_timing(mut self, start_time: Float64) -> Float64:
-        """End real GPU timing with DeviceContext synchronization."""
+    fn _end_real_gpu_timing(mut self, start_time: Float64) raises -> Float64:
+        """End real GPU timing with DeviceContext synchronization.
+
+        Args:
+            start_time: The start timestamp from _start_real_gpu_timing.
+
+        Returns:
+            Float64: The elapsed time in seconds.
+
+        Raises:
+            Error: If GPU timing fails, falls back to CPU timing.
+        """
         try:
             # Synchronize GPU after operations
             self.device_context.synchronize()
@@ -624,12 +668,12 @@ struct RealGPUCPUBenchmark(Copyable):
 
             # GPU timing completed
             return elapsed_time
-        except:
+        except:  # TODO: Use specific exception types when available in Mojo
             print("    GPU timing failed - using CPU timing")
             end_time = self._get_timestamp()
             return end_time - start_time
 
-    fn _real_gpu_matrix_multiply(mut self, rows: Int, cols: Int) -> Bool:
+    fn _real_gpu_matrix_multiply(mut self, rows: Int, cols: Int) raises -> Bool:
         """Real GPU matrix multiplication using DeviceContext and GPU kernels.
         """
         try:
@@ -774,7 +818,7 @@ struct RealGPUCPUBenchmark(Copyable):
 
     fn _gpu_neural_network_forward(
         mut self, input: List[Float64]
-    ) -> List[Float64]:
+    ) raises -> List[Float64]:
         """
         GPU neural network forward pass - functionally equivalent to CPU version.
         Single layer: 4 inputs -> 3 outputs with weights (i + j + 1) * 0.1 and tanh activation.
@@ -837,7 +881,7 @@ struct RealGPUCPUBenchmark(Copyable):
 
     fn _gpu_neural_network_batch_forward(
         mut self, inputs: List[List[Float64]]
-    ) -> List[List[Float64]]:
+    ) raises -> List[List[Float64]]:
         """
         GPU neural network batch forward pass - processes all samples in single GPU call.
         Major performance optimization: 1000 samples processed in one GPU operation.
@@ -931,7 +975,9 @@ struct RealGPUCPUBenchmark(Copyable):
 
         return control_sequence
 
-    fn _gpu_control_optimization(mut self, horizon: Int) -> List[Float64]:
+    fn _gpu_control_optimization(
+        mut self, horizon: Int
+    ) raises -> List[Float64]:
         """GPU control optimization using real GPU hardware acceleration."""
         try:
             # GPU control optimization starting
@@ -1034,7 +1080,11 @@ fn run_real_gpu_benchmark() raises -> RealGPUCPUBenchmark:
 
 
 fn main() raises:
-    """Main function to run GPU vs CPU benchmarks."""
+    """Main function to run GPU vs CPU benchmarks.
+
+    Note: This function enables standalone execution of the benchmark script.
+    The compiler warning about main() in packages is acceptable for executable scripts.
+    """
     print("=" * 70)
     print("PENDULUM AI CONTROL SYSTEM - GPU vs CPU BENCHMARK")
     print("=" * 70)

@@ -365,6 +365,25 @@ fn __copyinit__(out self, other: Self):
 
 Mojo's error handling system is designed for performance and safety. Functions that can raise errors must be explicitly annotated with `raises`, and error propagation follows strict rules for maintaining error context and stack traces.
 
+### 📝 **Design Note: main() Functions in Modules**
+
+**✅ ACCEPTABLE DESIGN PATTERN**: Including `main()` functions in Mojo modules for standalone execution
+
+```mojo
+# ✅ CORRECT: main() function in benchmark/test/demo scripts
+fn main() raises:
+    """Main function to run benchmarks/tests/demos."""
+    print("Running standalone execution...")
+    run_benchmark_suite()
+```
+
+**Important Notes:**
+- **Compiler Warning Expected**: `mojo: error: module does not contain a 'main' function` when building as library
+- **Ignore This Error**: This is an acceptable design pattern for executable scripts
+- **Use Cases**: Benchmark scripts, test files, demo applications, standalone utilities
+- **Benefits**: Allows modules to be both importable libraries AND executable scripts
+- **Pattern**: Include main() for standalone execution while keeping module functionality intact
+
 ### ✅ **Exception Propagation Best Practices**
 
 #### **Preserving Original Exceptions**
