@@ -33,7 +33,6 @@ struct GPUDeviceInfo:
     var compute_capability: String
 
     fn __init__(
-        """TODO: Add function description."""
         out self,
         is_valid: Bool,
         name: String,
@@ -120,7 +119,7 @@ struct GPUManager:
     var performance_stats: List[Float64]
     var fallback_to_cpu: Bool
 
-    fn __init__(out self, compute_mode: Int = ComputeMode.AUTO):
+    fn __init__(out self, compute_mode: Int = ComputeMode.AUTO) raises:
         """
         Initialize GPU manager with specified compute mode.
 
@@ -139,7 +138,7 @@ struct GPUManager:
         # Initialize device based on compute mode
         self._initialize_compute_device()
 
-    fn _detect_gpu_capabilities(mut self):
+    fn _detect_gpu_capabilities(mut self) raises:
         """Detect and assess GPU capabilities using real MAX Engine API."""
         print("Detecting GPU capabilities...")
 
@@ -160,7 +159,7 @@ struct GPUManager:
             self.capabilities.gpu_available = False
             self.capabilities.max_engine_available = False
 
-    fn _try_gpu_detection(mut self) -> Bool:
+    fn _try_gpu_detection(mut self) raises -> Bool:
         """
         Attempt to detect GPU devices using MAX engine.
 
@@ -214,7 +213,7 @@ struct GPUManager:
             print("Real MAX Engine: Failed to get GPU device information")
             return False
 
-    fn _check_max_engine_availability(self) -> Bool:
+    fn _check_max_engine_availability(self) raises -> Bool:
         """
         Check if MAX Engine GPU support is available and functional.
 
@@ -253,7 +252,7 @@ struct GPUManager:
         # Current implementation: Check for MAX Engine indicators
         return True  # Assuming MAX Engine structure is ready
 
-    fn _check_gpu_device_availability(self) -> Bool:
+    fn _check_gpu_device_availability(self) raises -> Bool:
         """
         Check if GPU devices are available for MAX Engine.
 
@@ -273,7 +272,7 @@ struct GPUManager:
         # Current implementation: Check for GPU hardware presence
         return self._detect_nvidia_gpu()
 
-    fn _verify_max_engine_gpu_access(self) -> Bool:
+    fn _verify_max_engine_gpu_access(self) raises -> Bool:
         """
         Verify MAX Engine can access and use GPU devices.
 
@@ -488,7 +487,7 @@ struct GPUManager:
         # Current implementation: Return modern GPU compute capability
         return "8.6"  # Modern GPU compute capability
 
-    fn _initialize_compute_device(mut self):
+    fn _initialize_compute_device(mut self) raises:
         """Initialize compute device based on detected capabilities and mode."""
         print("Initializing compute device...")
 
@@ -520,7 +519,7 @@ struct GPUManager:
             self.fallback_to_cpu = True
             self.device_initialized = True
 
-    fn _initialize_gpu_device(mut self) -> Bool:
+    fn _initialize_gpu_device(mut self) raises -> Bool:
         """
         Initialize GPU device for computation using real MAX Engine DeviceContext.
 
@@ -562,8 +561,8 @@ struct GPUManager:
 
             return True
 
-        except:
-            print("⚠️  Real GPU device initialization failed")
+        except e:
+            print("⚠️  Real GPU device initialization failed:", String(e))
             print("  - DeviceContext creation failed")
             print("  - Falling back to CPU simulation")
 
@@ -599,9 +598,8 @@ struct GPUManager:
             return "UNKNOWN"
 
     fn allocate_gpu_buffer(
-        """TODO: Add function description."""
         self, size: Int, dtype: DType = DType.float64
-    ) -> Bool:
+    ) raises -> Bool:
         """
         Allocate GPU buffer using real DeviceContext operations.
 
@@ -637,11 +635,16 @@ struct GPUManager:
             device_context.synchronize()
             return True
 
-        except:
-            print("⚠️  GPU buffer allocation failed, size:", size)
+        except e:
+            print(
+                "⚠️  GPU buffer allocation failed, size:",
+                size,
+                "- Error:",
+                String(e),
+            )
             return False
 
-    fn test_gpu_memory_bandwidth(self) -> Float64:
+    fn test_gpu_memory_bandwidth(self) raises -> Float64:
         """
         Test real GPU memory bandwidth using DeviceContext operations.
 
@@ -676,11 +679,11 @@ struct GPUManager:
             print("✓ Real GPU memory bandwidth test:", bandwidth_gbps, "GB/s")
             return bandwidth_gbps
 
-        except:
-            print("⚠️  GPU memory bandwidth test failed")
+        except e:
+            print("⚠️  GPU memory bandwidth test failed:", String(e))
             return 0.0
 
-    fn print_capabilities(self):
+    fn print_capabilities(self) raises:
         """Print detailed GPU capabilities and status."""
         print("=" * 60)
         print("GPU CAPABILITIES AND STATUS")
@@ -699,11 +702,11 @@ struct GPUManager:
         # Test real GPU memory bandwidth if available
         if self.is_gpu_available():
             bandwidth = self.test_gpu_memory_bandwidth()
-            print("Real GPU Memory Bandwidth:", bandwidth, "GB/s")
+            print("Real GPU Memory Bandwidth:", String(bandwidth), "GB/s")
 
         print("=" * 60)
 
-    fn benchmark_device_performance(mut self) -> Float64:
+    fn benchmark_device_performance(mut self) raises -> Float64:
         """
         Run a simple benchmark to assess device performance.
 
@@ -734,7 +737,9 @@ struct GPUManager:
         return ops_per_second
 
 
-fn create_gpu_manager(compute_mode: Int = ComputeMode.AUTO) -> GPUManager:
+fn create_gpu_manager(
+    compute_mode: Int = ComputeMode.AUTO,
+) raises -> GPUManager:
     """
     Create and initialize a GPU manager.
 
@@ -747,7 +752,7 @@ fn create_gpu_manager(compute_mode: Int = ComputeMode.AUTO) -> GPUManager:
     return GPUManager(compute_mode)
 
 
-fn detect_gpu_capabilities() -> GPUCapabilities:
+fn detect_gpu_capabilities() raises -> GPUCapabilities:
     """
     Detect GPU capabilities without initializing a full manager.
 
@@ -758,7 +763,7 @@ fn detect_gpu_capabilities() -> GPUCapabilities:
     return manager.capabilities
 
 
-fn test_gpu_functionality() -> Bool:
+fn test_gpu_functionality() raises -> Bool:
     """
     Test basic GPU functionality.
 

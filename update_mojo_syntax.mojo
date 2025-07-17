@@ -1191,7 +1191,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     or "write(" in function_content
                 )
 
-                if needs_raises and "raises" not in line:
+                if needs_raises and "raises" not in function_content:
                     violation = SyntaxViolation(
                         file_path,
                         line_num,
@@ -1695,7 +1695,10 @@ struct MojoSyntaxChecker(Copyable, Movable):
         print("- Observations:", total_observations)
         print("  - Suggestions:", total_suggestions)
         print("  - One-line docstrings:", total_one_line_docstrings)
-        print("- Average compliance score:", average_score, "%")
+        # Format average score to 1 decimal place
+        rounded_score = Int(average_score * 10 + 0.5) / 10.0
+        formatted_score = String(rounded_score)
+        print("- Average compliance score:", formatted_score, "%")
         print("")
 
         # Individual file reports
