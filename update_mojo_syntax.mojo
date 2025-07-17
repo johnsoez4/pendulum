@@ -1456,8 +1456,8 @@ struct MojoSyntaxChecker(Copyable, Movable):
                     print("Consider rolling back changes")
                 return False
 
-        except Error:
-            print("Error applying fixes to", file_path)
+        except e:
+            print("Error applying fixes to", file_path, ":", String(e))
             return False
 
     fn validate_compilation(self, file_path: String) raises -> Bool:
@@ -1480,8 +1480,13 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 original.write(content)
             print("Successfully rolled back changes for:", file_path)
             return True
-        except Error:
-            print("Failed to rollback changes for:", file_path)
+        except e:
+            print(
+                "Failed to rollback changes for:",
+                file_path,
+                "- Error:",
+                String(e),
+            )
             return False
 
     fn fix_import_patterns(self, content: String) -> String:
