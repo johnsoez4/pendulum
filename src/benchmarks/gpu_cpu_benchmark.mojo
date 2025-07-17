@@ -33,8 +33,19 @@ fn gpu_matrix_multiply_benchmark_kernel(
     Real GPU kernel for matrix multiplication benchmarking.
 
     Optimized for performance measurement with thread-level parallelism.
-    UnsafePointer parameters are required for GPU kernel interface and
-    memory is managed by the DeviceContext buffer system.
+
+    Args:
+        output: GPU memory buffer for result matrix (managed by DeviceContext).
+        a: GPU memory buffer for input matrix A (managed by DeviceContext).
+        b: GPU memory buffer for input matrix B (managed by DeviceContext).
+        rows_a: Number of rows in matrix A.
+        cols_a: Number of columns in matrix A (and rows in matrix B).
+        cols_b: Number of columns in matrix B.
+
+    Note: UnsafePointer parameters are required for GPU kernel interface.
+    Memory lifecycle is managed by DeviceContext buffer system - no manual
+    memory management required. Buffers are automatically freed when
+    DeviceContext goes out of scope.
     """
     row = thread_idx.y
     col = thread_idx.x
@@ -68,8 +79,19 @@ fn gpu_neural_benchmark_kernel(
     Real GPU kernel for neural network benchmarking.
 
     Implements fused linear transformation + tanh activation.
-    UnsafePointer parameters are required for GPU kernel interface and
-    memory is managed by the DeviceContext buffer system.
+
+    Args:
+        output: GPU memory buffer for output neurons (managed by DeviceContext).
+        input: GPU memory buffer for input neurons (managed by DeviceContext).
+        weights: GPU memory buffer for weight matrix (managed by DeviceContext).
+        biases: GPU memory buffer for bias vector (managed by DeviceContext).
+        input_size: Number of input neurons.
+        output_size: Number of output neurons.
+
+    Note: UnsafePointer parameters are required for GPU kernel interface.
+    Memory lifecycle is managed by DeviceContext buffer system - no manual
+    memory management required. Buffers are automatically freed when
+    DeviceContext goes out of scope.
     """
     idx = thread_idx.x + thread_idx.y * 32
 
@@ -99,8 +121,19 @@ fn gpu_vector_operations_kernel(
     """
     Real GPU kernel for vector operations benchmarking.
 
-    UnsafePointer parameters are required for GPU kernel interface and
-    memory is managed by the DeviceContext buffer system.
+    Supports element-wise addition, multiplication, and dot product operations.
+
+    Args:
+        output: GPU memory buffer for result vector (managed by DeviceContext).
+        a: GPU memory buffer for input vector A (managed by DeviceContext).
+        b: GPU memory buffer for input vector B (managed by DeviceContext).
+        size: Number of elements in the vectors.
+        operation: Operation type (0=add, 1=multiply, 2=dot_product).
+
+    Note: UnsafePointer parameters are required for GPU kernel interface.
+    Memory lifecycle is managed by DeviceContext buffer system - no manual
+    memory management required. Buffers are automatically freed when
+    DeviceContext goes out of scope.
     """
     idx = thread_idx.x + thread_idx.y * 32
 
@@ -209,7 +242,9 @@ alias ComputeMode_CPU_ONLY = 2
 alias ComputeMode_HYBRID = 3
 
 
-struct BenchmarkResult(Copyable, Movable):
+struct BenchmarkResult(
+    Copyable, Movable
+):  # Required for List[BenchmarkResult] usage
     """Structure to hold benchmark results."""
 
     var test_name: String
@@ -266,7 +301,7 @@ struct BenchmarkResult(Copyable, Movable):
         print("  Memory Usage: ", self.memory_usage_mb, "MB")
 
 
-struct RealGPUCPUBenchmark(Copyable):
+struct RealGPUCPUBenchmark(Copyable):  # Required for function return values
     """
     Real GPU vs CPU benchmarking system using MAX Engine DeviceContext API.
 
@@ -685,6 +720,7 @@ struct RealGPUCPUBenchmark(Copyable):
             buffer_size_result = rows * rows
 
             # Create GPU buffers for matrices (using Float64 for consistency)
+            # Note: Using enqueue_create_buffer as per mojo_syntax.md working patterns
             buffer_a = self.device_context.enqueue_create_buffer[DType.float64](
                 buffer_size_a
             )
@@ -711,6 +747,7 @@ struct RealGPUCPUBenchmark(Copyable):
             grid_x = (rows + block_size - 1) // block_size
             grid_y = (rows + block_size - 1) // block_size
 
+            # Note: Using enqueue_function as per mojo_syntax.md working patterns
             self.device_context.enqueue_function[
                 gpu_matrix_multiply_benchmark_kernel
             ](

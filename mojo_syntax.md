@@ -889,6 +889,115 @@ fn cleanup(mut self) raises -> None:
 4. **Use `out` parameters** for initialization
 5. **Avoid manual memory management** when possible
 
+### 🔐 **Argument Ownership Conventions**
+
+Mojo's ownership model determines memory management responsibilities for UnsafePointer parameters. Functions are only responsible for freeing UnsafePointer memory when they **own** the pointer.
+
+**Reference**: [Mojo Ownership Documentation](https://docs.modular.com/mojo/manual/values/ownership)
+
+#### **Ownership Types and Memory Responsibilities**
+
+| Ownership Type | Syntax | Memory Management | Description |
+|---------------|--------|-------------------|-------------|
+| **Borrowed (read)** | `param: UnsafePointer[T]` | ❌ **DO NOT FREE** | Function borrows pointer, caller retains ownership |
+| **Mutable Borrowed** | `mut param: UnsafePointer[T]` | ❌ **DO NOT FREE** | Function can modify through pointer, caller retains ownership |
+| **Owned** | `owned param: UnsafePointer[T]` | ✅ **MUST FREE** | Function takes ownership, responsible for cleanup |
+| **Output** | `out param: UnsafePointer[T]` | ✅ **MUST ALLOCATE** | Function must initialize/allocate for caller |
+
+#### **✅ Correct Ownership Patterns**
+
+```mojo
+# ✅ BORROWED: Function does NOT free memory (caller owns)
+fn process_data(data: UnsafePointer[Float64], size: Int) -> Float64:
+    """Process data without taking ownership."""
+    var sum = 0.0
+    for i in range(size):
+        sum += data[i]
+    return sum
+    # ❌ DO NOT: data.free()  # Caller still owns this memory
+
+# ✅ MUTABLE BORROWED: Function can modify but does NOT free
+fn modify_data(mut data: UnsafePointer[Float64], size: Int, scale: Float64):
+    """Modify data in-place without taking ownership."""
+    for i in range(size):
+        data[i] *= scale
+    # ❌ DO NOT: data.free()  # Caller still owns this memory
+
+# ✅ OWNED: Function MUST free memory (takes ownership)
+fn consume_data(owned data: UnsafePointer[Float64], size: Int) -> Float64:
+    """Process and consume data, taking ownership."""
+    var sum = 0.0
+    for i in range(size):
+        sum += data[i]
+    data.free()  # ✅ REQUIRED: Function owns and must free
+    return sum
+
+# ✅ OUTPUT: Function MUST allocate memory for caller
+fn create_data(out data: UnsafePointer[Float64], size: Int):
+    """Allocate and initialize data for caller."""
+    data = UnsafePointer[Float64].alloc(size)  # ✅ REQUIRED: Allocate for caller
+    for i in range(size):
+        data[i] = Float64(i)
+```
+
+#### **🎯 GPU Kernel Parameter Patterns**
+
+GPU kernels typically use **borrowed** parameters (no explicit ownership annotation):
+
+```mojo
+# ✅ GPU KERNEL: Parameters are borrowed, no memory management needed
+fn gpu_matrix_multiply_kernel(
+    output: UnsafePointer[Scalar[DType.float64]],  # Borrowed - DO NOT FREE
+    a: UnsafePointer[Scalar[DType.float64]],       # Borrowed - DO NOT FREE
+    b: UnsafePointer[Scalar[DType.float64]],       # Borrowed - DO NOT FREE
+    rows: Int,
+    cols: Int,
+):
+    """GPU kernel with borrowed pointers managed by DeviceContext."""
+    # Perform computation using pointers
+    var idx = thread_idx.x + block_idx.x * block_dim.x
+    if idx < rows * cols:
+        output[idx] = a[idx] + b[idx]
+    # ❌ DO NOT FREE: DeviceContext manages buffer lifecycle
+```
+
+#### **⚠️ Common Ownership Mistakes**
+
+```mojo
+# ❌ WRONG: Freeing borrowed pointer
+fn bad_borrowed_usage(data: UnsafePointer[Float64]):
+    # ... use data ...
+    data.free()  # ❌ ERROR: Function doesn't own this memory
+
+# ❌ WRONG: Not freeing owned pointer
+fn bad_owned_usage(owned data: UnsafePointer[Float64]):
+    # ... use data ...
+    # ❌ MEMORY LEAK: Function owns but doesn't free
+
+# ❌ WRONG: Not allocating output parameter
+fn bad_output_usage(out data: UnsafePointer[Float64]):
+    # ❌ ERROR: Function must allocate memory for caller
+    pass
+
+# ✅ CORRECT: Proper ownership handling
+fn correct_usage():
+    var data = UnsafePointer[Float64].alloc(100)
+
+    process_data(data, 100)        # Borrowed - data still owned by caller
+    modify_data(data, 100, 2.0)    # Mutable borrowed - data still owned
+
+    var result = consume_data(data^, 100)  # Transfer ownership with ^
+    # data is now invalid - consumed function freed it
+```
+
+#### **📋 Ownership Identification Rules**
+
+1. **No annotation** (`param: UnsafePointer[T]`) = **Borrowed** → DO NOT FREE
+2. **`mut` annotation** (`mut param: UnsafePointer[T]`) = **Mutable Borrowed** → DO NOT FREE
+3. **`owned` annotation** (`owned param: UnsafePointer[T]`) = **Owned** → MUST FREE
+4. **`out` annotation** (`out param: UnsafePointer[T]`) = **Output** → MUST ALLOCATE
+5. **GPU kernel parameters** (no annotation) = **Borrowed** → DO NOT FREE
+
 ---
 
 ## 🔌 External Function Calls (FFI) - DLHandle API

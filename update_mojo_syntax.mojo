@@ -705,6 +705,172 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         return non_trivial_lines == 0
 
+    fn _check_unsafe_pointer_ownership(
+        self,
+        lines: List[String],
+        line_index: Int,
+        file_content: String,
+        file_path: String,
+    ) -> Optional[SyntaxViolation]:
+        """
+        Check UnsafePointer parameters for ownership violations.
+
+        Only flags UnsafePointer parameters that are explicitly owned by the function
+        and require memory management. Borrowed parameters (default) are not flagged.
+
+        Args:
+            lines: All lines in the file.
+            line_index: Current line index being checked.
+            file_content: Full file content for context.
+            file_path: Path to the file being checked.
+
+        Returns:
+            Optional violation if owned UnsafePointer lacks proper memory management.
+        """
+        line = lines[line_index].strip()
+        line_num = line_index + 1
+
+        # Skip if not a function parameter line with UnsafePointer
+        if not ("UnsafePointer" in line and ("fn " in line or ":" in line)):
+            return None
+
+        # Check if this is a GPU kernel function (typically borrowed parameters)
+        if self._is_gpu_kernel_function(lines, line_index):
+            return None  # GPU kernels use borrowed pointers managed by DeviceContext
+
+        # Check if this is an explicitly owned parameter
+        if not self._is_owned_unsafe_pointer_parameter(String(line)):
+            return None  # Only flag owned parameters
+
+        # Check if the function properly manages the owned memory
+        if self._has_proper_memory_management(lines, line_index, file_content):
+            return None  # Proper management found
+
+        # Create violation for owned UnsafePointer without proper management
+        return SyntaxViolation(
+            file_path,
+            line_num,
+            "performance_memory_leak",
+            "Owned UnsafePointer parameter without explicit memory management",
+            (
+                "Add .free() call for owned UnsafePointer parameters or use"
+                " RAII patterns"
+            ),
+            "warning",
+        )
+
+    fn _is_gpu_kernel_function(
+        self, lines: List[String], line_index: Int
+    ) -> Bool:
+        """Check if the current line is part of a GPU kernel function definition.
+        """
+        # Look backwards for function definition
+        var i = line_index
+        while i >= 0:
+            line = lines[i].strip()
+            if line.startswith("fn "):
+                # Check if function name suggests it's a GPU kernel
+                return (
+                    "_kernel" in line
+                    or "gpu_" in line.lower()
+                    or "kernel_" in line
+                    or
+                    # Check for common GPU kernel parameter patterns
+                    (i + 1 < len(lines) and "thread_idx" in lines[i + 1])
+                    or (i + 2 < len(lines) and "thread_idx" in lines[i + 2])
+                )
+            i -= 1
+        return False
+
+    fn _is_owned_unsafe_pointer_parameter(self, line: String) -> Bool:
+        """Check if line contains an explicitly owned UnsafePointer parameter.
+        """
+        # Look for explicit ownership annotations
+        return (
+            "UnsafePointer" in line
+            and ("owned " in line or "var " in line)
+            and ":" in line  # Parameter declaration
+        )
+
+    fn _has_proper_memory_management(
+        self, lines: List[String], line_index: Int, file_content: String
+    ) -> Bool:
+        """Check if function has proper memory management for owned UnsafePointer.
+        """
+        # Find the function that contains this parameter
+        function_body = self._extract_function_body(lines, line_index)
+
+        # Check if the function body contains a .free() call
+        for line in function_body:
+            if ".free()" in line:
+                return True
+
+        return False
+
+    fn _extract_function_body(
+        self, lines: List[String], param_line_index: Int
+    ) -> List[String]:
+        """Extract the body of the function containing the given parameter line.
+        """
+        body = List[String]()
+
+        # Find the start of the function
+        var func_start = param_line_index
+        while func_start >= 0:
+            if lines[func_start].strip().startswith("fn "):
+                break
+            func_start -= 1
+
+        if func_start < 0:
+            return body  # No function found
+
+        # Extract function body until next function or end of file
+        var i = func_start + 1
+        var indent_level = 0
+        var found_body_start = False
+
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+
+            # Skip empty lines and comments
+            if stripped == "" or stripped.startswith("#"):
+                i += 1
+                continue
+
+            # Look for function body start (after docstring)
+            if not found_body_start:
+                if not stripped.startswith('"""') and not stripped.startswith(
+                    "'''"
+                ):
+                    found_body_start = True
+                else:
+                    # Skip docstring lines
+                    i += 1
+                    continue
+
+            # Track indentation to know when function ends
+            if found_body_start:
+                current_indent = len(line) - len(line.lstrip())
+
+                # If we hit a line at the same or lower indentation that starts a new definition
+                if current_indent <= indent_level and (
+                    stripped.startswith("fn ")
+                    or stripped.startswith("struct ")
+                    or stripped.startswith("alias ")
+                    or stripped.startswith("from ")
+                ):
+                    break
+
+                if indent_level == 0:
+                    indent_level = current_indent
+
+                body.append(line)
+
+            i += 1
+
+        return body
+
     fn check_function_patterns(
         self, file_content: String, file_path: String
     ) -> List[SyntaxViolation]:
@@ -1281,20 +1447,13 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 )
                 violations.append(violation)
 
-            # Check for potential memory inefficiencies
-            if "UnsafePointer" in line and "free" not in file_content:
-                violation = SyntaxViolation(
-                    file_path,
-                    line_num,
-                    "performance_memory_leak",
-                    "UnsafePointer usage without explicit memory management",
-                    (
-                        "Ensure proper memory cleanup with free() or use RAII"
-                        " patterns"
-                    ),
-                    "warning",
+            # Check for UnsafePointer ownership violations
+            if "UnsafePointer" in line:
+                ownership_violation = self._check_unsafe_pointer_ownership(
+                    lines, i, file_content, file_path
                 )
-                violations.append(violation)
+                if ownership_violation:
+                    violations.append(ownership_violation.value())
 
             # Check for string concatenation in loops
             if (
