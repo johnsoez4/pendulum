@@ -679,8 +679,8 @@ struct RealGPUCPUBenchmark(
 
             # GPU timing started with DeviceContext synchronization
             return start_time
-        except:  # TODO: Use specific exception types when available in Mojo
-            print("    GPU timing failed - using CPU timing")
+        except e:  # Generic exception handling for GPU synchronization failures
+            print("    GPU timing failed - using CPU timing:", e)
             return self._get_timestamp()
 
     fn _end_real_gpu_timing(mut self, start_time: Float64) raises -> Float64:
@@ -705,8 +705,8 @@ struct RealGPUCPUBenchmark(
 
             # GPU timing completed
             return elapsed_time
-        except:  # TODO: Use specific exception types when available in Mojo
-            print("    GPU timing failed - using CPU timing")
+        except e:  # Generic exception handling for GPU synchronization failures
+            print("    GPU timing failed - using CPU timing:", e)
             end_time = self._get_timestamp()
             return end_time - start_time
 
