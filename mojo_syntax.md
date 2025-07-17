@@ -1265,6 +1265,7 @@ struct Resource:
 5. **Include examples** for complex functions
 6. **Document error conditions** and exceptions
 7. **Code Examples in Docstrings**: By default, do not include code usage examples in docstrings unless explicitly requested by the user or required for complex APIs. The Mojo LSP server currently has issues parsing code examples within docstring blocks and may incorrectly flag valid Mojo code as errors, causing IDE warnings.
+8. **Optimization Opportunity Comments**: Use `#OPTIMIZE:` prefix to identify future optimization opportunities. Follow with detailed explanation of the optimization potential and include verified technical details (e.g., confirmed API availability).
 
 ### 🎯 **Docstring Length Guidelines**
 

@@ -589,7 +589,7 @@ struct BenchmarkReportGenerator:
         conclusions += "   - Enable GPU mode for performance testing\n"
         conclusions += "   - Implement comprehensive error handling\n\n"
 
-        conclusions += "3. FUTURE OPTIMIZATIONS:\n"
+        conclusions += "3. #OPTIMIZE: FUTURE OPTIMIZATIONS:\n"
         conclusions += (
             "   - Investigate multi-GPU scaling for larger problems\n"
         )

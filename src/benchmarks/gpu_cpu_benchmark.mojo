@@ -734,11 +734,9 @@ struct RealGPUCPUBenchmark(Copyable):
         """
         # ACTUAL GPU BENCHMARKING IMPLEMENTATION:
         # In real implementation, this would use MAX engine operations:
-        # import max.tensor as tensor
-        # import max.ops as ops
-        # gpu_a = tensor.from_list(flatten(a), device=gpu_device)
-        # gpu_b = tensor.from_list(flatten(b), device=gpu_device)
-        # gpu_result = ops.matmul(gpu_a, gpu_b)
+        # from max.graph import ops
+        # gpu_result = ops.matmul(gpu_a_tensor, gpu_b_tensor)
+        # (Verified: ops.matmul available in current MAX engine version)
         # return unflatten(gpu_result.to_host().to_list())
 
         print(

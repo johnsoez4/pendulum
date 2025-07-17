@@ -15,7 +15,8 @@ from gpu.host import DeviceContext
 from layout import Layout, LayoutTensor
 
 # Note: These are the working MAX Engine imports for GPU acceleration
-# The previous max.device, max.tensor, max.ops imports were incorrect assumptions
+# Current implementation uses DeviceContext and GPU kernels for real GPU operations
+# Future optimization could use: from max.graph import ops (verified available)
 
 # GPU availability determined at runtime using real MAX Engine API
 alias GPU_AVAILABLE = True  # Dynamically checked via has_nvidia_gpu_accelerator()
