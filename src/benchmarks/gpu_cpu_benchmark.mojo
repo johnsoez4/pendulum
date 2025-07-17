@@ -301,7 +301,9 @@ struct BenchmarkResult(
         print("  Memory Usage: ", self.memory_usage_mb, "MB")
 
 
-struct RealGPUCPUBenchmark(Copyable):  # Required for function return values
+struct RealGPUCPUBenchmark(
+    Copyable
+):  # Required: returned by create_real_benchmark_system()
     """
     Real GPU vs CPU benchmarking system using MAX Engine DeviceContext API.
 

@@ -402,23 +402,28 @@ struct MojoSyntaxChecker(Copyable, Movable):
             if line.startswith("struct "):
                 # Check for missing docstring - improved logic to handle struct inheritance/traits
                 docstring_found = False
-                # Find the end of the struct definition line (look for the closing colon)
+                # Find the end of struct definition (look for colon) - handles multi-line definitions and comments
                 j = i
                 while j < len(lines):
-                    current_line = lines[j].strip()
-                    if current_line.endswith(":"):
-                        # Found end of struct definition, check next non-empty line for docstring
-                        k = j + 1
-                        while k < len(lines):
-                            next_line = lines[k].strip()
-                            if next_line == "":
-                                k += 1
-                                continue
-                            if next_line.startswith('"""'):
-                                docstring_found = True
+                    line_stripped = lines[j].strip()
+                    # Check if line contains colon (handle comments after colon)
+                    if ":" in line_stripped:
+                        # Make sure colon is not inside a string or comment at the beginning
+                        colon_pos = line_stripped.find(":")
+                        if colon_pos >= 0:
                             break
-                        break
                     j += 1
+
+                # Look for docstring after struct definition
+                k = j + 1
+                while k < len(lines):
+                    next_line = lines[k].strip()
+                    if next_line == "":
+                        k += 1
+                        continue
+                    if next_line.startswith('"""'):
+                        docstring_found = True
+                    break
 
                 if not docstring_found:
                     violation = SyntaxViolation(
@@ -1163,9 +1168,16 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
             # Check for struct definitions
             if line.startswith("struct "):
-                # Find the end of struct definition (look for colon)
+                # Find the end of struct definition (look for colon) - handles comments after colon
                 j = i
-                while j < len(lines) and not lines[j].strip().endswith(":"):
+                while j < len(lines):
+                    line_stripped = lines[j].strip()
+                    # Check if line contains colon (handle comments after colon)
+                    if ":" in line_stripped:
+                        # Make sure colon is not inside a string or comment at the beginning
+                        colon_pos = line_stripped.find(":")
+                        if colon_pos >= 0:
+                            break
                     j += 1
 
                 # Look for docstring after struct definition
