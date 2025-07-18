@@ -16,7 +16,7 @@ Features:
 - Automatic corrections with safety backups
 - Compliance checking and scoring
 - Comprehensive reporting system
-- GPU acceleration pattern preservation
+- GPU acceleration pattern preservation (supports current API: create_buffer, call_function)
 - Docstring content exclusion (by default, use --check-docstring-code to enable)
 
 Content Exclusion:

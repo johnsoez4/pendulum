@@ -811,7 +811,7 @@ alias ResourceId = Int32
 for _ in range(num_iterations):  # Loop index not used
     process_data()
 
-_ = ctx.enqueue_create_buffer[DType.float64](size)  # Buffer not stored
+_ = ctx.create_buffer[DType.float64](size)  # Buffer not stored
 for i in range(len(items)):  # i is used for indexing
     process_item(items[i])
 ```
@@ -835,7 +835,7 @@ var resource_id = 12345  # Prefer: resource_id = 12345
 # DON'T: Keep unused variables that generate warnings
 for i in range(num_iterations):  # Warning: 'i' never used
     process_data()
-var buffer = ctx.enqueue_create_buffer[DType.float64](size)  # Warning: 'buffer' never used
+var buffer = ctx.create_buffer[DType.float64](size)  # Warning: 'buffer' never used
 ```
 
 ### 📋 **Variable Declaration Rules**
@@ -1104,11 +1104,36 @@ fn create_gpu_context() -> DeviceContext:
     var ctx = DeviceContext()
     return ctx
 
+### 🔄 **GPU API Updates (Current Mojo Compiler)**
+
+**Recent API Changes**: The Mojo compiler has simplified DeviceContext method names:
+
+| **Deprecated API** | **New API** | **Description** |
+|-------------------|-------------|-----------------|
+| `ctx.enqueue_create_buffer()` | `ctx.create_buffer()` | Create GPU buffer |
+| `ctx.enqueue_function()` | `ctx.call_function()` | Launch GPU kernel |
+| `buffer.enqueue_fill()` | `buffer.fill()` | Fill buffer with value |
+
+**Migration Pattern**:
+```mojo
+# ❌ OLD (Deprecated)
+var buffer = ctx.enqueue_create_buffer[DType.float64](size)
+buffer.enqueue_fill(0.0)
+ctx.enqueue_function[kernel](buffer, size, grid_dim=blocks)
+
+# ✅ NEW (Current)
+var buffer = ctx.create_buffer[DType.float64](size)
+buffer.fill(0.0)
+ctx.call_function[kernel](buffer, size, grid_dim=blocks)
+```
+
+**Note**: All examples in this document use the current API. Legacy code should be updated to use the simplified method names.
+
 # GPU Buffer Management (VERIFIED WORKING PATTERN)
 fn create_gpu_buffer[dtype: DType](ctx: DeviceContext, size: Int):
     """Create GPU buffer using DeviceContext."""
     # Based on working vector_addition.mojo example
-    var buffer = ctx.enqueue_create_buffer[dtype](size)
+    var buffer = ctx.create_buffer[dtype](size)
     return buffer
     except e:
         print("GPU operation failed:", e)
@@ -1127,7 +1152,7 @@ fn create_layout_tensor[dtype: DType](ctx: DeviceContext, width: Int, height: In
     alias layout = Layout.row_major(width, height)
 
     # Create GPU buffer
-    var buffer = ctx.enqueue_create_buffer[dtype](width * height)
+    var buffer = ctx.create_buffer[dtype](width * height)
 
     # Create tensor from buffer
     var tensor = LayoutTensor[dtype, layout](buffer)
@@ -1156,7 +1181,7 @@ fn launch_gpu_kernel(ctx: DeviceContext, tensor_a, tensor_b, result, size: Int):
     var grid_dim = ceildiv(size, BLOCK_SIZE)
 
     # Launch kernel (from working examples)
-    ctx.enqueue_function[gpu_element_wise_add](
+    ctx.call_function[gpu_element_wise_add](
         tensor_a,
         tensor_b,
         result,
@@ -1873,7 +1898,7 @@ fn benchmark_gpu_implementation(
     @always_inline
     fn kernel_launch(ctx: DeviceContext) raises:
         # Core computation only - launch GPU kernel
-        ctx.enqueue_function[gpu_kernel](
+        ctx.call_function[gpu_kernel](
             out_ptr, a_ptr, size,
             grid_dim=blocks_needed,
             block_dim=(block_size, block_size)
@@ -1901,8 +1926,8 @@ def main():
 
     # Setup GPU data once for GPU benchmarks
     with DeviceContext() as ctx:
-        var out_buf = ctx.enqueue_create_buffer[dtype](SIZE * SIZE).enqueue_fill(0)
-        var a_buf = ctx.enqueue_create_buffer[dtype](SIZE * SIZE).enqueue_fill(0)
+        var out_buf = ctx.create_buffer[dtype](SIZE * SIZE).fill(0)
+        var a_buf = ctx.create_buffer[dtype](SIZE * SIZE).fill(0)
 
         # Initialize input data
         with a_buf.map_to_host() as a_host:

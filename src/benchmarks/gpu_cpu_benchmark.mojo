@@ -722,16 +722,16 @@ struct RealGPUCPUBenchmark(
             buffer_size_result = rows * rows
 
             # Create GPU buffers for matrices (using Float64 for consistency)
-            # Note: Using enqueue_create_buffer as per mojo_syntax.md working patterns
-            buffer_a = self.device_context.enqueue_create_buffer[DType.float64](
+            # Note: Using new simplified create_buffer API
+            buffer_a = self.device_context.create_buffer[DType.float64](
                 buffer_size_a
             )
-            buffer_b = self.device_context.enqueue_create_buffer[DType.float64](
+            buffer_b = self.device_context.create_buffer[DType.float64](
                 buffer_size_b
             )
-            buffer_result = self.device_context.enqueue_create_buffer[
-                DType.float64
-            ](buffer_size_result)
+            buffer_result = self.device_context.create_buffer[DType.float64](
+                buffer_size_result
+            )
 
             # Initialize buffers with test matrix data
             with buffer_a.map_to_host() as a_host:
@@ -749,8 +749,8 @@ struct RealGPUCPUBenchmark(
             grid_x = (rows + block_size - 1) // block_size
             grid_y = (rows + block_size - 1) // block_size
 
-            # Note: Using enqueue_function as per mojo_syntax.md working patterns
-            self.device_context.enqueue_function[
+            # Note: Using new simplified call_function API
+            self.device_context.call_function[
                 gpu_matrix_multiply_benchmark_kernel
             ](
                 buffer_result.unsafe_ptr(),
@@ -868,12 +868,12 @@ struct RealGPUCPUBenchmark(
             output_size = 3
 
             # Allocate GPU buffers
-            input_buffer = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](input_size)
-            output_buffer = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](output_size)
+            input_buffer = self.device_context.create_buffer[DType.float32](
+                input_size
+            )
+            output_buffer = self.device_context.create_buffer[DType.float32](
+                output_size
+            )
 
             # Transfer input data to GPU
             with input_buffer.map_to_host() as input_host:
@@ -896,7 +896,7 @@ struct RealGPUCPUBenchmark(
             alias THREADS_PER_BLOCK = 32  # 32 threads for neural network computation
 
             # Single layer: Input -> Output using GPU kernel (functionally equivalent to CPU)
-            self.device_context.enqueue_function[gpu_neural_network_kernel](
+            self.device_context.call_function[gpu_neural_network_kernel](
                 output_tensor,
                 input_tensor,
                 grid_dim=BLOCKS_PER_GRID,
@@ -934,12 +934,12 @@ struct RealGPUCPUBenchmark(
             total_input_elements = batch_size * input_size
             total_output_elements = batch_size * output_size
 
-            input_buffer = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](total_input_elements)
-            output_buffer = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](total_output_elements)
+            input_buffer = self.device_context.create_buffer[DType.float32](
+                total_input_elements
+            )
+            output_buffer = self.device_context.create_buffer[DType.float32](
+                total_output_elements
+            )
 
             # Transfer all input data to GPU in single operation
             with input_buffer.map_to_host() as input_host:
@@ -1022,17 +1022,15 @@ struct RealGPUCPUBenchmark(
             # GPU control optimization starting
 
             # Create GPU buffers for control optimization
-            control_buffer = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](horizon)
-            state_buffer = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](
+            control_buffer = self.device_context.create_buffer[DType.float32](
+                horizon
+            )
+            state_buffer = self.device_context.create_buffer[DType.float32](
                 4
             )  # 4 state variables
-            cost_buffer = self.device_context.enqueue_create_buffer[
-                DType.float32
-            ](horizon)
+            cost_buffer = self.device_context.create_buffer[DType.float32](
+                horizon
+            )
 
             # Initialize state buffer with current system state
             with state_buffer.map_to_host() as state_host:
@@ -1056,9 +1054,7 @@ struct RealGPUCPUBenchmark(
             alias BLOCKS_PER_GRID = 1
             alias THREADS_PER_BLOCK = 64  # 64 threads for parallel optimization
 
-            self.device_context.enqueue_function[
-                gpu_control_optimization_kernel
-            ](
+            self.device_context.call_function[gpu_control_optimization_kernel](
                 control_tensor,
                 cost_tensor,
                 horizon,
