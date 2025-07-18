@@ -291,7 +291,11 @@ struct GPUNeuralLayer:
                     self.output_size + block_size - 1
                 ) // block_size
 
-                ctx.call_function[gpu_neural_layer_kernel](
+                var compiled_kernel = ctx.compile_function[
+                    gpu_neural_layer_kernel
+                ]()
+                ctx.call_function(
+                    compiled_kernel,
                     output_buffer.unsafe_ptr(),
                     input_buffer.unsafe_ptr(),
                     weights_buffer.unsafe_ptr(),

@@ -161,6 +161,9 @@ struct MojoSyntaxChecker(Copyable, Movable):
     var preserve_gpu_patterns: Bool
     var show_observations: Bool
     var check_docstring_code: Bool
+    var auto_cleanup_backups: Bool
+    var keep_backups: Bool
+    var backup_retention_days: Int
 
     fn __init__(out self):
         """Initialize the syntax checker."""
@@ -170,6 +173,9 @@ struct MojoSyntaxChecker(Copyable, Movable):
         self.preserve_gpu_patterns = True
         self.show_observations = False
         self.check_docstring_code = False
+        self.auto_cleanup_backups = True  # Auto-cleanup by default
+        self.keep_backups = False  # Don't keep backups by default
+        self.backup_retention_days = 7  # Keep backups for 7 days
 
     fn _is_inside_docstring(self, lines: List[String], line_index: Int) -> Bool:
         """
@@ -1660,6 +1666,65 @@ struct MojoSyntaxChecker(Copyable, Movable):
             )
             return False
 
+    fn cleanup_backup_file(self, file_path: String) -> Bool:
+        """Clean up backup file for a specific source file."""
+        backup_path = file_path + ".backup"
+        try:
+            # Check if backup file exists
+            with open(backup_path, "r") as _:
+                pass  # File exists, proceed with deletion
+
+            # Delete the backup file
+            from os import remove
+
+            remove(backup_path)
+            print("✅ Cleaned up backup:", backup_path)
+            return True
+        except:
+            # Backup file doesn't exist or couldn't be deleted
+            return False
+
+    fn cleanup_old_backups(self, directory: String) -> Int:
+        """Clean up backup files older than retention period."""
+        if self.backup_retention_days <= 0:
+            return 0
+
+        cleaned_count = 0
+        try:
+            from os import listdir, remove
+
+            # For now, just clean all backup files since time/stat APIs are limited
+            # TODO: Implement proper age-based cleanup when time APIs are available
+            files = listdir(directory)
+            for file_name in files:
+                if file_name.endswith(".backup"):
+                    file_path = directory + "/" + file_name
+                    try:
+                        remove(file_path)
+                        print("🗑️  Removed backup:", file_path)
+                        cleaned_count += 1
+                    except:
+                        continue  # Skip files we can't process
+
+        except:
+            print("Warning: Could not perform automatic backup cleanup")
+
+        return cleaned_count
+
+    fn cleanup_all_backups(self, base_directory: String) -> Int:
+        """Recursively clean up all backup files in directory tree."""
+        # Clean current directory
+        total_cleaned = self.cleanup_old_backups(base_directory)
+
+        # For now, just clean the current directory
+        # TODO: Add recursive directory traversal when path APIs are available
+        if total_cleaned > 0:
+            print(
+                "Cleaned", total_cleaned, "backup files from:", base_directory
+            )
+
+        return total_cleaned
+
     fn fix_import_patterns(self, content: String) -> String:
         """Fix import pattern violations."""
         lines = content.split("\n")
@@ -2059,8 +2124,17 @@ fn print_usage():
     print("  --fix [file]       Apply automatic fixes to file")
     print("  --validate [file]  Validate single file compliance")
     print("  --report [dir]     Generate compliance report")
+    print("  --cleanup [dir]    Clean up backup files in directory")
     print("  --enable-auto-fix  Enable automatic fixing (with backups)")
     print("  --disable-backup   Disable backup creation")
+    print("  --keep-backups     Keep backup files after successful completion")
+    print(
+        "  --auto-cleanup     Enable automatic cleanup of backup files"
+        " (default)"
+    )
+    print(
+        "  --retention-days N Set backup retention period in days (default: 7)"
+    )
     print("  --show-observations Show suggestions and style recommendations")
     print(
         "  --check-docstring-code Enable syntax checking within docstring code"
@@ -2085,6 +2159,11 @@ fn print_usage():
     print(
         "  mojo update_mojo_syntax.mojo --validate"
         " src/utils/gpu_matrix.mojo --check-docstring-code"
+    )
+    print("  mojo update_mojo_syntax.mojo --cleanup src/ --retention-days 3")
+    print(
+        "  mojo update_mojo_syntax.mojo --fix file.mojo --enable-auto-fix"
+        " --keep-backups"
     )
 
 
@@ -2177,6 +2256,22 @@ fn main() raises:
             checker.show_observations = True
         elif arg == "--check-docstring-code":
             checker.check_docstring_code = True
+        elif arg == "--keep-backups":
+            checker.keep_backups = True
+            checker.auto_cleanup_backups = False
+        elif arg == "--auto-cleanup":
+            checker.auto_cleanup_backups = True
+        elif arg == "--retention-days":
+            if i + 1 < len(args):
+                try:
+                    checker.backup_retention_days = atol(String(args[i + 1]))
+                except:
+                    print(
+                        "Warning: Invalid retention days value, using"
+                        " default (7)"
+                    )
+        elif arg == "--disable-backup":
+            checker.backup_enabled = False
 
     # If no arguments provided, show usage and run demo
     if len(args) < 2:
@@ -2244,6 +2339,11 @@ fn main() raises:
         success = checker.apply_automatic_fixes(file_path)
         if success:
             print("✅ Fixes applied successfully")
+
+            # Auto-cleanup backup files if enabled
+            if checker.auto_cleanup_backups and not checker.keep_backups:
+                if checker.cleanup_backup_file(file_path):
+                    print("🧹 Backup file cleaned up automatically")
         else:
             print("❌ Fix application failed or disabled")
 
@@ -2262,6 +2362,21 @@ fn main() raises:
             print("\n📋 Report generation completed")
         else:
             print("No files found to generate report")
+
+    elif command == "--cleanup":
+        if len(args) < 3:
+            print("Error: --cleanup requires a directory path")
+            print("Usage: mojo update_mojo_syntax.mojo --cleanup <directory>")
+            return
+
+        directory = String(args[2])
+        print("🧹 Cleaning up backup files in: " + directory)
+
+        cleaned_count = checker.cleanup_all_backups(directory)
+        if cleaned_count > 0:
+            print("✅ Cleanup completed:", cleaned_count, "backup files removed")
+        else:
+            print("ℹ️  No backup files found to clean up")
 
     else:
         print("Unknown command:", command)

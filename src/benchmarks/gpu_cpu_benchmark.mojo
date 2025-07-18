@@ -749,10 +749,12 @@ struct RealGPUCPUBenchmark(
             grid_x = (rows + block_size - 1) // block_size
             grid_y = (rows + block_size - 1) // block_size
 
-            # Note: Using new simplified call_function API
-            self.device_context.call_function[
+            # Note: Using recommended compile_function pattern for better performance
+            var compiled_kernel = self.device_context.compile_function[
                 gpu_matrix_multiply_benchmark_kernel
-            ](
+            ]()
+            self.device_context.call_function(
+                compiled_kernel,
                 buffer_result.unsafe_ptr(),
                 buffer_a.unsafe_ptr(),
                 buffer_b.unsafe_ptr(),
@@ -896,7 +898,11 @@ struct RealGPUCPUBenchmark(
             alias THREADS_PER_BLOCK = 32  # 32 threads for neural network computation
 
             # Single layer: Input -> Output using GPU kernel (functionally equivalent to CPU)
-            self.device_context.call_function[gpu_neural_network_kernel](
+            var compiled_nn_kernel = self.device_context.compile_function[
+                gpu_neural_network_kernel
+            ]()
+            self.device_context.call_function(
+                compiled_nn_kernel,
                 output_tensor,
                 input_tensor,
                 grid_dim=BLOCKS_PER_GRID,
@@ -1054,7 +1060,11 @@ struct RealGPUCPUBenchmark(
             alias BLOCKS_PER_GRID = 1
             alias THREADS_PER_BLOCK = 64  # 64 threads for parallel optimization
 
-            self.device_context.call_function[gpu_control_optimization_kernel](
+            var compiled_control_kernel = self.device_context.compile_function[
+                gpu_control_optimization_kernel
+            ]()
+            self.device_context.call_function(
+                compiled_control_kernel,
                 control_tensor,
                 cost_tensor,
                 horizon,

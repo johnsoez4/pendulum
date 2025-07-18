@@ -1121,13 +1121,21 @@ var buffer = ctx.enqueue_create_buffer[DType.float64](size)
 buffer.enqueue_fill(0.0)
 ctx.enqueue_function[kernel](buffer, size, grid_dim=blocks)
 
-# ✅ NEW (Current)
+# ✅ NEW (Current - Basic)
 var buffer = ctx.create_buffer[DType.float64](size)
 buffer.fill(0.0)
 ctx.call_function[kernel](buffer, size, grid_dim=blocks)
+
+# ✅ RECOMMENDED (Performance Optimized)
+var buffer = ctx.create_buffer[DType.float64](size)
+buffer.fill(0.0)
+var compiled_kernel = ctx.compile_function[kernel]()
+ctx.call_function(compiled_kernel, buffer, size, grid_dim=blocks)
 ```
 
 **Note**: All examples in this document use the current API. Legacy code should be updated to use the simplified method names.
+
+**Performance Recommendation**: Use the `compile_function` API for pre-compiling GPU kernels to achieve better performance by avoiding kernel recompilation on each call. This is now the recommended pattern for production GPU code.
 
 # GPU Buffer Management (VERIFIED WORKING PATTERN)
 fn create_gpu_buffer[dtype: DType](ctx: DeviceContext, size: Int):
@@ -1180,8 +1188,10 @@ fn launch_gpu_kernel(ctx: DeviceContext, tensor_a, tensor_b, result, size: Int):
     alias BLOCK_SIZE = 256
     var grid_dim = ceildiv(size, BLOCK_SIZE)
 
-    # Launch kernel (from working examples)
-    ctx.call_function[gpu_element_wise_add](
+    # Launch kernel (recommended performance pattern)
+    var compiled_kernel = ctx.compile_function[gpu_element_wise_add]()
+    ctx.call_function(
+        compiled_kernel,
         tensor_a,
         tensor_b,
         result,
@@ -1897,8 +1907,10 @@ fn benchmark_gpu_implementation(
     @parameter
     @always_inline
     fn kernel_launch(ctx: DeviceContext) raises:
-        # Core computation only - launch GPU kernel
-        ctx.call_function[gpu_kernel](
+        # Core computation only - launch GPU kernel (recommended pattern)
+        var compiled_kernel = ctx.compile_function[gpu_kernel]()
+        ctx.call_function(
+            compiled_kernel,
             out_ptr, a_ptr, size,
             grid_dim=blocks_needed,
             block_dim=(block_size, block_size)

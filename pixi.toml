@@ -8,7 +8,7 @@ version = "0.1.0"
 update = "sh update.sh"
 
 [dependencies]
-modular = ">=25.5.0.dev2025062815,<26"
+# max = ">=25.5.0.dev2025071505"
 max = "*"
 python = ">=3.10,<3.13"
 pip = ">=24.3.1"
