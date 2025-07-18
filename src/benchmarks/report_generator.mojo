@@ -58,7 +58,7 @@ struct SystemInfo:
     var real_gpu_detected: Bool
     var gpu_memory_gb: Int
 
-    fn __init__(out self):
+    fn __init__(out self) raises:
         """Initialize with real system information detection."""
         self.cpu_model = "Intel/AMD CPU (detected at runtime)"
         self.memory_gb = 32
@@ -95,7 +95,7 @@ struct SystemInfo:
         self.gpu_memory_gb = other.gpu_memory_gb
 
 
-fn collect_real_gpu_metrics() -> BenchmarkMetrics:
+fn collect_real_gpu_metrics() raises -> BenchmarkMetrics:
     """Collect real GPU performance metrics using actual hardware."""
     metrics = BenchmarkMetrics("Real GPU Hardware Validation")
 
@@ -105,12 +105,10 @@ fn collect_real_gpu_metrics() -> BenchmarkMetrics:
 
             # Test GPU memory bandwidth
             test_size = 1024 * 1024  # 1M elements
-            buffer = device_context.enqueue_create_buffer[DType.float64](
-                test_size
-            )
+            buffer = device_context.create_buffer[DType.float64](test_size)
 
             start_time = now()
-            _ = buffer.enqueue_fill(3.14159)
+            _ = buffer.fill(3.14159)
             device_context.synchronize()
             end_time = now()
 
@@ -131,8 +129,9 @@ fn collect_real_gpu_metrics() -> BenchmarkMetrics:
 
             metrics.calculate_derived_metrics()
 
-        except:
-            # GPU test failed
+        except e:
+            # GPU test failed - generic exception handling for GPU operations
+            print("GPU test failed:", e)
             metrics.gpu_time_ms = 0.0
             metrics.cpu_time_ms = 1.0
             metrics.test_passed = False
@@ -145,7 +144,9 @@ fn collect_real_gpu_metrics() -> BenchmarkMetrics:
     return metrics
 
 
-struct BenchmarkMetrics(Copyable, Movable):
+struct BenchmarkMetrics(
+    Copyable, Movable
+):  # Required: returned by functions and stored in collections
     """Comprehensive benchmark metrics."""
 
     var test_name: String
@@ -210,7 +211,7 @@ struct BenchmarkMetrics(Copyable, Movable):
         )  # Simplified calculation
 
 
-struct BenchmarkReportGenerator:
+struct BenchmarkReportGenerator(Copyable, Movable):
     """
     Comprehensive benchmark report generator.
 
@@ -224,22 +225,14 @@ struct BenchmarkReportGenerator:
     """
 
     var system_info: SystemInfo
-    var report_initialized: Bool
 
-    fn __init__(out self):
+    fn __init__(out self) raises:
         """Initialize report generator."""
         self.system_info = SystemInfo()
-        self.report_initialized = True
-
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.system_info = other.system_info
-        self.report_initialized = other.report_initialized
 
     fn generate_comprehensive_report(
-        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
-    ) -> String:
+    ) raises -> String:
         """Generate comprehensive benchmark report."""
         report = String("")
 
@@ -279,7 +272,6 @@ struct BenchmarkReportGenerator:
         return header
 
     fn _generate_executive_summary(
-        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate executive summary."""
@@ -397,7 +389,6 @@ struct BenchmarkReportGenerator:
         return hardware
 
     fn _generate_results_section(
-        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate performance results section."""
@@ -471,7 +462,6 @@ struct BenchmarkReportGenerator:
         return charts
 
     fn _generate_analysis_section(
-        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate analysis and interpretation section."""
@@ -546,7 +536,6 @@ struct BenchmarkReportGenerator:
         return analysis
 
     fn _generate_conclusions_section(
-        """TODO: Add function description."""
         self, metrics: List[BenchmarkMetrics]
     ) -> String:
         """Generate conclusions and recommendations section."""
@@ -617,7 +606,7 @@ struct BenchmarkReportGenerator:
         return conclusions
 
 
-fn create_benchmark_report(metrics: List[BenchmarkMetrics]) -> String:
+fn create_benchmark_report(metrics: List[BenchmarkMetrics]) raises -> String:
     """
     Create comprehensive benchmark report.
 
@@ -631,7 +620,7 @@ fn create_benchmark_report(metrics: List[BenchmarkMetrics]) -> String:
     return generator.generate_comprehensive_report(metrics)
 
 
-fn generate_real_gpu_report() -> String:
+fn generate_real_gpu_report() raises -> String:
     """Generate benchmark report with real GPU performance metrics."""
     metrics = List[BenchmarkMetrics]()
 
@@ -684,7 +673,7 @@ fn generate_real_gpu_report() -> String:
     return create_benchmark_report(metrics)
 
 
-fn generate_sample_report() -> String:
+fn generate_sample_report() raises -> String:
     """Generate sample benchmark report with simulated data."""
     metrics = List[BenchmarkMetrics]()
 

@@ -457,7 +457,6 @@ struct MojoSyntaxChecker(Copyable, Movable):
         """Analyze struct for trait requirements based on lifecycle methods."""
         violations = List[SyntaxViolation]()
         struct_line = lines[struct_line_idx].strip()
-        line_num = struct_line_idx + 1
 
         # Extract struct name and existing traits
         struct_info = self._parse_struct_definition(String(struct_line))
@@ -469,56 +468,89 @@ struct MojoSyntaxChecker(Copyable, Movable):
         struct_body = self._extract_struct_body(lines, struct_line_idx)
         lifecycle_analysis = self._analyze_lifecycle_methods(struct_body)
 
-        # Check for redundant traits
+        # NOTE: Traits are almost always required in Mojo - compiler does NOT auto-generate
+        # Only flag traits as redundant in very specific cases (e.g., utility structs never copied)
+
+        # Check for redundant traits (very rare cases)
+        # Most structs need traits for copying, function returns, and collection storage
+        # Only suggest removal for utility structs that are never copied/moved
         if has_copyable and not lifecycle_analysis.needs_custom_copy:
-            violation = SyntaxViolation(
-                file_path,
-                line_num,
-                "redundant_trait",
-                "Copyable trait unnecessary - compiler auto-generates copy",
-                (
-                    "Remove (Copyable) trait - let compiler handle default copy"
-                    " behavior"
-                ),
-                "suggestion",
-            )
-            violations.append(violation)
+            # TODO: Add logic to detect if struct is actually used in copyable contexts
+            # For now, don't suggest removing traits as they're usually needed
+            pass
 
         if has_movable and not lifecycle_analysis.needs_custom_move:
-            violation = SyntaxViolation(
-                file_path,
-                line_num,
-                "redundant_trait",
-                "Movable trait unnecessary - compiler auto-generates move",
-                (
-                    "Remove (Movable) trait - let compiler handle default move"
-                    " behavior"
-                ),
-                "suggestion",
-            )
-            violations.append(violation)
+            # TODO: Add logic to detect if struct is actually used in movable contexts
+            # For now, don't suggest removing traits as they're usually needed
+            pass
 
         # Check for redundant lifecycle methods
         if lifecycle_analysis.has_trivial_copyinit:
-            violation = SyntaxViolation(
-                file_path,
-                lifecycle_analysis.copyinit_line,
-                "redundant_method",
-                "Trivial __copyinit__ method duplicates compiler default",
-                "Remove __copyinit__ method and add Copyable trait if needed",
-                "suggestion",
-            )
+            # Adjust line number to be relative to file, not struct body
+            absolute_line = struct_line_idx + lifecycle_analysis.copyinit_line
+            if has_copyable:
+                # Struct has trait but method is trivial - suggest removing method
+                violation = SyntaxViolation(
+                    file_path,
+                    absolute_line,
+                    "redundant_method",
+                    "Trivial __copyinit__ method duplicates compiler default",
+                    (
+                        "Remove __copyinit__ method - Copyable trait handles"
+                        " this automatically"
+                    ),
+                    "suggestion",
+                )
+            else:
+                # Struct has trivial method but no trait - suggest replacing with trait
+                violation = SyntaxViolation(
+                    file_path,
+                    absolute_line,
+                    "redundant_method",
+                    (
+                        "Trivial __copyinit__ method should use Copyable trait"
+                        " instead"
+                    ),
+                    (
+                        "Remove __copyinit__ method and add Copyable trait to"
+                        " struct"
+                    ),
+                    "suggestion",
+                )
             violations.append(violation)
 
         if lifecycle_analysis.has_trivial_moveinit:
-            violation = SyntaxViolation(
-                file_path,
-                lifecycle_analysis.moveinit_line,
-                "redundant_method",
-                "Trivial __moveinit__ method duplicates compiler default",
-                "Remove __moveinit__ method and add Movable trait if needed",
-                "suggestion",
-            )
+            # Adjust line number to be relative to file, not struct body
+            absolute_line = struct_line_idx + lifecycle_analysis.moveinit_line
+            if has_movable:
+                # Struct has trait but method is trivial - suggest removing method
+                violation = SyntaxViolation(
+                    file_path,
+                    absolute_line,
+                    "redundant_method",
+                    "Trivial __moveinit__ method duplicates compiler default",
+                    (
+                        "Remove __moveinit__ method - Movable trait handles"
+                        " this automatically"
+                    ),
+                    "suggestion",
+                )
+            else:
+                # Struct has trivial method but no trait - suggest replacing with trait
+                violation = SyntaxViolation(
+                    file_path,
+                    absolute_line,
+                    "redundant_method",
+                    (
+                        "Trivial __moveinit__ method should use Movable trait"
+                        " instead"
+                    ),
+                    (
+                        "Remove __moveinit__ method and add Movable trait to"
+                        " struct"
+                    ),
+                    "suggestion",
+                )
             violations.append(violation)
 
         return violations
@@ -1251,8 +1283,14 @@ struct MojoSyntaxChecker(Copyable, Movable):
                         file_path,
                         line_num,
                         "struct_traits",
-                        "Struct may need traits specification",
-                        "Consider adding (Copyable, Movable) if appropriate",
+                        (
+                            "Struct likely needs (Copyable, Movable) traits for"
+                            " copying and collections"
+                        ),
+                        (
+                            "Add (Copyable, Movable) traits - required for"
+                            " copying, function returns, and collection storage"
+                        ),
                         "suggestion",
                     )
                     violations.append(violation)

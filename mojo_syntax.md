@@ -270,22 +270,34 @@ struct Resource(Copyable, Movable):
 
 ### 🔄 **Struct Lifecycle Management (Copy & Move Semantics)**
 
-#### 🎯 **Core Principle: Compiler Auto-Generation vs Explicit Implementation**
+#### 🎯 **Core Principle: Explicit Traits Required for Copy/Move Operations**
 
-**Mojo's compiler automatically generates copy and move operations when needed.** Explicit traits and lifecycle methods should only be used when custom behavior is required.
+**IMPORTANT: Mojo does NOT automatically generate copy and move operations.** Structs without explicit `Copyable` and `Movable` traits cannot be copied, moved, or stored in collections. Traits are REQUIRED for these operations.
 
-#### ✅ **PREFERRED: Let Compiler Handle Defaults**
+#### ✅ **REQUIRED: Explicit Traits for Copy/Move Operations**
 
 ```mojo
-# ✅ BEST: Simple struct - no traits needed
-# Compiler auto-generates copy/move when required
-struct SimpleStruct:
+# ❌ WRONG: Struct without traits - NOT copyable, cannot be stored in collections
+struct NonCopyableStruct:
     var data: Int
     var name: String
 
     fn __init__(out self, data: Int, name: String):
         self.data = data
         self.name = name
+    # Cannot copy: copied = original  # ← COMPILATION ERROR
+    # Cannot store: List[NonCopyableStruct]()  # ← COMPILATION ERROR
+
+# ✅ CORRECT: Struct with traits - copyable and can be stored in collections
+struct CopyableStruct(Copyable, Movable):
+    var data: Int
+    var name: String
+
+    fn __init__(out self, data: Int, name: String):
+        self.data = data
+        self.name = name
+    # Can copy: copied = original  # ← WORKS
+    # Can store: List[CopyableStruct]()  # ← WORKS
 
 # ✅ GOOD: Struct with resource management needs explicit control
 struct ResourceManager(Copyable, Movable):
@@ -308,14 +320,21 @@ struct ResourceManager(Copyable, Movable):
         self.buffer = other.buffer^
 ```
 
-#### ❌ **AVOID: Unnecessary Explicit Implementation**
+#### ❌ **AVOID: Trivial Explicit Methods When Traits Suffice**
 
 ```mojo
-# ❌ DON'T: Redundant traits for simple structs
-struct SimpleData(Copyable, Movable):  # ← Unnecessary
+# ❌ DON'T: Explicit trivial methods when traits handle it automatically
+struct SimpleData(Copyable, Movable):  # ← Traits are REQUIRED
     var value: Int
 
-# ❌ DON'T: Trivial lifecycle methods that duplicate defaults
+    # ❌ DON'T: Trivial __copyinit__ when trait handles it automatically
+    fn __copyinit__(out self, other: Self):
+        self.value = other.value  # ← Redundant - trait does this automatically
+
+# ✅ DO: Use traits without explicit methods for simple copying
+struct SimpleData(Copyable, Movable):  # ← Traits are REQUIRED
+    var value: Int
+    # No explicit __copyinit__ needed - trait handles simple field copying
 struct BasicStruct:
     var data: Int
 
@@ -326,35 +345,118 @@ struct BasicStruct:
         self.data = other.data^  # Just moves field - compiler does this
 ```
 
-### 📋 **When to Use Explicit Traits and Methods**
+### 📋 **When to Use Traits vs Explicit Methods**
 
-#### ✅ **Use Explicit Traits When:**
+#### ✅ **ALWAYS Use Copyable/Movable Traits When:**
+1. **Struct Needs to be Copied**: Any assignment like `copied = original`
+2. **Struct Stored in Collections**: `List[MyStruct]`, `Dict[String, MyStruct]`
+3. **Struct Returned from Functions**: `fn get_data() -> MyStruct`
+4. **Struct Passed by Value**: `fn process(data: MyStruct)`
+5. **Simple Field Copying**: Default trait behavior handles field copying automatically
+
+#### ✅ **Use Explicit Methods (+ Traits) When:**
 1. **Custom Resource Management**: File handles, memory allocation, GPU contexts
-2. **Reference Counting**: Shared ownership semantics
-3. **Validation Logic**: Copy/move operations need validation
+2. **Reference Counting**: Shared ownership semantics requiring custom logic
+3. **Validation Logic**: Copy/move operations need validation or error handling
 4. **Performance Optimization**: Custom memory layout or SIMD operations
 5. **External Resource Coordination**: Network connections, database handles
 
-#### ❌ **DON'T Use Explicit Traits When:**
-1. **Simple Data Containers**: Basic structs with primitive fields
-2. **Default Behavior Sufficient**: No custom logic needed
-3. **Compiler Auto-Generation Works**: Standard copy/move semantics are adequate
+#### 🎯 **Decision Matrix:**
+- **Simple struct with basic fields** → Use `(Copyable, Movable)` traits only
+- **Complex struct with resources** → Use `(Copyable, Movable)` traits + explicit methods
+- **Struct never copied/moved** → No traits needed (rare case)
+
+### 📚 **Comprehensive Examples**
+
+#### **Example 1: Simple Data Struct (Traits Only)**
+```mojo
+# ✅ CORRECT: Simple struct with traits for copying and collections
+struct BenchmarkMetrics(Copyable, Movable):
+    """Simple data container - traits handle copying automatically."""
+    var test_name: String
+    var cpu_time_ms: Float64
+    var gpu_time_ms: Float64
+
+    fn __init__(out self, name: String):
+        self.test_name = name
+        self.cpu_time_ms = 0.0
+        self.gpu_time_ms = 0.0
+
+# Usage examples that work with traits:
+fn example_usage():
+    original = BenchmarkMetrics("test")
+    copied = original  # ✅ Works with Copyable trait
+
+    var metrics_list = List[BenchmarkMetrics]()  # ✅ Works with traits
+    metrics_list.append(original)
+
+    returned = get_metrics()  # ✅ Function return works
+
+fn get_metrics() -> BenchmarkMetrics:  # ✅ Return works with traits
+    return BenchmarkMetrics("example")
+```
+
+#### **Example 2: Resource Management (Traits + Explicit Methods)**
+```mojo
+# ✅ CORRECT: Resource management with custom logic
+struct FileManager(Copyable, Movable):
+    """Resource manager - needs custom copy/move logic."""
+    var file_path: String
+    var handle: FileHandle
+
+    fn __init__(out self, path: String):
+        self.file_path = path
+        self.handle = open(path)
+
+    fn __copyinit__(out self, other: Self):
+        # Custom copy: duplicate file handle
+        self.file_path = other.file_path
+        self.handle = open(other.file_path)  # New handle
+
+    fn __moveinit__(out self, owned other: Self):
+        # Custom move: transfer ownership
+        self.file_path = other.file_path^
+        self.handle = other.handle^
+```
 
 ### 🔍 **Detection Criteria for Automation**
 
-#### **Trivial Methods (Remove + Add Trait):**
+#### **Missing Traits (Add Required Traits):**
 ```mojo
-fn __copyinit__(out self, other: Self):
-    self.field1 = other.field1  # ← Just field copying
-    self.field2 = other.field2  # ← No custom logic
+# ❌ DETECTED: Struct without traits but used in copyable contexts
+struct DataStruct:  # ← Missing (Copyable, Movable)
+    var value: Int
+
+# Usage that requires traits:
+fn process() -> DataStruct:  # ← Function return needs traits
+    return DataStruct(42)
+
+var items = List[DataStruct]()  # ← Collection storage needs traits
 ```
 
-#### **Custom Methods (Keep Explicit):**
+#### **Trivial Methods (Remove Method, Keep Traits):**
 ```mojo
-fn __copyinit__(out self, other: Self):
-    self.field1 = other.field1
-    self.ref_count = other.ref_count + 1  # ← Custom logic
-    validate_copy_operation()             # ← Additional behavior
+# ❌ DETECTED: Redundant explicit method
+struct SimpleStruct(Copyable, Movable):
+    var field1: Int
+    var field2: String
+
+    fn __copyinit__(out self, other: Self):  # ← Remove this
+        self.field1 = other.field1  # ← Trait handles automatically
+        self.field2 = other.field2  # ← No custom logic needed
+```
+
+#### **Custom Methods (Keep Explicit + Traits):**
+```mojo
+# ✅ CORRECT: Custom logic requires explicit method
+struct ResourceStruct(Copyable, Movable):
+    var field1: Int
+    var ref_count: Int
+
+    fn __copyinit__(out self, other: Self):  # ← Keep this
+        self.field1 = other.field1
+        self.ref_count = other.ref_count + 1  # ← Custom logic
+        validate_copy_operation()             # ← Additional behavior
 ```
 
 ---
