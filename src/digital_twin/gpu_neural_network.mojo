@@ -129,26 +129,13 @@ alias MODEL_HIDDEN_SIZE = 8
 alias MODEL_LEARNING_RATE = 0.001
 
 
-# Simplified physics model for GPU neural network
-struct PendulumPhysics:
-    """Simplified physics model for pendulum constraints."""
-
-    fn __init__(out self):
-        """Initialize physics model."""
-        pass
-
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        pass
-
-
 # Note: ComputeMode constants imported from src.utils.gpu_matrix
 
 
 # Note: Using proper GPUMatrix from src.utils.gpu_matrix module
 
 
-struct GPUNeuralLayer:
+struct GPUNeuralLayer(Copyable, Movable):
     """GPU-accelerated neural network layer."""
 
     var weights: GPUMatrix
@@ -233,15 +220,9 @@ struct GPUNeuralLayer:
                 output_size = input.rows * self.output_size
 
                 # Create optimized GPU buffers
-                input_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    input_size
-                )
-                weights_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    weights_size
-                )
-                output_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    output_size
-                )
+                _ = ctx.enqueue_create_buffer[DType.float64](input_size)
+                _ = ctx.enqueue_create_buffer[DType.float64](weights_size)
+                _ = ctx.enqueue_create_buffer[DType.float64](output_size)
                 bias_buffer = ctx.enqueue_create_buffer[DType.float64](
                     self.output_size
                 )
@@ -294,7 +275,7 @@ struct GPUNeuralLayer:
                 var compiled_kernel = ctx.compile_function[
                     gpu_neural_layer_kernel
                 ]()
-                ctx.call_function(
+                ctx.enqueue_function(
                     compiled_kernel,
                     output_buffer.unsafe_ptr(),
                     input_buffer.unsafe_ptr(),
@@ -429,7 +410,7 @@ struct GPUNeuralLayer:
             return self.forward(input)
 
 
-struct GPUPendulumNeuralNetwork:
+struct GPUPendulumNeuralNetwork(Copyable, Movable):
     """
     GPU-accelerated physics-informed neural network for pendulum digital twin.
 
@@ -443,7 +424,6 @@ struct GPUPendulumNeuralNetwork:
     var layer1: GPUNeuralLayer
     var layer2: GPUNeuralLayer
     var output_layer: GPUNeuralLayer
-    var physics_model: PendulumPhysics
     var input_means: List[Float64]
     var input_stds: List[Float64]
     var output_means: List[Float64]
@@ -484,7 +464,6 @@ struct GPUPendulumNeuralNetwork:
             MODEL_HIDDEN_SIZE, MODEL_OUTPUT_DIM, "linear", actual_gpu_available
         )
 
-        self.physics_model = PendulumPhysics()
         self.input_means = List[Float64]()
         self.input_stds = List[Float64]()
         self.output_means = List[Float64]()
@@ -653,10 +632,10 @@ struct GPUPendulumNeuralNetwork:
         constrained = List[Float64]()
 
         # Extract current state
-        current_la_pos = input[0]
-        current_pend_vel = input[1]
+        _ = input[0]  # current_la_pos
+        _ = input[1]  # current_pend_vel
         current_pend_pos = input[2]
-        current_cmd_volts = input[3]
+        _ = input[3]  # current_cmd_volts
 
         # Extract predictions
         pred_la_pos = prediction[0]
@@ -709,7 +688,7 @@ struct GPUPendulumNeuralNetwork:
                 )
 
                 # GPU performance test
-                for i in range(num_iterations):
+                for _ in range(num_iterations):
                     var _ = self.forward(test_input)
 
                 ctx.synchronize()
@@ -744,21 +723,21 @@ struct GPUPendulumNeuralNetwork:
                 # Layer 1 memory optimization
                 layer1_input_size = MODEL_INPUT_DIM
                 layer1_output_size = MODEL_HIDDEN_SIZE
-                layer1_buffer = ctx.enqueue_create_buffer[DType.float64](
+                _ = ctx.enqueue_create_buffer[DType.float64](
                     layer1_input_size * layer1_output_size
                 )
 
                 # Layer 2 memory optimization
                 layer2_input_size = MODEL_HIDDEN_SIZE
                 layer2_output_size = MODEL_HIDDEN_SIZE
-                layer2_buffer = ctx.enqueue_create_buffer[DType.float64](
+                _ = ctx.enqueue_create_buffer[DType.float64](
                     layer2_input_size * layer2_output_size
                 )
 
                 # Output layer memory optimization
                 output_input_size = MODEL_HIDDEN_SIZE
                 output_output_size = MODEL_OUTPUT_DIM
-                output_buffer = ctx.enqueue_create_buffer[DType.float64](
+                _ = ctx.enqueue_create_buffer[DType.float64](
                     output_input_size * output_output_size
                 )
 

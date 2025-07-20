@@ -261,35 +261,48 @@ struct Resource(Copyable, Movable):
 ### 📋 **Struct Definition Rules**
 
 1. **Include comprehensive docstrings** for structs and methods
-2. **Use traits** (Copyable, Movable) ONLY when custom lifecycle behavior is needed
-3. **Let compiler auto-generate** copy/move operations for simple structs
-4. **Define type aliases** within structs for clarity
-5. **Use `_` prefix** for private methods and variables
-6. **Group related methods** together logically
-7. **Use `@staticmethod`** for utility functions that don't need instance data
+2. **Add Copyable trait** ONLY when implementing `fn __copyinit__()`
+3. **Add Movable trait** ONLY when implementing `fn __moveinit__()`
+4. **Use both traits** when implementing both lifecycle methods
+5. **Define type aliases** within structs for clarity
+6. **Use `_` prefix** for private methods and variables
+7. **Group related methods** together logically
+8. **Use `@staticmethod`** for utility functions that don't need instance data
 
 ### 🔄 **Struct Lifecycle Management (Copy & Move Semantics)**
 
-#### 🎯 **Core Principle: Explicit Traits Required for Copy/Move Operations**
+#### 🎯 **Core Principle: Traits Required Only When Corresponding Methods Are Needed**
 
-**IMPORTANT: Mojo does NOT automatically generate copy and move operations.** Structs without explicit `Copyable` and `Movable` traits cannot be copied, moved, or stored in collections. Traits are REQUIRED for these operations.
+**IMPORTANT: Add traits only when the corresponding lifecycle methods are required.** Use `Copyable` trait only if `fn __copyinit__()` is needed. Use `Movable` trait only if `fn __moveinit__()` is needed. Either trait can be used independently, or both can be combined when both methods are required.
 
-#### ✅ **REQUIRED: Explicit Traits for Copy/Move Operations**
+**Acceptable Syntax Variations:**
+- Single trait: `struct MyStruct(Copyable):`
+- Multiple traits (comma): `struct MyStruct(Copyable, Movable):`
+- Multiple traits (ampersand): `struct MyStruct(Copyable & Movable):`
+
+#### ✅ **CORRECT: Add Traits Based on Required Methods**
 
 ```mojo
-# ❌ WRONG: Struct without traits - NOT copyable, cannot be stored in collections
-struct NonCopyableStruct:
+# ✅ CORRECT: Struct with only Copyable trait when only copying is needed
+struct CopyOnlyStruct(Copyable):
     var data: Int
     var name: String
 
     fn __init__(out self, data: Int, name: String):
         self.data = data
         self.name = name
-    # Cannot copy: copied = original  # ← COMPILATION ERROR
-    # Cannot store: List[NonCopyableStruct]()  # ← COMPILATION ERROR
+    # Can copy: copied = original  # ← WORKS with Copyable trait
 
-# ✅ CORRECT: Struct with traits - copyable and can be stored in collections
-struct CopyableStruct(Copyable, Movable):
+# ✅ CORRECT: Struct with only Movable trait when only moving is needed
+struct MoveOnlyStruct(Movable):
+    var resource: UnsafePointer[UInt8]
+
+    fn __init__(out self):
+        self.resource = UnsafePointer[UInt8].alloc(1024)
+    # Can move: moved = resource^  # ← WORKS with Movable trait
+
+# ✅ CORRECT: Struct with both traits when both operations are needed
+struct CopyAndMoveStruct(Copyable, Movable):
     var data: Int
     var name: String
 
@@ -297,9 +310,10 @@ struct CopyableStruct(Copyable, Movable):
         self.data = data
         self.name = name
     # Can copy: copied = original  # ← WORKS
-    # Can store: List[CopyableStruct]()  # ← WORKS
+    # Can move: moved = original^  # ← WORKS
+    # Can store: List[CopyAndMoveStruct]()  # ← WORKS (needs both traits)
 
-# ✅ GOOD: Struct with resource management needs explicit control
+# ✅ GOOD: Struct with custom copy logic needs Copyable trait
 struct ResourceManager(Copyable, Movable):
     var file_handle: FileHandle
     var buffer: UnsafePointer[UInt8]
@@ -309,70 +323,82 @@ struct ResourceManager(Copyable, Movable):
         self.buffer = UnsafePointer[UInt8].alloc(1024)
 
     fn __copyinit__(out self, other: Self):
-        # Custom copy logic: duplicate file handle
+        # Custom copy logic: duplicate file handle (requires Copyable trait)
         self.file_handle = other.file_handle.duplicate()
         self.buffer = UnsafePointer[UInt8].alloc(1024)
         memcpy(self.buffer, other.buffer, 1024)
 
     fn __moveinit__(out self, owned other: Self):
-        # Custom move logic: transfer ownership
+        # Custom move logic: transfer ownership (requires Movable trait)
         self.file_handle = other.file_handle^
         self.buffer = other.buffer^
 ```
 
-#### ❌ **AVOID: Trivial Explicit Methods When Traits Suffice**
+#### ❌ **AVOID: Adding Traits Without Corresponding Methods**
 
 ```mojo
-# ❌ DON'T: Explicit trivial methods when traits handle it automatically
-struct SimpleData(Copyable, Movable):  # ← Traits are REQUIRED
+# ❌ DON'T: Add traits without implementing the corresponding methods
+struct UnnecessaryTraits(Copyable, Movable):
     var value: Int
+    # No __copyinit__ or __moveinit__ methods - traits are unnecessary
 
-    # ❌ DON'T: Trivial __copyinit__ when trait handles it automatically
+# ✅ DO: Add traits only when implementing corresponding methods
+struct NecessaryTraits(Copyable):
+    var value: Int
+    var ref_count: Int
+
     fn __copyinit__(out self, other: Self):
-        self.value = other.value  # ← Redundant - trait does this automatically
+        # Custom copy logic requires Copyable trait
+        self.value = other.value
+        self.ref_count = other.ref_count + 1
 
-# ✅ DO: Use traits without explicit methods for simple copying
-struct SimpleData(Copyable, Movable):  # ← Traits are REQUIRED
-    var value: Int
-    # No explicit __copyinit__ needed - trait handles simple field copying
-struct BasicStruct:
-    var data: Int
+# ✅ DO: Use both traits when both methods are needed
+struct BothTraitsNeeded(Copyable, Movable):
+    var resource: UnsafePointer[UInt8]
+    var size: Int
 
-    fn __copyinit__(out self, other: Self):  # ← Redundant
-        self.data = other.data  # Just copies field - compiler does this
+    fn __copyinit__(out self, other: Self):
+        # Custom copy logic requires Copyable trait
+        self.size = other.size
+        self.resource = UnsafePointer[UInt8].alloc(self.size)
+        memcpy(self.resource, other.resource, self.size)
 
-    fn __moveinit__(out self, owned other: Self):  # ← Redundant
-        self.data = other.data^  # Just moves field - compiler does this
+    fn __moveinit__(out self, owned other: Self):
+        # Custom move logic requires Movable trait
+        self.resource = other.resource^
+        self.size = other.size
 ```
 
-### 📋 **When to Use Traits vs Explicit Methods**
+### 📋 **When to Use Traits and Methods**
 
-#### ✅ **ALWAYS Use Copyable/Movable Traits When:**
-1. **Struct Needs to be Copied**: Any assignment like `copied = original`
-2. **Struct Stored in Collections**: `List[MyStruct]`, `Dict[String, MyStruct]`
-3. **Struct Returned from Functions**: `fn get_data() -> MyStruct`
-4. **Struct Passed by Value**: `fn process(data: MyStruct)`
-5. **Simple Field Copying**: Default trait behavior handles field copying automatically
+#### ✅ **Use Copyable Trait When:**
+1. **Implementing `fn __copyinit__()`**: Custom copy logic is required
+2. **Need Copy Semantics**: Struct requires copying behavior beyond default
+3. **Resource Duplication**: Creating independent copies of resources
 
-#### ✅ **Use Explicit Methods (+ Traits) When:**
-1. **Custom Resource Management**: File handles, memory allocation, GPU contexts
-2. **Reference Counting**: Shared ownership semantics requiring custom logic
-3. **Validation Logic**: Copy/move operations need validation or error handling
-4. **Performance Optimization**: Custom memory layout or SIMD operations
-5. **External Resource Coordination**: Network connections, database handles
+#### ✅ **Use Movable Trait When:**
+1. **Implementing `fn __moveinit__()`**: Custom move logic is required
+2. **Need Move Semantics**: Struct requires moving behavior beyond default
+3. **Resource Transfer**: Transferring ownership of resources
+
+#### ✅ **Use Both Traits When:**
+1. **Both Methods Needed**: Struct implements both `__copyinit__` and `__moveinit__`
+2. **Collection Storage**: Some collections may require both copy and move capabilities
+3. **Flexible Usage**: Struct needs both copy and move semantics
 
 #### 🎯 **Decision Matrix:**
-- **Simple struct with basic fields** → Use `(Copyable, Movable)` traits only
-- **Complex struct with resources** → Use `(Copyable, Movable)` traits + explicit methods
-- **Struct never copied/moved** → No traits needed (rare case)
+- **Need custom copy logic** → Add `Copyable` trait + `fn __copyinit__()`
+- **Need custom move logic** → Add `Movable` trait + `fn __moveinit__()`
+- **Need both custom behaviors** → Add `(Copyable, Movable)` traits + both methods
+- **No custom lifecycle needed** → No traits needed
 
 ### 📚 **Comprehensive Examples**
 
-#### **Example 1: Simple Data Struct (Traits Only)**
+#### **Example 1: Simple Data Struct (No Traits Needed)**
 ```mojo
-# ✅ CORRECT: Simple struct with traits for copying and collections
-struct BenchmarkMetrics(Copyable, Movable):
-    """Simple data container - traits handle copying automatically."""
+# ✅ CORRECT: Simple struct without custom lifecycle methods
+struct BenchmarkMetrics:
+    """Simple data container - no custom copy/move logic needed."""
     var test_name: String
     var cpu_time_ms: Float64
     var gpu_time_ms: Float64
@@ -382,25 +408,35 @@ struct BenchmarkMetrics(Copyable, Movable):
         self.cpu_time_ms = 0.0
         self.gpu_time_ms = 0.0
 
-# Usage examples that work with traits:
+# Usage examples (default behavior):
 fn example_usage():
     original = BenchmarkMetrics("test")
-    copied = original  # ✅ Works with Copyable trait
-
-    var metrics_list = List[BenchmarkMetrics]()  # ✅ Works with traits
-    metrics_list.append(original)
-
-    returned = get_metrics()  # ✅ Function return works
-
-fn get_metrics() -> BenchmarkMetrics:  # ✅ Return works with traits
-    return BenchmarkMetrics("example")
+    # Default copy/move behavior works without explicit traits
 ```
 
-#### **Example 2: Resource Management (Traits + Explicit Methods)**
+#### **Example 2: Custom Copy Logic (Copyable Trait + Method)**
 ```mojo
-# ✅ CORRECT: Resource management with custom logic
+# ✅ CORRECT: Custom copy logic requires Copyable trait
+struct RefCountedData(Copyable):
+    """Data with reference counting - needs custom copy logic."""
+    var data: String
+    var ref_count: Int
+
+    fn __init__(out self, data: String):
+        self.data = data
+        self.ref_count = 1
+
+    fn __copyinit__(out self, other: Self):
+        # Custom copy: increment reference count
+        self.data = other.data
+        self.ref_count = other.ref_count + 1
+```
+
+#### **Example 3: Resource Management (Both Traits + Methods)**
+```mojo
+# ✅ CORRECT: Resource management with both custom copy and move
 struct FileManager(Copyable, Movable):
-    """Resource manager - needs custom copy/move logic."""
+    """Resource manager - needs both custom copy and move logic."""
     var file_path: String
     var handle: FileHandle
 
@@ -409,54 +445,62 @@ struct FileManager(Copyable, Movable):
         self.handle = open(path)
 
     fn __copyinit__(out self, other: Self):
-        # Custom copy: duplicate file handle
+        # Custom copy: duplicate file handle (requires Copyable trait)
         self.file_path = other.file_path
         self.handle = open(other.file_path)  # New handle
 
     fn __moveinit__(out self, owned other: Self):
-        # Custom move: transfer ownership
+        # Custom move: transfer ownership (requires Movable trait)
         self.file_path = other.file_path^
         self.handle = other.handle^
 ```
 
 ### 🔍 **Detection Criteria for Automation**
 
+#### **Unnecessary Traits (Remove Unused Traits):**
+```mojo
+# ❌ DETECTED: Struct with traits but no corresponding methods
+struct DataStruct(Copyable, Movable):  # ← Traits not needed
+    var value: Int
+    # No __copyinit__ or __moveinit__ methods - traits are unnecessary
+
+# ✅ CORRECTED: Remove unnecessary traits
+struct DataStruct:
+    var value: Int
+```
+
 #### **Missing Traits (Add Required Traits):**
 ```mojo
-# ❌ DETECTED: Struct without traits but used in copyable contexts
-struct DataStruct:  # ← Missing (Copyable, Movable)
+# ❌ DETECTED: Struct with methods but missing corresponding traits
+struct DataStruct:  # ← Missing Copyable trait
     var value: Int
 
-# Usage that requires traits:
-fn process() -> DataStruct:  # ← Function return needs traits
-    return DataStruct(42)
+    fn __copyinit__(out self, other: Self):  # ← Method needs Copyable trait
+        self.value = other.value * 2  # Custom logic
 
-var items = List[DataStruct]()  # ← Collection storage needs traits
+# ✅ CORRECTED: Add required trait for the method
+struct DataStruct(Copyable):
+    var value: Int
+
+    fn __copyinit__(out self, other: Self):
+        self.value = other.value * 2  # Custom logic requires Copyable trait
 ```
 
-#### **Trivial Methods (Remove Method, Keep Traits):**
+#### **Correct Usage (Methods + Corresponding Traits):**
 ```mojo
-# ❌ DETECTED: Redundant explicit method
-struct SimpleStruct(Copyable, Movable):
-    var field1: Int
-    var field2: String
-
-    fn __copyinit__(out self, other: Self):  # ← Remove this
-        self.field1 = other.field1  # ← Trait handles automatically
-        self.field2 = other.field2  # ← No custom logic needed
-```
-
-#### **Custom Methods (Keep Explicit + Traits):**
-```mojo
-# ✅ CORRECT: Custom logic requires explicit method
+# ✅ CORRECT: Custom logic with appropriate traits
 struct ResourceStruct(Copyable, Movable):
     var field1: Int
     var ref_count: Int
 
-    fn __copyinit__(out self, other: Self):  # ← Keep this
+    fn __copyinit__(out self, other: Self):  # ← Requires Copyable trait
         self.field1 = other.field1
         self.ref_count = other.ref_count + 1  # ← Custom logic
         validate_copy_operation()             # ← Additional behavior
+
+    fn __moveinit__(out self, owned other: Self):  # ← Requires Movable trait
+        self.field1 = other.field1^
+        self.ref_count = other.ref_count  # ← Custom move logic
 ```
 
 ---
@@ -549,6 +593,64 @@ fn safe_process(input_data: List[Float64]) -> Optional[ProcessResult]:
         print("Processing failed:", e)
         return Optional[ProcessResult]()  # Return empty optional
 ```
+
+### 🎯 **Design Pattern: Minimal `raises` Usage**
+
+**✅ CORE PRINCIPLE**: Only add `raises` annotations where **required by the compiler**
+
+The `raises` keyword should be used sparingly and only when the Mojo compiler demands it. This approach:
+- Keeps function signatures clean and minimal
+- Reduces unnecessary error propagation chains
+- Makes actual error-raising functions more visible
+- Follows the principle of explicit error handling only where needed
+
+```mojo
+# ✅ PREFERRED: No raises annotation when not required
+fn format_number(value: Int) -> String:
+    """Convert integer to string using builtin formatting."""
+    try:
+        return "{}".format(value)  # format() can raise, but we handle it
+    except e:
+        return "ERROR"  # Handle internally, no propagation needed
+
+# ✅ REQUIRED: Compiler forces raises annotation
+fn format_number_propagating(value: Int) raises -> String:
+    """Convert integer to string, propagating format errors."""
+    return "{}".format(value)  # Compiler error without 'raises'
+
+# ✅ PREFERRED: Handle errors internally when possible
+fn safe_divide(a: Float64, b: Float64) -> Optional[Float64]:
+    """Safely divide two numbers without raising."""
+    if b == 0.0:
+        return Optional[Float64]()  # Return empty optional
+    return Optional(a / b)
+
+# ✅ ONLY when compiler requires it
+fn unsafe_divide(a: Float64, b: Float64) raises -> Float64:
+    """Divide two numbers, raising on division by zero."""
+    if b == 0.0:
+        raise Error("Division by zero")  # Compiler requires 'raises'
+    return a / b
+```
+
+**Implementation Strategy**:
+1. **Start without `raises`** - let the compiler tell you when it's needed
+2. **Add `raises` only when compiler errors occur**
+3. **Consider internal error handling** as an alternative to propagation
+4. **Use `Optional` or `Result` types** for recoverable errors when appropriate
+
+**When Compiler REQUIRES `raises`**:
+- Functions that contain explicit `raise` statements (cannot be handled internally)
+- Functions that call other `raises` functions without try/except handling
+- Functions using operations that can fail: `String.format()`, file I/O, network operations
+- Functions using GPU operations that can fail: `DeviceContext`, buffer operations
+
+**When Compiler DOES NOT require `raises`**:
+- Simple field assignments and basic calculations
+- String concatenation and basic string operations
+- Functions that handle all errors internally with try/except
+- Constructor functions with only basic initialization
+- Functions returning `Optional` or error codes instead of raising
 
 ### 🔧 **Mojo-Specific Exception Syntax**
 
@@ -843,10 +945,11 @@ fn api_endpoint(request: Request) -> Response:
 
 ### 📋 **Comprehensive Error Handling Guidelines**
 
-1. **✅ Use `raises` annotation** for any function that:
-   - Contains `raise` statements
-   - Calls other functions with `raises` annotations
-   - Performs operations that can fail (file I/O, network, external calls)
+1. **✅ Use `raises` annotation** **ONLY when required by the compiler**:
+   - **Minimal approach**: Start without `raises`, add only when compiler demands it
+   - **Required for**: Functions with `raise` statements that cannot be handled internally
+   - **Required for**: Functions calling other `raises` functions without internal error handling
+   - **Avoid**: Preemptive `raises` annotations "just in case"
 
 2. **✅ Catch specific exception types** rather than using bare `except:` clauses:
    - Use `except SpecificError as e:` for known error types
@@ -869,9 +972,15 @@ fn api_endpoint(request: Request) -> Response:
    - Always ensure cleanup happens in both success and error paths
 
 6. **✅ Documentation requirements**:
-   - Functions with `raises` must have multi-line docstrings
+   - Functions with `raises` should have comprehensive docstrings
    - Include `Raises:` section documenting specific exception types and conditions
    - Document error recovery strategies and cleanup behavior
+
+7. **✅ Automation Script Behavior**:
+   - **Does NOT enforce** preemptive `raises` annotations
+   - **Focuses on** compiler-driven error handling patterns
+   - **Flags violations** only for missing error handling where patterns suggest it's needed
+   - **Respects** the minimal `raises` design pattern
 
 ---
 
@@ -913,7 +1022,7 @@ alias ResourceId = Int32
 for _ in range(num_iterations):  # Loop index not used
     process_data()
 
-_ = ctx.create_buffer[DType.float64](size)  # Buffer not stored
+_ = ctx.enqueue_create_buffer[DType.float64](size)  # Buffer not stored
 for i in range(len(items)):  # i is used for indexing
     process_item(items[i])
 ```
@@ -937,7 +1046,7 @@ var resource_id = 12345  # Prefer: resource_id = 12345
 # DON'T: Keep unused variables that generate warnings
 for i in range(num_iterations):  # Warning: 'i' never used
     process_data()
-var buffer = ctx.create_buffer[DType.float64](size)  # Warning: 'buffer' never used
+var buffer = ctx.enqueue_create_buffer[DType.float64](size)  # Warning: 'buffer' never used
 ```
 
 ### 📋 **Variable Declaration Rules**
@@ -1176,6 +1285,39 @@ from gpu import global_idx, thread_idx
 # from max.ops import matmul, add, tanh, relu, sigmoid         # ❌ NOT AVAILABLE
 ```
 
+### 📝 **DeviceContext Variable Naming Convention**
+
+**Preferred Variable Name**: Use `ctx` as the standard variable name for `DeviceContext` instances:
+
+```mojo
+# ✅ PREFERRED: Standard naming convention
+var ctx = DeviceContext()
+buffer = ctx.enqueue_create_buffer[DType.float64](size)
+```
+
+**Multiple DeviceContext Variables**: When multiple DeviceContext variables are needed, use descriptive prefixed variations:
+
+```mojo
+# ✅ CORRECT: Multiple contexts with descriptive prefixes
+var gpu_ctx = DeviceContext()      # Primary GPU context
+var main_ctx = DeviceContext()     # Main computation context
+var compute_ctx = DeviceContext()  # Dedicated compute context
+var stream_ctx = DeviceContext()   # Streaming operations context
+
+# Use contexts appropriately
+var buffer_a = gpu_ctx.enqueue_create_buffer[DType.float64](size)
+var buffer_b = compute_ctx.enqueue_create_buffer[DType.float32](size)
+```
+
+**❌ AVOID: Generic or unclear naming**:
+```mojo
+# ❌ DON'T: Generic names that don't convey purpose
+var device = DeviceContext()       # Too generic
+var context = DeviceContext()      # Too generic
+var dc = DeviceContext()           # Unclear abbreviation
+var gpu_device_context = DeviceContext()  # Too verbose
+```
+
 ### ✅ **REAL GPU Device Management Patterns (VERIFIED WORKING)**
 
 ```mojo
@@ -1206,36 +1348,37 @@ fn create_gpu_context() -> DeviceContext:
     var ctx = DeviceContext()
     return ctx
 
-### 🔄 **GPU API Updates (Current Mojo Compiler)**
+### 🔄 **GPU API Method Names (Current Mojo Compiler)**
 
-**Recent API Changes**: The Mojo compiler has simplified DeviceContext method names:
+**Current API Methods**: The Mojo compiler uses the following DeviceContext method names:
 
-| **Deprecated API** | **New API** | **Description** |
-|-------------------|-------------|-----------------|
-| `ctx.enqueue_create_buffer()` | `ctx.create_buffer()` | Create GPU buffer |
-| `ctx.enqueue_function()` | `ctx.call_function()` | Launch GPU kernel |
-| `buffer.enqueue_fill()` | `buffer.fill()` | Fill buffer with value |
+| **Current API** | **Description** | **Status** |
+|----------------|-----------------|------------|
+| `ctx.enqueue_create_buffer()` | Create GPU buffer | ✅ Current |
+| `ctx.enqueue_function()` | Launch GPU kernel | ✅ Current |
+| `buffer.fill()` | Fill buffer with value | ✅ Current |
 
-**Migration Pattern**:
+**Correct Usage Pattern**:
 ```mojo
-# ❌ OLD (Deprecated)
+# ✅ CORRECT (Current API)
 var buffer = ctx.enqueue_create_buffer[DType.float64](size)
-buffer.enqueue_fill(0.0)
+buffer.fill(0.0)
 ctx.enqueue_function[kernel](buffer, size, grid_dim=blocks)
 
-# ✅ NEW (Current - Basic)
-var buffer = ctx.create_buffer[DType.float64](size)
+# ✅ RECOMMENDED (Performance - Pre-compiled)
+var compiled_kernel = ctx.compile_function[kernel]()
+var buffer = ctx.enqueue_create_buffer[DType.float64](size)
 buffer.fill(0.0)
-ctx.call_function[kernel](buffer, size, grid_dim=blocks)
+ctx.enqueue_function[kernel](buffer, size, grid_dim=blocks)
 
 # ✅ RECOMMENDED (Performance Optimized)
-var buffer = ctx.create_buffer[DType.float64](size)
+var buffer = ctx.enqueue_create_buffer[DType.float64](size)
 buffer.fill(0.0)
 var compiled_kernel = ctx.compile_function[kernel]()
-ctx.call_function(compiled_kernel, buffer, size, grid_dim=blocks)
+ctx.enqueue_function(compiled_kernel, buffer, size, grid_dim=blocks)
 ```
 
-**Note**: All examples in this document use the current API. Legacy code should be updated to use the simplified method names.
+**Note**: All examples in this document use the current API with `enqueue_create_buffer()` method names.
 
 **Performance Recommendation**: Use the `compile_function` API for pre-compiling GPU kernels to achieve better performance by avoiding kernel recompilation on each call. This is now the recommended pattern for production GPU code.
 
@@ -1243,7 +1386,7 @@ ctx.call_function(compiled_kernel, buffer, size, grid_dim=blocks)
 fn create_gpu_buffer[dtype: DType](ctx: DeviceContext, size: Int):
     """Create GPU buffer using DeviceContext."""
     # Based on working vector_addition.mojo example
-    var buffer = ctx.create_buffer[dtype](size)
+    var buffer = ctx.enqueue_create_buffer[dtype](size)
     return buffer
     except e:
         print("GPU operation failed:", e)
@@ -1262,7 +1405,7 @@ fn create_layout_tensor[dtype: DType](ctx: DeviceContext, width: Int, height: In
     alias layout = Layout.row_major(width, height)
 
     # Create GPU buffer
-    var buffer = ctx.create_buffer[dtype](width * height)
+    var buffer = ctx.enqueue_create_buffer[dtype](width * height)
 
     # Create tensor from buffer
     var tensor = LayoutTensor[dtype, layout](buffer)
@@ -1292,7 +1435,7 @@ fn launch_gpu_kernel(ctx: DeviceContext, tensor_a, tensor_b, result, size: Int):
 
     # Launch kernel (recommended performance pattern)
     var compiled_kernel = ctx.compile_function[gpu_element_wise_add]()
-    ctx.call_function(
+    ctx.enqueue_function(
         compiled_kernel,
         tensor_a,
         tensor_b,
@@ -1453,6 +1596,11 @@ alias SYSTEM_FLAG_ENABLED = 0x01
 alias ResourceId = Int32
 alias HandlerId = Int32
 
+# Descriptive type aliases for complex types - PascalCase with descriptive names
+alias GPUMatrixBuffer = DeviceBuffer[DType.float64]
+alias NetworkConnection = Socket[SocketType.TCP]
+alias ConfigurationMap = Dict[String, String]
+
 # Struct names - PascalCase
 struct SystemManager:
 struct ResourceRegistry:
@@ -1479,6 +1627,35 @@ fn _get_error_message(error_code: Int32) -> String:
 4. **Variables**: snake_case
 5. **Private members**: _snake_case prefix
 6. **Global variables**: g_ prefix for clarity
+
+### ✅ **Descriptive Type Aliases**
+
+Use descriptive type aliases for complex types to improve code readability and maintainability:
+
+```mojo
+# ✅ PREFERRED: Descriptive aliases that indicate purpose
+alias GPUMatrixBuffer = DeviceBuffer[DType.float64]
+alias NetworkConnection = Socket[SocketType.TCP]
+alias ConfigurationMap = Dict[String, String]
+alias TimestampMillis = Int64
+
+# Usage in code becomes self-documenting
+var buffer_pool: List[GPUMatrixBuffer]
+fn get_buffer(mut self, size: Int) raises -> GPUMatrixBuffer:
+fn return_buffer(mut self, buffer: GPUMatrixBuffer):
+
+# ❌ AVOID: Using complex types directly throughout code
+var buffer_pool: List[DeviceBuffer[DType.float64]]  # Less readable
+fn get_buffer(mut self, size: Int) raises -> DeviceBuffer[DType.float64]:  # Verbose
+```
+
+**Benefits of Descriptive Type Aliases:**
+- **Self-documenting code**: Type names clearly indicate their purpose
+- **Easier maintenance**: Change underlying type in one place
+- **Improved readability**: Shorter, more meaningful names
+- **Consistent usage**: Enforces uniform type usage across codebase
+
+**Naming Pattern**: Use PascalCase with descriptive names that indicate the type's purpose in the domain (e.g., `GPUMatrixBuffer` for GPU matrix operations, `NetworkConnection` for networking).
 
 ---
 
@@ -2011,7 +2188,7 @@ fn benchmark_gpu_implementation(
     fn kernel_launch(ctx: DeviceContext) raises:
         # Core computation only - launch GPU kernel (recommended pattern)
         var compiled_kernel = ctx.compile_function[gpu_kernel]()
-        ctx.call_function(
+        ctx.enqueue_function(
             compiled_kernel,
             out_ptr, a_ptr, size,
             grid_dim=blocks_needed,
@@ -2040,8 +2217,8 @@ def main():
 
     # Setup GPU data once for GPU benchmarks
     with DeviceContext() as ctx:
-        var out_buf = ctx.create_buffer[dtype](SIZE * SIZE).fill(0)
-        var a_buf = ctx.create_buffer[dtype](SIZE * SIZE).fill(0)
+        var out_buf = ctx.enqueue_create_buffer[dtype](SIZE * SIZE).fill(0)
+        var a_buf = ctx.enqueue_create_buffer[dtype](SIZE * SIZE).fill(0)
 
         # Initialize input data
         with a_buf.map_to_host() as a_host:
@@ -2466,7 +2643,7 @@ mojo update_mojo_syntax.mojo --fix src/utils/gpu_matrix.mojo --enable-auto-fix
 
 2. **Struct Definition Issues**
    - Missing docstrings
-   - Redundant trait specifications (when compiler auto-generation is sufficient)
+   - Unnecessary trait specifications (when no corresponding methods exist)
    - Trivial lifecycle methods that duplicate compiler defaults
    - Inconsistent naming patterns
 
@@ -2486,30 +2663,42 @@ mojo update_mojo_syntax.mojo --fix src/utils/gpu_matrix.mojo --enable-auto-fix
 
 6. **Intelligent Trait Analysis**
    - Analyzes struct lifecycle methods (`__copyinit__`, `__moveinit__`)
-   - Distinguishes between trivial and custom implementations
-   - Suggests trait removal when compiler auto-generation is sufficient
-   - Identifies redundant explicit methods that duplicate defaults
+   - Detects traits without corresponding methods (suggests removal)
+   - Detects methods without corresponding traits (suggests addition)
+   - Validates trait-method correspondence for proper semantics
    - Preserves custom logic in lifecycle methods
 
 #### **Trait Detection Logic**
 
-The automation script uses sophisticated analysis to determine trait requirements:
+The automation script analyzes trait-method correspondence:
 
-**✅ Trivial Method Detection:**
+**✅ Unnecessary Trait Detection:**
 ```mojo
-fn __copyinit__(out self, other: Self):
-    self.field1 = other.field1  # ← Simple field copy
-    self.field2 = other.field2  # ← No custom logic
-# → Suggests: Remove method, let compiler auto-generate
+struct MyStruct(Copyable, Movable):  # ← Traits present
+    var field1: Int
+    var field2: String
+    # No __copyinit__ or __moveinit__ methods
+# → Suggests: Remove unnecessary traits
 ```
 
-**✅ Custom Method Preservation:**
+**✅ Missing Trait Detection:**
 ```mojo
-fn __copyinit__(out self, other: Self):
-    self.field1 = other.field1
-    self.ref_count += 1         # ← Custom logic
-    validate_copy()             # ← Additional behavior
-# → Keeps: Explicit method with custom behavior
+struct MyStruct:  # ← Missing Copyable trait
+    var field1: Int
+
+    fn __copyinit__(out self, other: Self):  # ← Method present
+        self.field1 = other.field1 * 2  # ← Custom logic
+# → Suggests: Add Copyable trait for __copyinit__ method
+```
+
+**✅ Correct Usage:**
+```mojo
+struct MyStruct(Copyable):  # ← Trait matches method
+    var field1: Int
+
+    fn __copyinit__(out self, other: Self):  # ← Method present
+        self.field1 = other.field1 * 2  # ← Custom logic
+# → Correct: Trait corresponds to implemented method
 ```
 
 #### **Compliance Scoring System**

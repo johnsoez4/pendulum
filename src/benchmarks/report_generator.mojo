@@ -12,40 +12,7 @@ from gpu.host import DeviceContext
 from time import perf_counter_ns as now
 
 
-# Simple string conversion functions
-fn to_string(value: Int) -> String:
-    """Convert integer to string (simplified)."""
-    # Simplified implementation - in real code would use proper conversion
-    if value == 0:
-        return "0"
-    elif value == 1:
-        return "1"
-    elif value == 2:
-        return "2"
-    elif value == 3:
-        return "3"
-    elif value == 4:
-        return "4"
-    elif value == 5:
-        return "5"
-    else:
-        return "N"  # Placeholder for other numbers
-
-
-fn to_string(value: Float64) -> String:
-    """Convert float to string (simplified)."""
-    # Simplified implementation - in real code would use proper conversion
-    if value < 1.0:
-        return "0.X"
-    elif value < 10.0:
-        return "X.X"
-    elif value < 100.0:
-        return "XX.X"
-    else:
-        return "XXX.X"
-
-
-struct SystemInfo:
+struct SystemInfo(Copyable, Movable):
     """System information for benchmark reports."""
 
     var cpu_model: String
@@ -58,7 +25,7 @@ struct SystemInfo:
     var real_gpu_detected: Bool
     var gpu_memory_gb: Int
 
-    fn __init__(out self) raises:
+    fn __init__(out self):
         """Initialize with real system information detection."""
         self.cpu_model = "Intel/AMD CPU (detected at runtime)"
         self.memory_gb = 32
@@ -101,15 +68,15 @@ fn collect_real_gpu_metrics() raises -> BenchmarkMetrics:
 
     if has_nvidia_gpu_accelerator() or has_amd_gpu_accelerator():
         try:
-            device_context = DeviceContext()
+            ctx = DeviceContext()
 
             # Test GPU memory bandwidth
             test_size = 1024 * 1024  # 1M elements
-            buffer = device_context.create_buffer[DType.float64](test_size)
+            buffer = ctx.enqueue_create_buffer[DType.float64](test_size)
 
             start_time = now()
-            _ = buffer.fill(3.14159)
-            device_context.synchronize()
+            _ = buffer.enqueue_fill(3.14159)
+            ctx.synchronize()
             end_time = now()
 
             # Calculate real metrics
@@ -226,7 +193,7 @@ struct BenchmarkReportGenerator(Copyable, Movable):
 
     var system_info: SystemInfo
 
-    fn __init__(out self) raises:
+    fn __init__(out self):
         """Initialize report generator."""
         self.system_info = SystemInfo()
 
@@ -273,7 +240,7 @@ struct BenchmarkReportGenerator(Copyable, Movable):
 
     fn _generate_executive_summary(
         self, metrics: List[BenchmarkMetrics]
-    ) -> String:
+    ) raises -> String:
         """Generate executive summary."""
         summary = String("")
         summary += "EXECUTIVE SUMMARY\n"
@@ -306,14 +273,14 @@ struct BenchmarkReportGenerator(Copyable, Movable):
 
         summary += "KEY FINDINGS:\n"
         summary += (
-            "- Total benchmarks conducted: " + to_string(total_tests) + "\n"
+            "- Total benchmarks conducted: " + "{}".format(total_tests) + "\n"
         )
-        summary += "- Average GPU speedup: " + to_string(avg_speedup) + "x\n"
+        summary += "- Average GPU speedup: " + "{}".format(avg_speedup) + "x\n"
         summary += (
-            "- Maximum speedup achieved: " + to_string(max_speedup) + "x\n"
+            "- Maximum speedup achieved: " + "{}".format(max_speedup) + "x\n"
         )
         summary += (
-            "- Minimum speedup observed: " + to_string(min_speedup) + "x\n\n"
+            "- Minimum speedup observed: " + "{}".format(min_speedup) + "x\n\n"
         )
 
         summary += "RECOMMENDATIONS:\n"
@@ -357,7 +324,7 @@ struct BenchmarkReportGenerator(Copyable, Movable):
 
         return methodology
 
-    fn _generate_hardware_section(self) -> String:
+    fn _generate_hardware_section(self) raises -> String:
         """Generate hardware specifications section."""
         hardware = String("")
         hardware += "HARDWARE SPECIFICATIONS\n"
@@ -378,7 +345,7 @@ struct BenchmarkReportGenerator(Copyable, Movable):
 
         hardware += "SYSTEM CONFIGURATION:\n"
         hardware += (
-            "- Total RAM: " + to_string(self.system_info.memory_gb) + " GB\n"
+            "- Total RAM: " + "{}".format(self.system_info.memory_gb) + " GB\n"
         )
         hardware += "- CUDA Version: " + self.system_info.cuda_version + "\n"
         hardware += "- Mojo Version: " + self.system_info.mojo_version + "\n"
@@ -390,7 +357,7 @@ struct BenchmarkReportGenerator(Copyable, Movable):
 
     fn _generate_results_section(
         self, metrics: List[BenchmarkMetrics]
-    ) -> String:
+    ) raises -> String:
         """Generate performance results section."""
         results = String("")
         results += "PERFORMANCE RESULTS\n"
@@ -401,32 +368,32 @@ struct BenchmarkReportGenerator(Copyable, Movable):
             results += "TEST: " + metrics[i].test_name + "\n"
             results += "-" * 30 + "\n"
             results += (
-                "CPU Time: " + to_string(metrics[i].cpu_time_ms) + " ms\n"
+                "CPU Time: " + "{}".format(metrics[i].cpu_time_ms) + " ms\n"
             )
             results += (
-                "GPU Time: " + to_string(metrics[i].gpu_time_ms) + " ms\n"
+                "GPU Time: " + "{}".format(metrics[i].gpu_time_ms) + " ms\n"
             )
             results += (
-                "Speedup: " + to_string(metrics[i].speedup_factor) + "x\n"
+                "Speedup: " + "{}".format(metrics[i].speedup_factor) + "x\n"
             )
             results += (
                 "CPU Throughput: "
-                + to_string(metrics[i].cpu_throughput)
+                + "{}".format(metrics[i].cpu_throughput)
                 + " ops/sec\n"
             )
             results += (
                 "GPU Throughput: "
-                + to_string(metrics[i].gpu_throughput)
+                + "{}".format(metrics[i].gpu_throughput)
                 + " ops/sec\n"
             )
             results += (
                 "Memory Usage: "
-                + to_string(metrics[i].memory_usage_mb)
+                + "{}".format(metrics[i].memory_usage_mb)
                 + " MB\n"
             )
             results += (
                 "Energy Efficiency: "
-                + to_string(metrics[i].energy_efficiency)
+                + "{}".format(metrics[i].energy_efficiency)
                 + "x\n"
             )
             results += (
@@ -440,7 +407,9 @@ struct BenchmarkReportGenerator(Copyable, Movable):
 
         return results
 
-    fn _generate_ascii_charts(self, metrics: List[BenchmarkMetrics]) -> String:
+    fn _generate_ascii_charts(
+        self, metrics: List[BenchmarkMetrics]
+    ) raises -> String:
         """Generate ASCII performance charts."""
         charts = String("")
         charts += "PERFORMANCE VISUALIZATION\n"
@@ -454,7 +423,7 @@ struct BenchmarkReportGenerator(Copyable, Movable):
                 + ": "
                 + "████"  # Fixed bar for simplicity
                 + " ("
-                + to_string(metrics[i].speedup_factor)
+                + "{}".format(metrics[i].speedup_factor)
                 + "x)\n"
             )
 

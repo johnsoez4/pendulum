@@ -302,7 +302,7 @@ struct BenchmarkResult(
 
 
 struct RealGPUCPUBenchmark(
-    Copyable
+    Copyable, Movable
 ):  # Required: returned by create_real_benchmark_system()
     """
     Real GPU vs CPU benchmarking system using MAX Engine DeviceContext API.
@@ -314,7 +314,7 @@ struct RealGPUCPUBenchmark(
     - Real GPU control algorithm optimization vs CPU
     """
 
-    var device_context: DeviceContext
+    var ctx: DeviceContext
     var benchmark_initialized: Bool
     var num_results: Int
     var gpu_available: Bool
@@ -322,7 +322,7 @@ struct RealGPUCPUBenchmark(
 
     fn __init__(out self) raises:
         """Initialize real GPU benchmark system."""
-        self.device_context = DeviceContext()
+        self.ctx = DeviceContext()
         self.benchmark_initialized = True
         self.num_results = 0
         self.gpu_available = (
@@ -672,7 +672,7 @@ struct RealGPUCPUBenchmark(
         """
         try:
             # Synchronize GPU before timing
-            self.device_context.synchronize()
+            self.ctx.synchronize()
 
             # Record start time after synchronization
             start_time = self._get_timestamp()
@@ -697,7 +697,7 @@ struct RealGPUCPUBenchmark(
         """
         try:
             # Synchronize GPU after operations
-            self.device_context.synchronize()
+            self.ctx.synchronize()
 
             # Record end time after synchronization
             end_time = self._get_timestamp()
@@ -722,14 +722,14 @@ struct RealGPUCPUBenchmark(
             buffer_size_result = rows * rows
 
             # Create GPU buffers for matrices (using Float64 for consistency)
-            # Note: Using new simplified create_buffer API
-            buffer_a = self.device_context.create_buffer[DType.float64](
+            # Note: Using current enqueue_create_buffer API
+            buffer_a = self.ctx.enqueue_create_buffer[DType.float64](
                 buffer_size_a
             )
-            buffer_b = self.device_context.create_buffer[DType.float64](
+            buffer_b = self.ctx.enqueue_create_buffer[DType.float64](
                 buffer_size_b
             )
-            buffer_result = self.device_context.create_buffer[DType.float64](
+            buffer_result = self.ctx.enqueue_create_buffer[DType.float64](
                 buffer_size_result
             )
 
@@ -750,10 +750,10 @@ struct RealGPUCPUBenchmark(
             grid_y = (rows + block_size - 1) // block_size
 
             # Note: Using recommended compile_function pattern for better performance
-            var compiled_kernel = self.device_context.compile_function[
+            var compiled_kernel = self.ctx.compile_function[
                 gpu_matrix_multiply_benchmark_kernel
             ]()
-            self.device_context.call_function(
+            self.ctx.enqueue_function(
                 compiled_kernel,
                 buffer_result.unsafe_ptr(),
                 buffer_a.unsafe_ptr(),
@@ -766,7 +766,7 @@ struct RealGPUCPUBenchmark(
             )
 
             # Synchronize to ensure completion
-            self.device_context.synchronize()
+            self.ctx.synchronize()
 
             # GPU matrix multiplication completed successfully
             return True
@@ -870,10 +870,10 @@ struct RealGPUCPUBenchmark(
             output_size = 3
 
             # Allocate GPU buffers
-            input_buffer = self.device_context.create_buffer[DType.float32](
+            input_buffer = self.ctx.enqueue_create_buffer[DType.float32](
                 input_size
             )
-            output_buffer = self.device_context.create_buffer[DType.float32](
+            output_buffer = self.ctx.enqueue_create_buffer[DType.float32](
                 output_size
             )
 
@@ -898,10 +898,10 @@ struct RealGPUCPUBenchmark(
             alias THREADS_PER_BLOCK = 32  # 32 threads for neural network computation
 
             # Single layer: Input -> Output using GPU kernel (functionally equivalent to CPU)
-            var compiled_nn_kernel = self.device_context.compile_function[
+            var compiled_nn_kernel = self.ctx.compile_function[
                 gpu_neural_network_kernel
             ]()
-            self.device_context.call_function(
+            self.ctx.enqueue_function(
                 compiled_nn_kernel,
                 output_tensor,
                 input_tensor,
@@ -910,7 +910,7 @@ struct RealGPUCPUBenchmark(
             )
 
             # Synchronize GPU operations
-            self.device_context.synchronize()
+            self.ctx.synchronize()
 
             # Transfer results back to CPU
             result = List[Float64]()
@@ -940,10 +940,10 @@ struct RealGPUCPUBenchmark(
             total_input_elements = batch_size * input_size
             total_output_elements = batch_size * output_size
 
-            input_buffer = self.device_context.create_buffer[DType.float32](
+            input_buffer = self.ctx.enqueue_create_buffer[DType.float32](
                 total_input_elements
             )
-            output_buffer = self.device_context.create_buffer[DType.float32](
+            output_buffer = self.ctx.enqueue_create_buffer[DType.float32](
                 total_output_elements
             )
 
@@ -1028,15 +1028,13 @@ struct RealGPUCPUBenchmark(
             # GPU control optimization starting
 
             # Create GPU buffers for control optimization
-            control_buffer = self.device_context.create_buffer[DType.float32](
+            control_buffer = self.ctx.enqueue_create_buffer[DType.float32](
                 horizon
             )
-            state_buffer = self.device_context.create_buffer[DType.float32](
+            state_buffer = self.ctx.enqueue_create_buffer[DType.float32](
                 4
             )  # 4 state variables
-            cost_buffer = self.device_context.create_buffer[DType.float32](
-                horizon
-            )
+            cost_buffer = self.ctx.enqueue_create_buffer[DType.float32](horizon)
 
             # Initialize state buffer with current system state
             with state_buffer.map_to_host() as state_host:
@@ -1060,10 +1058,10 @@ struct RealGPUCPUBenchmark(
             alias BLOCKS_PER_GRID = 1
             alias THREADS_PER_BLOCK = 64  # 64 threads for parallel optimization
 
-            var compiled_control_kernel = self.device_context.compile_function[
+            var compiled_control_kernel = self.ctx.compile_function[
                 gpu_control_optimization_kernel
             ]()
-            self.device_context.call_function(
+            self.ctx.enqueue_function(
                 compiled_control_kernel,
                 control_tensor,
                 cost_tensor,
@@ -1073,7 +1071,7 @@ struct RealGPUCPUBenchmark(
             )
 
             # Synchronize GPU operations
-            self.device_context.synchronize()
+            self.ctx.synchronize()
 
             # Transfer optimized control sequence back to CPU
             result = List[Float64]()

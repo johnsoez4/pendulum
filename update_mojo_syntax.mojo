@@ -16,7 +16,7 @@ Features:
 - Automatic corrections with safety backups
 - Compliance checking and scoring
 - Comprehensive reporting system
-- GPU acceleration pattern preservation (supports current API: create_buffer, call_function)
+- GPU acceleration pattern preservation (supports current API: enqueue_create_buffer, enqueue_function)
 - Docstring content exclusion (by default, use --check-docstring-code to enable)
 
 Content Exclusion:
@@ -958,6 +958,37 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 )
                 violations.append(violation)
 
+            # Check for DeviceContext variable naming convention
+            if "= DeviceContext()" in line:
+                # Extract variable name
+                if "var " in line:
+                    var_part = line.split("var ")[1].split("=")[0].strip()
+                    # Check if variable name follows convention
+                    is_valid_name = (
+                        var_part == "ctx"
+                        or var_part == "gpu_ctx"
+                        or var_part == "main_ctx"
+                        or var_part == "compute_ctx"
+                        or var_part == "stream_ctx"
+                        or var_part.endswith("_ctx")
+                    )
+                    if not is_valid_name:
+                        violation = SyntaxViolation(
+                            file_path,
+                            line_num,
+                            "variable_naming",
+                            (
+                                "DeviceContext variable should follow naming"
+                                " convention"
+                            ),
+                            (
+                                "Use 'ctx' or descriptive prefix like"
+                                " 'gpu_ctx', 'main_ctx', 'compute_ctx'"
+                            ),
+                            "suggestion",
+                        )
+                        violations.append(violation)
+
         return violations
 
     fn check_gpu_patterns(
@@ -991,6 +1022,35 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
             if "thread_idx" in line or "block_idx" in line:
                 has_gpu_kernels = True
+
+            # Check for incorrect GPU API method names
+            if (
+                ".create_buffer[" in line
+                and "enqueue_create_buffer" not in line
+            ):
+                violation = SyntaxViolation(
+                    file_path,
+                    line_num,
+                    "gpu_api_deprecated",
+                    "Incorrect GPU API method name detected",
+                    (
+                        "Use 'enqueue_create_buffer()' instead of"
+                        " 'create_buffer()'"
+                    ),
+                    "error",
+                )
+                violations.append(violation)
+
+            if ".call_function(" in line and "enqueue_function" not in line:
+                violation = SyntaxViolation(
+                    file_path,
+                    line_num,
+                    "gpu_api_deprecated",
+                    "Incorrect GPU API method name detected",
+                    "Use 'enqueue_function()' instead of 'call_function()'",
+                    "error",
+                )
+                violations.append(violation)
 
             # Check for simulation labels that should be removed (exclude detection logic itself)
             if ("SIMULATED GPU:" in line or "PLACEHOLDER:" in line) and not (
@@ -1083,10 +1143,13 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         # Quality criteria (aligned with mojo_syntax.md guidelines)
         # Note: Examples are NOT required due to Mojo LSP parsing issues
+        # Note: Raises sections are optional - only needed when function has 'raises'
         has_description = len(full_content) > 10
         has_args = "Args:" in full_content or "Parameters:" in full_content
         has_returns = "Returns:" in full_content or "Return:" in full_content
-        has_raises = "Raises:" in full_content or "Raise:" in full_content
+        _ = (
+            "Raises:" in full_content or "Raise:" in full_content
+        )  # Optional documentation
 
         # For single-line docstrings, check if they're appropriate
         if docstring_line_count == 1:
@@ -1102,6 +1165,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
 
         # For multi-line docstrings, expect more comprehensive content
         # Calculate quality score (excluding examples per new guidelines)
+        # Note: Raises sections are optional - only needed when function has 'raises'
         quality_indicators = 0
         if has_description:
             quality_indicators += 1
@@ -1109,8 +1173,9 @@ struct MojoSyntaxChecker(Copyable, Movable):
             quality_indicators += 1
         if has_returns:
             quality_indicators += 1
-        if has_raises:
-            quality_indicators += 1
+        # Raises sections are optional (not counted as required indicator)
+        # if has_raises:
+        #     quality_indicators += 1  # Optional bonus
 
         # Consider comprehensive if it has description and at least one other element
         # OR if it's a substantial single description (>50 chars)
@@ -1129,7 +1194,7 @@ struct MojoSyntaxChecker(Copyable, Movable):
             else:
                 return (
                     False,
-                    "Consider adding Args, Returns, or Raises sections",
+                    "Consider adding Args or Returns sections",
                     "Violation",
                 )
 
@@ -1392,40 +1457,21 @@ struct MojoSyntaxChecker(Copyable, Movable):
             line = lines[i].strip()
             line_num = i + 1
 
-            # Check for functions that should have raises annotations
-            if line.startswith("fn ") and "(" in line:
-                # Look ahead for error-prone patterns (excluding docstring and variable string content)
-                function_content = ""
-                j = i
-                while j < len(lines) and j < i + 20:  # Look ahead 20 lines
-                    # Skip variable-assigned strings and optionally docstrings
-                    if not self._should_skip_line_for_violations(lines, j):
-                        function_content += lines[j] + "\n"
-                    j += 1
-
-                needs_raises = (
-                    "Error(" in function_content
-                    or "raise " in function_content
-                    or "try:" in function_content
-                    or "except" in function_content
-                    or "open(" in function_content
-                    or "read(" in function_content
-                    or "write(" in function_content
-                )
-
-                if needs_raises and "raises" not in function_content:
-                    violation = SyntaxViolation(
-                        file_path,
-                        line_num,
-                        "error_handling_missing",
-                        "Function should have 'raises' annotation",
-                        (
-                            "Add 'raises' annotation for functions that can"
-                            " throw errors"
-                        ),
-                        "error",
-                    )
-                    violations.append(violation)
+            # DESIGN PATTERN: Minimal 'raises' Usage
+            # =====================================
+            # We do NOT automatically flag missing 'raises' annotations as violations.
+            #
+            # CORE PRINCIPLE: Only add 'raises' where the compiler REQUIRES it.
+            #
+            # RATIONALE:
+            # - Keeps function signatures clean and minimal
+            # - Reduces unnecessary error propagation chains
+            # - Makes actual error-raising functions more visible
+            # - Follows compiler-driven approach rather than static analysis guessing
+            #
+            # The Mojo compiler will produce errors when 'raises' is truly needed.
+            # Static analysis cannot reliably determine when 'raises' is required
+            # because it depends on whether errors are handled internally or propagated.
 
             # Check for bare except clauses
             if line.startswith("except:") or line == "except:":
