@@ -10,8 +10,6 @@ from math import sin, cos, sqrt, pi, atan2
 from collections import List
 
 
-
-
 # Physical constants and parameters
 alias MAX_ACTUATOR_TRAVEL = 4.0  # inches - maximum actuator travel
 alias MAX_CONTROL_VOLTAGE = 5.0  # volts - maximum control voltage
@@ -49,7 +47,6 @@ struct PendulumState(Copyable, Movable):
 
     @staticmethod
     fn from_data_sample(
-        """TODO: Add function description."""
         la_pos_inches: Float64,
         pend_vel_deg_s: Float64,
         pend_pos_deg: Float64,
@@ -73,14 +70,21 @@ struct PendulumState(Copyable, Movable):
         pend_vel = pend_vel_deg_s * DEGREES_TO_RADIANS
         force = cmd_volts * ACTUATOR_GAIN  # Approximate force from voltage
 
-        return PendulumState(cart_pos, 0.0, pend_angle, pend_vel, force, 0.0)
+        return PendulumState(
+            cart_position=cart_pos,
+            cart_velocity=0.0,
+            pendulum_angle=pend_angle,
+            pendulum_velocity=pend_vel,
+            control_force=force,
+            timestamp=0.0,
+        )
 
     fn to_data_format(self) -> (Float64, Float64, Float64, Float64):
         """
         Convert state back to experimental data format.
 
         Returns:
-            Tuple of (la_pos_inches, pend_vel_deg_s, pend_pos_deg, cmd_volts)
+            Tuple of (la_pos_inches, pend_vel_deg_s, pend_pos_deg, cmd_volts).
         """
         la_pos = self.cart_position / INCHES_TO_METERS
         pend_vel = self.pendulum_velocity / DEGREES_TO_RADIANS
@@ -104,7 +108,7 @@ struct PendulumState(Copyable, Movable):
         Calculate total energy of the pendulum system.
 
         Returns:
-            Total energy in Joules
+            Total energy in Joules.
         """
         # Kinetic energy of cart
         cart_ke = 0.5 * CART_MASS * self.cart_velocity * self.cart_velocity
@@ -126,7 +130,7 @@ struct PendulumState(Copyable, Movable):
         return cart_ke + pend_ke + pend_pe
 
 
-struct PendulumPhysics:
+struct PendulumPhysics(Copyable, Movable):
     """
     Physics model for inverted pendulum system.
 
@@ -141,7 +145,6 @@ struct PendulumPhysics:
     var gravity: Float64
 
     fn __init__(
-        """TODO: Add function description."""
         out self,
         length: Float64 = PENDULUM_LENGTH,
         pend_mass: Float64 = PENDULUM_MASS,
@@ -156,17 +159,16 @@ struct PendulumPhysics:
         self.gravity = GRAVITY
 
     fn equations_of_motion(
-        """TODO: Add function description."""
         self, state: PendulumState
     ) -> (Float64, Float64, Float64, Float64):
         """
         Compute derivatives of state variables using equations of motion.
 
         Args:
-            state: Current pendulum state
+            state: Current pendulum state.
 
         Returns:
-            Tuple of (cart_accel, cart_vel, pend_accel, pend_vel)
+            Tuple of (cart_accel, cart_vel, pend_accel, pend_vel).
         """
         # Extract state variables
         theta = state.pendulum_angle
@@ -216,11 +218,11 @@ struct PendulumPhysics:
         Integrate equations of motion for one time step using RK4.
 
         Args:
-            state: Current state
-            dt: Time step (seconds)
+            state: Current state.
+            dt: Time step (seconds).
 
         Returns:
-            New state after integration
+            New state after integration.
         """
         # RK4 integration
         k1 = self.equations_of_motion(state)
@@ -286,10 +288,10 @@ struct PendulumPhysics:
         Validate that state satisfies physical constraints.
 
         Args:
-            state: State to validate
+            state: State to validate.
 
         Returns:
-            True if state is physically valid
+            True if state is physically valid.
         """
         # Check cart position limits
         cart_pos_inches = state.cart_position / INCHES_TO_METERS
@@ -314,20 +316,23 @@ struct PendulumPhysics:
         return True
 
     fn compute_linearized_model(
-        """TODO: Add function description."""
         self, equilibrium: PendulumState
     ) -> List[List[Float64]]:
         """
         Compute linearized model around equilibrium point.
 
         Args:
-            equilibrium: Equilibrium state for linearization
+            equilibrium: Equilibrium state for linearization.
 
         Returns:
-            State matrix A for linearized system dx/dt = Ax + Bu
+            State matrix A for linearized system dx/dt = Ax + Bu.
         """
-        # For inverted pendulum, linearize around upright position
-        theta_eq = equilibrium.pendulum_angle
+        # TODO: Implement linearization around equilibrium point
+        # This should compute the Jacobian matrix ∂f/∂x at the equilibrium state
+        # For inverted pendulum control, typically linearized around upright position (θ ≈ 0)
+        var _ = (
+            equilibrium.pendulum_angle
+        )  # Placeholder - will be used for linearization coefficients
 
         # System parameters
         m_p = self.pendulum_mass

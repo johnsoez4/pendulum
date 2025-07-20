@@ -11,17 +11,17 @@ from math import exp, tanh, sqrt
 from memory import UnsafePointer
 
 # Import project modules
-from config.pendulum_config import (
-    MODEL_INPUT_DIM,
-    MODEL_OUTPUT_DIM,
-    MODEL_HIDDEN_LAYERS,
-    MODEL_HIDDEN_SIZE,
-    MODEL_LEARNING_RATE,
-)
-from ..utils.physics import PendulumState, PendulumPhysics
+from src.utils.physics import PendulumState, PendulumPhysics
+
+# Model configuration constants (from config/pendulum_config.mojo)
+alias MODEL_INPUT_DIM = 4  # [la_pos, pend_vel, pend_pos, cmd_volts]
+alias MODEL_OUTPUT_DIM = 3  # [next_la_pos, next_pend_vel, next_pend_pos]
+alias MODEL_HIDDEN_LAYERS = 3  # number of hidden layers
+alias MODEL_HIDDEN_SIZE = 128  # neurons per hidden layer
+alias MODEL_LEARNING_RATE = 0.001  # training learning rate
 
 
-struct Matrix:
+struct Matrix(Copyable, Movable):
     """
     Simple matrix implementation for neural network operations.
 
@@ -38,7 +38,7 @@ struct Matrix:
         self.cols = cols
         self.data = List[Float64]()
 
-        for i in range(rows * cols):
+        for _ in range(rows * cols):
             self.data.append(0.0)
 
     fn get(self, row: Int, col: Int) -> Float64:
@@ -83,7 +83,7 @@ struct Matrix:
                 # Linear activation (no change) for output layer
 
 
-struct NeuralLayer:
+struct NeuralLayer(Copyable, Movable):
     """
     Single neural network layer with weights, biases, and activation.
     """
@@ -95,7 +95,6 @@ struct NeuralLayer:
     var output_size: Int
 
     fn __init__(
-        """TODO: Add function description."""
         out self, input_size: Int, output_size: Int, activation: String = "tanh"
     ):
         """Initialize layer with random weights."""
@@ -106,7 +105,7 @@ struct NeuralLayer:
         self.biases = List[Float64]()
 
         # Initialize biases to zero
-        for i in range(output_size):
+        for _ in range(output_size):
             self.biases.append(0.0)
 
         # Initialize weights with Xavier initialization
@@ -130,7 +129,7 @@ struct NeuralLayer:
         return output
 
 
-struct PendulumNeuralNetwork:
+struct PendulumNeuralNetwork(Copyable, Movable):
     """
     Physics-informed neural network for pendulum digital twin.
 
@@ -172,7 +171,7 @@ struct PendulumNeuralNetwork:
         self.layers.append(layer1)
 
         # Hidden layers
-        for i in range(MODEL_HIDDEN_LAYERS - 1):
+        for _ in range(MODEL_HIDDEN_LAYERS - 1):
             hidden_layer = NeuralLayer(
                 MODEL_HIDDEN_SIZE, MODEL_HIDDEN_SIZE, "tanh"
             )
@@ -187,12 +186,12 @@ struct PendulumNeuralNetwork:
     fn _initialize_normalization(mut self):
         """Initialize normalization parameters with default values."""
         # Input normalization (will be updated during training)
-        for i in range(MODEL_INPUT_DIM):
+        for _ in range(MODEL_INPUT_DIM):
             self.input_means.append(0.0)
             self.input_stds.append(1.0)
 
         # Output normalization
-        for i in range(MODEL_OUTPUT_DIM):
+        for _ in range(MODEL_OUTPUT_DIM):
             self.output_means.append(0.0)
             self.output_stds.append(1.0)
 
@@ -227,10 +226,10 @@ struct PendulumNeuralNetwork:
         Forward pass through the network.
 
         Args:
-            input: [la_position, pend_velocity, pend_position, cmd_volts]
+            input: [la_position, pend_velocity, pend_position, cmd_volts].
 
         Returns:
-            [next_la_position, next_pend_velocity, next_pend_position]
+            [next_la_position, next_pend_velocity, next_pend_position].
         """
         # Normalize input
         normalized_input = self.normalize_input(input)
@@ -256,7 +255,6 @@ struct PendulumNeuralNetwork:
         return self._apply_physics_constraints(input, final_output)
 
     fn _apply_physics_constraints(
-        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """
@@ -304,34 +302,32 @@ struct PendulumNeuralNetwork:
         return constrained
 
     fn predict_next_state(
-        """TODO: Add function description."""
         self, current_state: List[Float64], dt: Float64 = 0.04
     ) -> List[Float64]:
         """
         Predict next state given current state.
 
         Args:
-            current_state: [la_position, pend_velocity, pend_position, cmd_volts]
-            dt: Time step (seconds)
+            current_state: [la_position, pend_velocity, pend_position, cmd_volts].
+            dt: Time step (seconds).
 
         Returns:
-            Predicted next state
+            Predicted next state.
         """
         return self.forward(current_state)
 
     fn compute_physics_loss(
-        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> Float64:
         """
         Compute physics-informed loss component.
 
         Args:
-            input: Input state
-            prediction: Network prediction
+            input: Input state.
+            prediction: Network prediction.
 
         Returns:
-            Physics loss value
+            Physics loss value.
         """
         # Convert to physics state
         current_state = PendulumState.from_data_sample(
@@ -356,7 +352,6 @@ struct PendulumNeuralNetwork:
         return energy_loss + constraint_loss
 
     fn set_normalization_parameters(
-        """TODO: Add function description."""
         mut self,
         input_means: List[Float64],
         input_stds: List[Float64],
@@ -370,12 +365,11 @@ struct PendulumNeuralNetwork:
         self.output_stds = output_stds
 
 
-@staticmethod
 fn create_pendulum_network() -> PendulumNeuralNetwork:
     """
     Create a pendulum neural network with default architecture.
 
     Returns:
-        Initialized PendulumNeuralNetwork
+        Initialized PendulumNeuralNetwork.
     """
     return PendulumNeuralNetwork()

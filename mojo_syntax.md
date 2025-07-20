@@ -268,6 +268,73 @@ struct Resource(Copyable, Movable):
 6. **Use `_` prefix** for private methods and variables
 7. **Group related methods** together logically
 8. **Use `@staticmethod`** for utility functions that don't need instance data
+9. **Use `@fieldwise_init`** for simple initialization without custom logic
+
+### 🏗️ **Struct Initialization Patterns**
+
+#### ✅ **Preferred: Use `@fieldwise_init` for Simple Initialization**
+
+**IMPORTANT: Use `@fieldwise_init` decorator when a struct's initialization does not require special logic beyond what is automatically created by the compiler.**
+
+```mojo
+# ✅ PREFERRED: Simple data struct with automatic initialization
+@fieldwise_init
+struct PendulumState(Copyable, Movable):
+    """Complete state of the pendulum system."""
+    var cart_position: Float64
+    var cart_velocity: Float64
+    var pendulum_angle: Float64
+    var pendulum_velocity: Float64
+    var control_force: Float64
+    var timestamp: Float64
+
+# Usage: Automatic constructor with named parameters
+var state = PendulumState(
+    cart_position=0.0,
+    cart_velocity=0.0,
+    pendulum_angle=0.1,
+    pendulum_velocity=0.0,
+    control_force=0.0,
+    timestamp=0.0
+)
+```
+
+#### ✅ **Use Custom `__init__` Only When Special Logic Is Required**
+
+```mojo
+# ✅ CORRECT: Custom initialization with validation or complex logic
+struct ResourceManager(Copyable, Movable):
+    """Resource manager requiring custom initialization logic."""
+    var file_handle: FileHandle
+    var buffer: UnsafePointer[UInt8]
+    var is_initialized: Bool
+
+    fn __init__(out self, filename: String) raises:
+        """Initialize with file validation and resource allocation."""
+        # Custom logic: validate file exists
+        if not file_exists(filename):
+            raise Error("File not found: " + filename)
+
+        # Custom logic: allocate resources
+        self.file_handle = open(filename)
+        self.buffer = UnsafePointer[UInt8].alloc(1024)
+        self.is_initialized = True
+```
+
+#### 🎯 **Decision Matrix for Initialization Patterns**
+
+- **Use `@fieldwise_init`** when:
+  - Simple field assignment only
+  - No validation or complex logic needed
+  - Default parameter values are sufficient
+  - Automatic constructor generation is desired
+
+- **Use custom `__init__`** when:
+  - Field validation is required
+  - Resource allocation/deallocation needed
+  - Complex initialization logic required
+  - Error handling during initialization
+  - Computed or derived field values needed
 
 ### 🔄 **Struct Lifecycle Management (Copy & Move Semantics)**
 
