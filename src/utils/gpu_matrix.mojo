@@ -64,9 +64,12 @@ fn gpu_matrix_multiply_kernel(
         thread computes one element of the output matrix. Uses thread_idx.x
         and thread_idx.y for parallel execution.
     """
-    # Get thread indices for parallel execution
-    row = thread_idx.y
-    col = thread_idx.x
+    # Get global thread indices for parallel execution
+    # Use global_idx for proper thread indexing across blocks
+    from gpu import global_idx
+
+    row = global_idx.y
+    col = global_idx.x
 
     # Bounds checking
     if row < rows_a and col < cols_b:
@@ -105,14 +108,17 @@ fn gpu_element_wise_add_kernel(
         thread computes one element: output[i] = a[i] + b[i].
         Uses thread_idx.x and thread_idx.y for parallel execution.
     """
-    # Get thread index for parallel execution
-    idx = thread_idx.x + thread_idx.y * 32  # Assuming 32 threads per block
+    # Get global thread index for parallel execution
+    # Use global_idx for proper thread indexing across blocks
+    from gpu import global_idx
+
+    idx = global_idx.x
 
     if idx < size:
         output[idx] = a[idx] + b[idx]
 
 
-struct RealGPUMemoryManager(Copyable, Movable):
+struct GPUMemoryManager(Copyable, Movable):
     """
     Real GPU Memory Manager using MAX Engine DeviceContext API.
 
@@ -125,12 +131,16 @@ struct RealGPUMemoryManager(Copyable, Movable):
     """
 
     var ctx: DeviceContext
-    var allocated_buffers: List[Int]  # Track buffer sizes
-    var buffer_pool: List[GPUMatrixBuffer]  # Track actual GPU buffers for reuse
-    var buffer_sizes: List[Int]  # Track sizes corresponding to buffer_pool
+    var allocated_buffers: List[
+        Int
+    ]  # Track all allocated buffer sizes for statistics
+    var buffer_pool: List[
+        GPUMatrixBuffer
+    ]  # Pool of buffers available for reuse
+    var buffer_sizes: List[Int]  # Sizes of buffers in the reuse pool
     var buffer_available: List[
         Bool
-    ]  # Track which buffers are available for reuse
+    ]  # Availability status of buffers in reuse pool
     var total_allocated_mb: Int
     var peak_usage_mb: Int
     var allocation_count: Int
@@ -173,7 +183,7 @@ struct RealGPUMemoryManager(Copyable, Movable):
         is destroyed. This ensures no GPU memory leaks occur even if explicit
         cleanup is not called.
         """
-        print("🧹 RealGPUMemoryManager destructor: cleaning up GPU memory...")
+        print("🧹 GPUMemoryManager destructor: cleaning up GPU memory...")
 
         # Clean up all remaining buffers
         if len(self.buffer_pool) > 0:
@@ -190,7 +200,9 @@ struct RealGPUMemoryManager(Copyable, Movable):
 
         print("✓ GPU memory manager cleanup completed")
 
-    fn allocate_gpu_buffer(mut self, size: Int) raises -> Bool:
+    fn allocate_gpu_buffer(
+        mut self, size: Int
+    ) raises -> Optional[GPUMatrixBuffer]:
         """
         Allocate real GPU buffer using DeviceContext.
 
@@ -202,7 +214,8 @@ struct RealGPUMemoryManager(Copyable, Movable):
             size: Number of Float64 elements to allocate in GPU memory.
 
         Returns:
-            True if allocation succeeded, False if allocation failed.
+            Optional[GPUMatrixBuffer] containing the allocated buffer if successful,
+            or None if allocation failed.
 
         Raises:
             Error: If GPU buffer allocation fails or DeviceContext is invalid.
@@ -211,16 +224,13 @@ struct RealGPUMemoryManager(Copyable, Movable):
             # Check if we can track more buffers
             if len(self.buffer_pool) >= self.max_buffers:
                 print("⚠️  Buffer pool full, cannot track more buffers")
-                return False
+                return Optional[GPUMatrixBuffer]()
 
             # Real GPU memory allocation
             buffer = self.ctx.enqueue_create_buffer[DType.float64](size)
 
-            # Track allocation with buffer reference
+            # Track allocation statistics (no longer storing in pool)
             self.allocated_buffers.append(size)
-            self.buffer_pool.append(buffer^)  # Move buffer to pool
-            self.buffer_sizes.append(size)
-            self.buffer_available.append(True)  # Mark as available for reuse
             self.allocation_count += 1
 
             # Calculate memory usage
@@ -246,47 +256,62 @@ struct RealGPUMemoryManager(Copyable, Movable):
             print("  - Peak usage:", self.peak_usage_mb, "MB")
             print("  - Memory efficiency:", self.memory_efficiency)
 
-            return True
+            # Return the buffer wrapped in Optional
+            return Optional(buffer^)
 
         except e:
             print("❌ Real GPU buffer allocation failed:", e)
-            return False
+            return Optional[GPUMatrixBuffer]()
 
-    fn deallocate_gpu_buffer(mut self, size: Int) raises:
+    fn deallocate_gpu_buffer(mut self, buffer: GPUMatrixBuffer) raises:
         """
         Deallocate GPU buffer and update tracking metrics.
 
-        Actually deallocates GPU memory by finding and removing the buffer from
-        the tracked buffer pool. Updates memory usage statistics and efficiency
-        calculations for accurate memory management.
+        Updates memory usage statistics and efficiency calculations for accurate
+        memory management. Uses buffer identity matching to ensure the correct
+        buffer is deallocated, preventing wrong buffer deallocation when multiple
+        buffers of the same size exist.
 
         Args:
-            size: Number of Float64 elements being deallocated from GPU memory.
+            buffer: The specific GPUMatrixBuffer instance to deallocate.
 
         Raises:
-            Error: If buffer deallocation fails or buffer not found.
+            Error: If buffer deallocation fails.
         """
-        # Find buffer with matching size to deallocate
-        var buffer_index = self.find_buffer_by_size(size)
+        var buffer_size = 0
+        var buffer_found = False
 
-        if buffer_index == -1:
-            print("⚠️  Buffer with size", size, "not found in pool")
+        # Find and remove the specific buffer from reuse pool using identity matching
+        for i in range(len(self.buffer_pool)):
+            if self.buffer_pool[i].unsafe_ptr() == buffer.unsafe_ptr():
+                buffer_size = self.buffer_sizes[i]
+                buffer_found = True
+
+                # Remove from reuse pool
+                _ = self.buffer_pool.pop(i)
+                _ = self.buffer_sizes.pop(i)
+                _ = self.buffer_available.pop(i)
+                print("✓ Removed specific buffer from reuse pool")
+                break
+
+        if not buffer_found:
+            print(
+                "⚠️  Buffer not found in reuse pool (may be direct allocation)"
+            )
+            # For direct allocations, we need to estimate size or track differently
+            # For now, we'll skip statistics update for unknown buffers
             return
 
-        # Note: In a complete implementation, we would call a proper deallocation method
-        # For now, we remove the buffer from tracking which simulates deallocation
-        # In real MAX Engine, this would be: buffer.deallocate() or similar
-
-        # Remove buffer from tracking
-        _ = self.buffer_pool.pop(buffer_index)
-        _ = self.buffer_sizes.pop(buffer_index)
-        _ = self.buffer_available.pop(buffer_index)
-        _ = self.allocated_buffers.pop(buffer_index)
+        # Update statistics using the actual buffer size
+        for i in range(len(self.allocated_buffers)):
+            if self.allocated_buffers[i] == buffer_size:
+                _ = self.allocated_buffers.pop(i)
+                break
 
         self.deallocation_count += 1
 
-        # Update memory tracking
-        memory_mb = Int((size * 8) / (1024 * 1024))
+        # Update memory tracking using actual buffer size
+        memory_mb = Int((buffer_size * 8) / (1024 * 1024))
         self.total_allocated_mb -= memory_mb
 
         # Update efficiency
@@ -294,10 +319,50 @@ struct RealGPUMemoryManager(Copyable, Movable):
             max(self.allocation_count, 1)
         )
 
-        print("✓ GPU buffer deallocated:", size, "elements,", memory_mb, "MB")
+        print(
+            "✓ GPU buffer deallocated:",
+            buffer_size,
+            "elements,",
+            memory_mb,
+            "MB",
+        )
         print("  - Total allocated:", self.total_allocated_mb, "MB")
         print("  - Memory efficiency:", self.memory_efficiency)
         print("  - Buffers in pool:", len(self.buffer_pool))
+
+    fn deallocate_buffer_direct(mut self, size: Int):
+        """
+        Deallocate a buffer that was returned directly from allocate_gpu_buffer().
+
+        This method updates statistics for buffers that were allocated but never
+        added to the reuse pool. Used when buffers are allocated and immediately
+        used without going through the get_buffer() reuse system.
+
+        Args:
+            size: Number of Float64 elements in the deallocated buffer.
+        """
+        # Update statistics for direct buffer deallocation
+        for i in range(len(self.allocated_buffers)):
+            if self.allocated_buffers[i] == size:
+                _ = self.allocated_buffers.pop(i)
+                break
+
+        self.deallocation_count += 1
+
+        # Update memory tracking
+        memory_mb = Int((size * 8) / (1024 * 1024))
+        self.total_allocated_mb -= memory_mb
+
+        # Update efficiency metrics
+        self.memory_efficiency = Float64(self.deallocation_count) / Float64(
+            max(self.allocation_count, 1)
+        )
+
+        print(
+            "✓ Direct buffer deallocated:", size, "elements,", memory_mb, "MB"
+        )
+        print("  - Total allocated:", self.total_allocated_mb, "MB")
+        print("  - Memory efficiency:", self.memory_efficiency)
 
     fn get_buffer(mut self, size: Int) raises -> GPUMatrixBuffer:
         """
@@ -331,13 +396,18 @@ struct RealGPUMemoryManager(Copyable, Movable):
 
         # No suitable buffer found, create a new one
         print("Creating new GPU buffer:", size, "elements")
-        if not self.allocate_gpu_buffer(size):
+        var buffer_optional = self.allocate_gpu_buffer(size)
+        if not buffer_optional:
             raise Error("Failed to allocate GPU buffer")
 
-        # Return the newly created buffer (last in pool)
-        var buffer_index = len(self.buffer_pool) - 1
-        self.buffer_available[buffer_index] = False  # Mark as in use
-        return self.buffer_pool[buffer_index]
+        # Extract buffer from Optional and add to pool for tracking
+        var buffer = buffer_optional.value()
+        self.buffer_pool.append(buffer^)
+        self.buffer_sizes.append(size)
+        self.buffer_available.append(False)  # Mark as in use
+
+        # Return the buffer (last in pool)
+        return self.buffer_pool[len(self.buffer_pool) - 1]
 
     fn return_buffer(mut self, buffer: GPUMatrixBuffer):
         """
@@ -394,8 +464,9 @@ struct RealGPUMemoryManager(Copyable, Movable):
 
         # Deallocate all buffers in reverse order (LIFO)
         while len(self.buffer_pool) > 0:
-            buffer_size = self.buffer_sizes[-1]
-            self.deallocate_gpu_buffer(buffer_size)
+            # Get the last buffer from the pool
+            buffer = self.buffer_pool[-1]
+            self.deallocate_gpu_buffer(buffer)
 
         print("✓ All GPU buffers deallocated")
         print("  - Total buffers deallocated:", self.deallocation_count)
@@ -416,21 +487,6 @@ struct RealGPUMemoryManager(Copyable, Movable):
         print("  - Deallocations:", self.deallocation_count)
         print("  - Memory efficiency:", self.memory_efficiency)
         print("  - Buffer pool capacity:", self.max_buffers)
-
-    fn find_buffer_by_size(self, size: Int) -> Int:
-        """
-        Find buffer index by size for efficient lookup.
-
-        Args:
-            size: Size of buffer to find.
-
-        Returns:
-            Index of buffer in pool, or -1 if not found.
-        """
-        for i in range(len(self.buffer_sizes)):
-            if self.buffer_sizes[i] == size:
-                return i
-        return -1
 
     fn get_largest_buffer_size(self) -> Int:
         """
@@ -1243,7 +1299,9 @@ struct AdvancedGPUMemoryOptimizer(Copyable, Movable):
             ](total_elements)
 
             # Implement cache-friendly access pattern (row-major with blocking)
-            block_size = self.cache_line_size / 8  # 8 bytes per Float64
+            block_size = (
+                self.cache_line_size // 8
+            )  # 8 bytes per Float64 (integer division)
 
             for block_row in range(0, matrix_rows, block_size):
                 for block_col in range(0, matrix_cols, block_size):
@@ -1506,9 +1564,13 @@ struct GPUTensor(Copyable, Movable):
         self._initialize_gpu_tensor_hardware()
 
     fn _initialize_gpu_tensor_hardware(mut self):
-        """Initialize tensor for real GPU hardware operations using verified MAX Engine API.
+        """Detect GPU hardware availability and prepare tensor for GPU operations.
+
+        This method detects available GPU hardware and sets up the tensor's GPU
+        readiness state. The actual GPU memory allocation and data transfer
+        happens in the to_gpu() method.
         """
-        # Real GPU hardware initialization using discovered MAX Engine API
+        # Real GPU hardware detection using MAX Engine API
         # Hardware: Compatible GPU with sufficient memory
         # Environment: Mojo 25.5.0, MAX Engine 25.5.0
 
@@ -1523,11 +1585,14 @@ struct GPUTensor(Copyable, Movable):
             print("- Ready for DeviceContext operations")
         elif has_amd:
             print("✓ AMD GPU detected and available for acceleration")
+            print("- Device ID:", self.device_id)
+            print("- Tensor shape: [", len(self.shape), "dimensions ]")
+            print("- Ready for DeviceContext operations")
         else:
             print("⚠️  No GPU accelerator detected, using CPU fallback")
 
-        # Mark as ready for GPU operations
-        self.is_on_gpu = False  # Will be set to True when transferred
+        # Initialize as CPU-resident (will be moved to GPU via to_gpu() method)
+        self.is_on_gpu = False
 
     fn to_gpu(mut self) raises -> Bool:
         """
@@ -1756,7 +1821,7 @@ struct GPUTensor(Copyable, Movable):
             # Real GPU kernel execution using DeviceContext with memory management
             try:
                 # Create memory manager for this operation
-                memory_manager = RealGPUMemoryManager()
+                memory_manager = GPUMemoryManager()
                 size = self.get_total_elements()
 
                 # Get GPU buffers from memory manager (reuse if available)
@@ -1764,24 +1829,61 @@ struct GPUTensor(Copyable, Movable):
                 rhs_buffer = memory_manager.get_buffer(size)
                 var result_buffer = memory_manager.get_buffer(size)
 
-                # Transfer data to GPU buffers
-                for i in range(size):
-                    _ = lhs_buffer.enqueue_fill(self.data[i])
-                    _ = rhs_buffer.enqueue_fill(other.data[i])
+                # Transfer data to GPU buffers using proper array copy
+                # Create host arrays for the data
+                var host_lhs = UnsafePointer[Float64].alloc(size)
+                var host_rhs = UnsafePointer[Float64].alloc(size)
 
-                # Perform GPU addition using DeviceContext operations
-                # Note: Using available DeviceContext API for GPU computation
+                # Copy tensor data to host arrays
                 for i in range(size):
-                    # Simulate GPU parallel execution pattern
-                    result_value = self.data[i] + other.data[i]
-                    _ = result_buffer.enqueue_fill(result_value)
+                    host_lhs[i] = self.data[i]
+                    host_rhs[i] = other.data[i]
+
+                # Copy host arrays to GPU buffers
+                memory_manager.ctx.enqueue_copy(lhs_buffer, host_lhs)
+                memory_manager.ctx.enqueue_copy(rhs_buffer, host_rhs)
+                memory_manager.ctx.synchronize()  # Ensure transfers complete
+
+                # Clean up host arrays
+                host_lhs.free()
+                host_rhs.free()
+
+                # Execute real GPU kernel for parallel addition
+                print("🚀 Launching GPU kernel for parallel addition...")
+                memory_manager.ctx.enqueue_function[
+                    gpu_element_wise_add_kernel
+                ](
+                    result_buffer.unsafe_ptr(),
+                    lhs_buffer.unsafe_ptr(),
+                    rhs_buffer.unsafe_ptr(),
+                    size,
+                    grid_dim=(size // 32 + 1),  # Number of blocks
+                    block_dim=32,  # Threads per block
+                )
 
                 # Synchronize GPU operations
                 memory_manager.ctx.synchronize()
+                print("✓ GPU kernel execution completed")
 
-                # Transfer result back to CPU memory
+                # Transfer actual GPU computation results back to CPU memory
+                print("📥 Transferring GPU computation results to CPU...")
+
+                # Create host buffer to receive GPU results
+                var host_result_buffer = UnsafePointer[Float64].alloc(size)
+
+                # Copy GPU-computed results from device buffer to host buffer
+                memory_manager.ctx.enqueue_copy(
+                    host_result_buffer, result_buffer
+                )
+                memory_manager.ctx.synchronize()  # Ensure copy completes
+
+                # Transfer GPU-computed results to result tensor
                 for i in range(size):
-                    result.data[i] = self.data[i] + other.data[i]
+                    result.data[i] = host_result_buffer[i]
+
+                # Clean up host buffer
+                host_result_buffer.free()
+                print("✓ GPU-computed results transferred to CPU successfully")
 
                 # Return buffers to memory manager for reuse
                 memory_manager.return_buffer(lhs_buffer)
@@ -1789,7 +1891,14 @@ struct GPUTensor(Copyable, Movable):
                 # Keep result_buffer for result tensor (will be returned when result is destroyed)
 
                 result.is_on_gpu = True
-                print("✓ GPU addition completed using managed buffers")
+                print(
+                    "🚀 Real GPU acceleration completed using parallel kernel"
+                    " execution"
+                )
+                print(
+                    "✓ GPU addition completed using managed buffers and"
+                    " hardware acceleration"
+                )
 
             except e:
                 print("⚠️  GPU operation failed, using CPU fallback:", e)
@@ -1886,7 +1995,7 @@ struct GPUMatrix(Copyable, Movable):
     var cols: Int
     var use_gpu: Bool
     var gpu_allocated: Bool  # Track if GPU memory is allocated
-    var memory_manager: RealGPUMemoryManager  # Real GPU memory manager for buffer reuse
+    var memory_manager: GPUMemoryManager  # GPU memory manager for buffer reuse
     var use_memory_pool: Bool  # Whether to use memory pooling
 
     fn __init__(
@@ -1922,8 +2031,8 @@ struct GPUMatrix(Copyable, Movable):
         tensor_shape.append(cols)
         self.gpu_tensor = GPUTensor(tensor_shape, device_id=0)
 
-        # Initialize real GPU memory manager for buffer reuse
-        self.memory_manager = RealGPUMemoryManager()
+        # Initialize GPU memory manager for buffer reuse
+        self.memory_manager = GPUMemoryManager()
         self.use_memory_pool = True
 
         # Determine GPU usage based on compute mode
@@ -2005,7 +2114,10 @@ struct GPUMatrix(Copyable, Movable):
             # Try to allocate from memory manager first
             size = self.rows * self.cols
             try:
-                if self.memory_manager.allocate_gpu_buffer(size):
+                var buffer_optional = self.memory_manager.allocate_gpu_buffer(
+                    size
+                )
+                if buffer_optional:
                     self.gpu_allocated = True
                     print(
                         "GPU memory allocated from manager for",
@@ -2258,34 +2370,79 @@ struct GPUMatrix(Copyable, Movable):
                 )
                 c_buffer = result.memory_manager.get_buffer(result_size)
 
-                # Transfer matrix data to GPU buffers
+                # Transfer matrix data to GPU buffers using proper array copy
+                # Create host arrays for the matrix data
+                var host_a = UnsafePointer[Float64].alloc(self.rows * self.cols)
+                var host_b = UnsafePointer[Float64].alloc(
+                    other.rows * other.cols
+                )
+
+                # Copy matrix data to host arrays in row-major order
                 for i in range(self.rows):
                     for j in range(self.cols):
-                        _ = a_buffer.enqueue_fill(self.get(i, j))
+                        host_a[i * self.cols + j] = self.get(i, j)
 
                 for i in range(other.rows):
                     for j in range(other.cols):
-                        _ = b_buffer.enqueue_fill(other.get(i, j))
+                        host_b[i * other.cols + j] = other.get(i, j)
 
-                # Perform GPU matrix multiplication using DeviceContext
-                # Note: Using available DeviceContext API for GPU computation
-                for i in range(self.rows):
-                    for j in range(other.cols):
-                        var sum = 0.0
-                        for k in range(self.cols):
-                            sum += self.get(i, k) * other.get(k, j)
-                        _ = c_buffer.enqueue_fill(sum)
+                # Copy host arrays to GPU buffers
+                self.memory_manager.ctx.enqueue_copy(a_buffer, host_a)
+                other.memory_manager.ctx.enqueue_copy(b_buffer, host_b)
+                self.memory_manager.ctx.synchronize()  # Ensure transfers complete
+
+                # Clean up host arrays
+                host_a.free()
+                host_b.free()
+
+                # Execute real GPU matrix multiplication kernel
+                print("🚀 Launching GPU matrix multiplication kernel...")
+                self.memory_manager.ctx.enqueue_function[
+                    gpu_matrix_multiply_kernel
+                ](
+                    c_buffer.unsafe_ptr(),
+                    a_buffer.unsafe_ptr(),
+                    b_buffer.unsafe_ptr(),
+                    self.rows,
+                    self.cols,
+                    other.cols,
+                    grid_dim=(
+                        self.rows // 16 + 1,
+                        other.cols // 16 + 1,
+                    ),  # 2D grid
+                    block_dim=(16, 16),  # 2D block
+                )
 
                 # Synchronize GPU operations
                 self.memory_manager.ctx.synchronize()
+                print("✓ GPU matrix multiplication kernel completed")
 
-                # Copy results back to CPU matrix
+                # Transfer actual GPU computation results back to CPU matrix
+                print("📥 Transferring GPU matrix results to CPU...")
+
+                # Create host buffer to receive GPU matrix results
+                var host_result_buffer = UnsafePointer[Float64].alloc(
+                    result_size
+                )
+
+                # Copy GPU-computed matrix results from device buffer to host buffer
+                self.memory_manager.ctx.enqueue_copy(
+                    host_result_buffer, c_buffer
+                )
+                self.memory_manager.ctx.synchronize()  # Ensure copy completes
+
+                # Transfer GPU-computed results to result matrix
                 for i in range(self.rows):
                     for j in range(other.cols):
-                        var sum = 0.0
-                        for k in range(self.cols):
-                            sum += self.get(i, k) * other.get(k, j)
-                        result.set(i, j, sum)
+                        var index = i * other.cols + j
+                        result.set(i, j, host_result_buffer[index])
+
+                # Clean up host buffer
+                host_result_buffer.free()
+                print(
+                    "✓ GPU-computed matrix results transferred to CPU"
+                    " successfully"
+                )
 
                 # Return buffers to memory manager for reuse
                 self.memory_manager.return_buffer(a_buffer)
@@ -2293,8 +2450,12 @@ struct GPUMatrix(Copyable, Movable):
                 # Keep c_buffer for result matrix
 
                 print(
+                    "🚀 Real GPU matrix multiplication completed using parallel"
+                    " kernel execution"
+                )
+                print(
                     "✓ GPU matrix multiplication completed using managed"
-                    " buffers"
+                    " buffers and hardware acceleration"
                 )
 
             except e:

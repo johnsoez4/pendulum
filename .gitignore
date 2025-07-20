@@ -166,6 +166,13 @@ Temporary Items
 # Project specific (customize as needed)
 # Add any project-specific files or directories to ignore
 
+# Test directory symlinks (created for module imports)
+tests/src
+tests/unit/src
+tests/performance/src
+tests/integration/src
+src/src
+
 # pixi environments
 .pixi
 *.egg-info
