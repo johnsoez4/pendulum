@@ -336,6 +336,97 @@ struct ResourceManager(Copyable, Movable):
   - Error handling during initialization
   - Computed or derived field values needed
 
+### ⚠️ **CRITICAL: Struct Initialization Order Requirements**
+
+**IMPORTANT: In Mojo, all struct fields must be initialized before calling any instance methods in `__init__()`. This is a strict requirement that prevents use of uninitialized values.**
+
+#### ❌ **INCORRECT: Instance Method Calls Before Field Initialization**
+
+```mojo
+# ❌ COMPILATION ERROR: Cannot call instance methods before all fields are initialized
+struct SystemInfo(Copyable, Movable):
+    var cpu_model: String
+    var memory_gb: Int
+    var gpu_available: Bool
+
+    fn __init__(out self):
+        # ❌ ERROR: Calling instance method before fields are initialized
+        self.cpu_model = self._detect_cpu_model()  # ← FAILS: use of uninitialized value
+        self.memory_gb = self._detect_memory()
+        self.gpu_available = False
+
+    fn _detect_cpu_model(self) -> String:  # ← Instance method requires initialized self
+        return "CPU Model"
+```
+
+#### ✅ **CORRECT: Use @staticmethod for Initialization Helpers**
+
+```mojo
+# ✅ CORRECT: Static methods don't require initialized self
+struct SystemInfo(Copyable, Movable):
+    var cpu_model: String
+    var memory_gb: Int
+    var gpu_available: Bool
+
+    fn __init__(out self):
+        # ✅ CORRECT: Static methods can be called during initialization
+        self.cpu_model = SystemInfo._detect_cpu_model()
+        self.memory_gb = SystemInfo._detect_memory()
+        self.gpu_available = False
+
+    @staticmethod
+    fn _detect_cpu_model() -> String:  # ← Static method, no self required
+        return "CPU Model"
+
+    @staticmethod
+    fn _detect_memory() -> Int:
+        return 16
+```
+
+#### ✅ **ALTERNATIVE: Initialize Fields First, Then Call Methods**
+
+```mojo
+# ✅ CORRECT: Initialize all fields with defaults, then call instance methods
+struct SystemInfo(Copyable, Movable):
+    var cpu_model: String
+    var memory_gb: Int
+    var gpu_available: Bool
+
+    fn __init__(out self):
+        # Initialize all fields first with default values
+        self.cpu_model = "Unknown"
+        self.memory_gb = 0
+        self.gpu_available = False
+
+        # Now safe to call instance methods
+        self.cpu_model = self._detect_cpu_model()
+        self.memory_gb = self._detect_memory()
+
+    fn _detect_cpu_model(self) -> String:  # ← Instance method, self is now initialized
+        return "Detected CPU Model"
+```
+
+#### 🎯 **Initialization Pattern Decision Matrix**
+
+- **Use `@staticmethod`** when:
+  - Method doesn't need access to struct fields
+  - Method is a utility function for initialization
+  - Method performs system detection or external queries
+  - Method is called during `__init__()` before field initialization
+
+- **Use instance methods** when:
+  - Method needs access to initialized struct fields
+  - Method operates on struct state
+  - Method is called after all fields are initialized
+  - Method is part of the struct's public API
+
+#### 🚨 **Common Initialization Errors to Avoid**
+
+1. **Calling instance methods in `__init__()` before field initialization**
+2. **Accessing `self` fields before they are assigned**
+3. **Circular dependencies between field initialization and method calls**
+4. **Forgetting to initialize all fields before using instance methods**
+
 ### 🔄 **Struct Lifecycle Management (Copy & Move Semantics)**
 
 #### 🎯 **Core Principle: Traits Required Only When Corresponding Methods Are Needed**
@@ -2105,12 +2196,32 @@ fn test_basic_functionality() raises:
 #### 📋 **Symbolic Link Organization Rules**
 
 1. **Create symbolic links** from test directory to source code directories
-2. **Use consistent naming** for symbolic links across all test directories
-3. **Link to parent directories** containing source modules, not individual files
-4. **Maintain clean separation** between test and source directory structures
-5. **Document symbolic links** in project README or test documentation
-6. **Use relative paths** in symbolic links for portability
-7. **Verify symbolic links** work correctly before committing tests
+2. **Each test subdirectory needs its own symlink** - imports don't inherit from parent directories
+3. **Use consistent naming** for symbolic links across all test directories (`src` for source code)
+4. **Link to parent directories** containing source modules, not individual files
+5. **Maintain clean separation** between test and source directory structures
+6. **Document symbolic links** in project README or test documentation
+7. **Use relative paths** in symbolic links for portability (e.g., `../../../src`)
+8. **Verify symbolic links** work correctly before committing tests
+
+#### ⚠️ **CRITICAL: Every Test Folder Requires Symlinks**
+
+**IMPORTANT**: Each folder containing test files must have its own symlink to the source code. Mojo's import system does not inherit symlinks from parent directories.
+
+**Required Pattern:**
+```bash
+# Each of these directories needs its own src symlink:
+tests/unit/benchmarks/src -> ../../../src
+tests/unit/control/src -> ../../../src
+tests/unit/utils/src -> ../../../src
+tests/integration/src -> ../../src
+tests/performance/gpu/src -> ../../../src
+```
+
+**Why This Is Required:**
+- Mojo resolves imports relative to the file's directory
+- Parent directory symlinks are not inherited by subdirectories
+- Each test file needs direct access to source code imports
 
 #### 🚫 **Anti-Patterns to Avoid**
 
@@ -2144,9 +2255,42 @@ from /home/user/project/src.my_module import MyClass  # Not portable
 # STANDARD STRUCTURE: For projects with src/ directory structure (RECOMMENDED)
 # Source code organization: src/benchmarks/, src/control/, src/utils/, etc.
 # Import pattern: from src.utils.module import Class
+
+# Main tests directory symlink
 cd tests/
 ln -s ../src src
 ln -s ../test_utils test_utils
+
+# IMPORTANT: Each test subdirectory also needs its own symlink
+# This ensures imports work correctly from any test location
+
+# Unit test subdirectories
+cd tests/unit/benchmarks/
+ln -s ../../../src src
+
+cd tests/unit/control/
+ln -s ../../../src src
+
+cd tests/unit/utils/
+ln -s ../../../src src
+
+cd tests/unit/digital_twin/
+ln -s ../../../src src
+
+# Integration test subdirectories
+cd tests/integration/
+ln -s ../../src src
+
+# Performance test subdirectories
+cd tests/performance/
+ln -s ../../src src
+
+cd tests/performance/gpu/
+ln -s ../../../src src
+
+# Verify symbolic links are created correctly
+ls -la tests/unit/benchmarks/
+# Should show: src -> ../../../src
 
 # ALTERNATIVE: For projects with root-level source files
 # Source code organization: benchmarks/, control/, utils/ (in project root)
@@ -2154,10 +2298,6 @@ ln -s ../test_utils test_utils
 cd tests/
 ln -s .. mojo_src
 ln -s ../test_utils test_utils
-
-# Verify symbolic links are created correctly
-ls -la tests/
-# Should show symbolic links pointing to source directories
 ```
 
 #### 📁 **Directory Structure Clarification**

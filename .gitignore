@@ -1,5 +1,8 @@
 # Mojo Project .gitignore
 
+# Graphical models & media
+models/
+
 # Mojo build artifacts
 *.o
 *.so
@@ -169,6 +172,7 @@ Temporary Items
 # Test directory symlinks (created for module imports)
 tests/src
 tests/unit/src
+tests/unit/benchmarks/src
 tests/performance/src
 tests/integration/src
 src/src

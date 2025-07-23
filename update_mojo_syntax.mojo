@@ -449,6 +449,106 @@ struct MojoSyntaxChecker(Copyable, Movable):
                 for violation in struct_violations:
                     violations.append(violation)
 
+        # Check for struct initialization order violations
+        var init_violations = self._check_struct_initialization_order(
+            lines, file_path
+        )
+        for violation in init_violations:
+            violations.append(violation)
+
+        return violations
+
+    fn _check_struct_initialization_order(
+        self, lines: List[String], file_path: String
+    ) -> List[SyntaxViolation]:
+        """Check for struct initialization order violations."""
+        violations = List[SyntaxViolation]()
+
+        for i in range(len(lines)):
+            line = lines[i].strip()
+
+            # Look for __init__ method definitions
+            if line.startswith("fn __init__("):
+                var indent_level = len(lines[i]) - len(lines[i].lstrip())
+                var found_field_assignment = False
+
+                # Scan through the __init__ method until we find a line with same or less indentation
+                for j in range(i + 1, len(lines)):
+                    var current_line = lines[j].strip()
+                    var current_indent = len(lines[j]) - len(lines[j].lstrip())
+
+                    # If we hit a line with same or less indentation (and it's not empty), we've exited the method
+                    if len(current_line) > 0 and current_indent <= indent_level:
+                        break
+
+                    # Skip the method signature line
+                    if j == i:
+                        continue
+
+                    # Look for instance method calls in field assignments (self.field = self._method())
+                    if (
+                        "self." in current_line
+                        and "=" in current_line
+                        and "self._" in current_line
+                        and "(" in current_line
+                        and not current_line.startswith("#")
+                    ):
+                        # This is a field assignment using an instance method call
+                        violation = SyntaxViolation(
+                            file_path,
+                            j + 1,
+                            "struct_init_order",
+                            (
+                                "Instance method call in __init__() during"
+                                " field initialization"
+                            ),
+                            (
+                                "Use @staticmethod decorator for methods called"
+                                " during initialization, or initialize all"
+                                " fields with defaults first"
+                            ),
+                            "error",
+                        )
+                        violations.append(violation)
+                        break
+
+                    # Look for field assignments (self.field = ...)
+                    if (
+                        "self." in current_line
+                        and "=" in current_line
+                        and not current_line.startswith("#")
+                    ):
+                        # Check if it's a field assignment (not a method call)
+                        if not "(" in current_line.split("=")[0]:
+                            found_field_assignment = True
+
+                    # Look for standalone instance method calls (self._method())
+                    if (
+                        "self._" in current_line
+                        and "(" in current_line
+                        and "=" not in current_line
+                        and not current_line.startswith("#")
+                    ):
+                        # Check if this is before field assignments
+                        if not found_field_assignment:
+                            violation = SyntaxViolation(
+                                file_path,
+                                j + 1,
+                                "struct_init_order",
+                                (
+                                    "Instance method call in __init__() before"
+                                    " field initialization"
+                                ),
+                                (
+                                    "Use @staticmethod decorator for methods"
+                                    " called during initialization, or"
+                                    " initialize all fields first"
+                                ),
+                                "error",
+                            )
+                            violations.append(violation)
+                            break
+
         return violations
 
     fn _analyze_struct_traits(
@@ -1857,24 +1957,81 @@ struct MojoSyntaxChecker(Copyable, Movable):
             line = lines[i]
 
             # Add basic docstrings for functions missing them
-            if line.strip().startswith("fn ") and "(" in line:
-                if i + 1 < len(lines) and not lines[i + 1].strip().startswith(
-                    '"""'
+            if line.strip().startswith("fn ") and ("(" in line or "[" in line):
+                # Find the end of the function signature
+                signature_start = i
+                signature_end_index = i
+                paren_count = 0
+                signature_complete = False
+
+                # Count parentheses to find the actual end of the function signature
+                j = i
+                bracket_count = 0  # Track square brackets for generics
+                found_opening_paren = (
+                    False  # Track if we've found the parameter list
+                )
+
+                while j < len(lines) and not signature_complete:
+                    current_line = lines[j]
+
+                    # Count parentheses and brackets in this line
+                    for char_idx in range(len(current_line)):
+                        char = current_line[char_idx]
+                        if char == "[":
+                            bracket_count += 1
+                        elif char == "]":
+                            bracket_count -= 1
+                        elif char == "(":
+                            paren_count += 1
+                            found_opening_paren = True
+                        elif char == ")":
+                            paren_count -= 1
+
+                        # If we've found the opening paren, closed all parentheses and brackets, and found a colon, signature is complete
+                        if (
+                            found_opening_paren
+                            and paren_count == 0
+                            and bracket_count == 0
+                            and ":" in current_line[char_idx:]
+                        ):
+                            signature_end_index = j
+                            signature_complete = True
+                            break
+
+                    j += 1
+
+                # Check if there's a docstring after the complete signature
+                docstring_line_index = signature_end_index + 1
+                has_docstring = False
+
+                if docstring_line_index < len(lines):
+                    next_line = lines[docstring_line_index].strip()
+                    has_docstring = next_line.startswith('"""')
+
+                # Add all lines of the function signature
+                for sig_line_idx in range(
+                    signature_start, signature_end_index + 1
                 ):
-                    fixed_lines.append(line)
-                    # Add basic docstring
-                    indent = len(line) - len(line.lstrip())
+                    fixed_lines.append(lines[sig_line_idx])
+
+                # Add docstring if missing (after the complete signature)
+                if not has_docstring:
+                    # Use the indentation of the function definition line
+                    base_indent = len(lines[signature_start]) - len(
+                        lines[signature_start].lstrip()
+                    )
                     docstring = (
-                        " " * (indent + 4)
+                        " " * (base_indent + 4)
                         + '"""TODO: Add function description."""'
                     )
                     fixed_lines.append(docstring)
-                else:
-                    fixed_lines.append(line)
+
+                # Move index past the processed signature
+                i = signature_end_index + 1
+                continue
             else:
                 fixed_lines.append(line)
-
-            i += 1
+                i += 1
 
         return "\n".join(fixed_lines)
 
