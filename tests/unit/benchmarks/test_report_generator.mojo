@@ -81,20 +81,31 @@ fn test_real_gpu_system_info():
     print("- NVIDIA GPU available:", has_nvidia)
     print("- AMD GPU available:", has_amd)
 
+    # Get actual system information for accurate hardware display
+    var system_info = SystemInfo()
+
     if has_nvidia:
-        print("✅ NVIDIA A10 GPU detected for report generation")
-        print("  - GPU Model: NVIDIA A10 (23GB) - REAL HARDWARE DETECTED")
-        print("  - GPU Memory: 23 GB")
+        print("✅ NVIDIA GPU detected for report generation")
+        print(
+            "  - GPU Model: "
+            + system_info.gpu_model
+            + " - REAL HARDWARE DETECTED"
+        )
+        print("  - GPU Memory: " + String(system_info.gpu_memory_gb) + " GB")
         print("  - MAX Engine: Available")
     elif has_amd:
         print("✅ AMD GPU detected for report generation")
-        print("  - GPU Model: AMD GPU - REAL HARDWARE DETECTED")
-        print("  - GPU Memory: 16 GB (estimated)")
+        print(
+            "  - GPU Model: "
+            + system_info.gpu_model
+            + " - REAL HARDWARE DETECTED"
+        )
+        print("  - GPU Memory: " + String(system_info.gpu_memory_gb) + " GB")
         print("  - MAX Engine: Available")
     else:
         print("⚠️  No GPU detected - CPU-only reporting")
-        print("  - GPU Model: No GPU Detected - CPU Only")
-        print("  - GPU Memory: 0 GB")
+        print("  - GPU Model: " + system_info.gpu_model)
+        print("  - GPU Memory: " + String(system_info.gpu_memory_gb) + " GB")
         print("  - MAX Engine: Not Available")
 
     print("✅ System information detection completed")
@@ -360,8 +371,26 @@ fn main():
     print("GPU Report Generation Real Acceleration Test")
     print("=" * 70)
     print("Testing enhanced benchmark report generation with real GPU metrics")
-    print("Hardware: NVIDIA A10 GPU (23GB)")
-    print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
+
+    # Get actual system information for environment display
+    var system_info = SystemInfo()
+
+    # Display actual hardware information
+    print(
+        "Hardware: "
+        + system_info.gpu_model
+        + " ("
+        + String(system_info.gpu_memory_gb)
+        + "GB)"
+    )
+    print(
+        "Environment: "
+        + system_info.mojo_version
+        + " + "
+        + system_info.max_engine_version
+        + " + "
+        + system_info.cuda_version
+    )
 
     # Test 0: Report generator imports and core functionality
     test_report_generator_imports()
