@@ -6,9 +6,11 @@ and validates report accuracy and comprehensive performance documentation.
 """
 
 from collections import List
+from memory import UnsafePointer
 from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
 from gpu.host import DeviceContext
 from time import perf_counter_ns as now
+from benchmark import Bench, Bencher, BenchId, BenchConfig
 
 # Import components from the report generator using symlink
 from src.benchmarks.report_generator import (
@@ -28,17 +30,13 @@ fn test_report_generator_imports():
     print("-" * 60)
 
     # Test SystemInfo creation and functionality
-    try:
-        var system_info = SystemInfo()
-        print("✅ SystemInfo created successfully")
-        print("- CPU Model:", system_info.cpu_model)
-        print("- GPU Model:", system_info.gpu_model)
-        print("- Memory:", system_info.memory_gb, "GB")
-        print("- CUDA Version:", system_info.cuda_version)
-        print("- GPU Available:", system_info.gpu_available)
-
-    except e:
-        print("❌ SystemInfo creation failed:", e)
+    var system_info = SystemInfo()
+    print("✅ SystemInfo created successfully")
+    print("- CPU Model:", system_info.cpu_model)
+    print("- GPU Model:", system_info.gpu_model)
+    print("- Memory:", system_info.memory_gb, "GB")
+    print("- CUDA Version:", system_info.cuda_version)
+    print("- GPU Available:", system_info.gpu_available)
 
     # Test BenchmarkReportGenerator creation
     try:
@@ -54,14 +52,10 @@ fn test_report_generator_imports():
         print("❌ BenchmarkReportGenerator creation failed:", e)
 
     # Test BenchmarkMetrics creation
-    try:
-        var metrics = BenchmarkMetrics("Test Metrics")
-        print("✅ BenchmarkMetrics created successfully")
-        print("- Test name:", metrics.test_name)
-        print("- Test passed:", metrics.test_passed)
-
-    except e:
-        print("❌ BenchmarkMetrics creation failed:", e)
+    var metrics = BenchmarkMetrics("Test Metrics")
+    print("✅ BenchmarkMetrics created successfully")
+    print("- Test name:", metrics.test_name)
+    print("- Test passed:", metrics.test_passed)
 
     print("✅ Import test completed - all components working correctly")
 
@@ -149,14 +143,64 @@ fn test_real_gpu_metrics_collection():
             )
             print("  - Test Status: PASSED")
 
-            # Estimate CPU equivalent
-            cpu_time_ms = time_seconds * 1000.0 * 2.0  # Estimated 2x slower
-            cpu_bandwidth = bandwidth_gbps * 0.5  # Estimated 50% bandwidth
+            # Measure actual CPU equivalent performance using official benchmark module
+            # Pre-allocate CPU buffer outside benchmark timing (best practice)
+            var cpu_data = UnsafePointer[Float64].alloc(test_size)
 
-            print("  - Estimated CPU Time:", cpu_time_ms, "ms")
-            print("  - Estimated CPU Bandwidth:", cpu_bandwidth, "GB/s")
+            # Create benchmark configuration
+            var bench = Bench(BenchConfig())
 
-            # Calculate speedup
+            # Define CPU benchmark function following mojo_syntax.md patterns
+            @parameter
+            @always_inline
+            fn cpu_memory_fill_benchmark(mut bencher: Bencher) raises:
+                """CPU memory fill benchmark using official benchmark module."""
+
+                @parameter
+                @always_inline
+                fn run_cpu_fill():
+                    # Core computation only - no setup/teardown in timing
+                    # Prevent compiler optimization by using volatile operations
+                    for i in range(test_size):
+                        cpu_data[i] = 3.14159 + Float64(i % 100) * 0.001
+
+                    # Add memory barrier to prevent optimization
+                    var sum = 0.0
+                    for i in range(
+                        min(test_size, 1000)
+                    ):  # Sample to prevent optimization
+                        sum += cpu_data[i]
+
+                    # Use the sum to prevent dead code elimination
+                    if sum < 0.0:  # Never true, but compiler doesn't know
+                        cpu_data[0] = sum
+
+                # Run benchmark iterations with statistical analysis
+                bencher.iter[run_cpu_fill]()
+
+            # Execute CPU benchmark
+            bench.bench_function[cpu_memory_fill_benchmark](
+                BenchId("memory_fill", "cpu")
+            )
+
+            # Extract timing results using official benchmark API
+            var cpu_time_ms: Float64 = 0.0
+            for info in bench.info_vec:
+                if info.name == "memory_fill/cpu":
+                    cpu_time_ms = info.result.mean("ms")
+                    break
+
+            # Calculate CPU bandwidth based on actual benchmark results
+            var cpu_time_seconds = cpu_time_ms / 1000.0
+            var cpu_bandwidth = (bytes_transferred / cpu_time_seconds) / 1e9
+
+            print("  - Actual CPU Time:", cpu_time_ms, "ms (benchmark module)")
+            print("  - Actual CPU Bandwidth:", cpu_bandwidth, "GB/s")
+
+            # Clean up CPU memory
+            cpu_data.free()
+
+            # Calculate real speedup
             speedup = cpu_time_ms / (time_seconds * 1000.0)
             print("  - GPU Speedup Factor:", speedup, "x")
 
