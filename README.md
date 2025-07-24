@@ -61,18 +61,13 @@ pixi run mojo run tests/unit/test_physics.mojo
 These files demonstrate the AI training and neural network capabilities:
 
 ```bash
-# Simple neural network training demonstration
-pixi run mojo run src/pendulum/digital_twin/simple_network.mojo
-# Trains a simplified neural network on pendulum data
-# Expected output: Training progress with decreasing loss and final test prediction
-
 # Integrated training pipeline (requires dependencies)
 pixi run mojo run src/pendulum/digital_twin/integrated_trainer.mojo
-# Note: May have import dependencies - use simple_network.mojo for basic demo
+# Comprehensive neural network training with advanced features
 
 # Basic neural network trainer
 pixi run mojo run src/pendulum/digital_twin/trainer.mojo
-# Note: May have import dependencies - use simple_network.mojo for basic demo
+# Core training infrastructure for pendulum digital twin
 ```
 
 ### 🗑️ **Legacy Unit Tests** (Removed)
@@ -138,7 +133,7 @@ pixi run mojo run tests/unit/test_gpu_benchmark.mojo
 pixi run mojo run tests/performance/test_benchmarks.mojo
 
 # Neural network training demo
-pixi run mojo run src/pendulum/digital_twin/simple_network.mojo
+pixi run mojo run src/pendulum/digital_twin/trainer.mojo
 
 # GPU integration testing
 pixi run mojo run tests/integration/test_gpu_integration.mojo

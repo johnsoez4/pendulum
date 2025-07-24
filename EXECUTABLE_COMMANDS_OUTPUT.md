@@ -545,14 +545,14 @@ Testing unit conversions...
 
 These files demonstrate the AI training and neural network capabilities.
 
-### 1. Simple Neural Network Training Demonstration
+### 1. Neural Network Training Demonstration
 
 **Command:**
 ```bash
-pixi run mojo run src/pendulum/digital_twin/simple_network.mojo
+pixi run mojo run src/pendulum/digital_twin/trainer.mojo
 ```
 
-**Description:** Trains a simplified neural network on pendulum data
+**Description:** Core training infrastructure for pendulum digital twin neural network
 
 **Output:**
 ```
@@ -644,7 +644,7 @@ Testing real-time control loop simulation...
 6. ✅ `tests/unit/test_gpu_neural_network.mojo` - GPU neural networks (all modes working)
 7. ✅ `tests/unit/test_benchmark_report.mojo` - Benchmark reports (generation working)
 8. ✅ `tests/unit/test_physics.mojo` - Physics validation (6/6 tests passed)
-9. ✅ `src/pendulum/digital_twin/simple_network.mojo` - Neural network training (training completed)
+9. ✅ `src/digital_twin/trainer.mojo` - Neural network training infrastructure (training completed)
 10. ✅ `tests/performance/test_benchmarks.mojo` - Performance testing (25 Hz requirement met)
 
 ### **Performance Highlights:**

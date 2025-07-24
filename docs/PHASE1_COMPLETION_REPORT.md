@@ -111,7 +111,6 @@ Phase 1 of the Inverted Pendulum AI Control System has been **successfully compl
 - **`neural_network.mojo`** (300 lines): Core neural network architecture
 - **`trainer.mojo`** (300 lines): Training infrastructure with loss functions
 - **`integrated_trainer.mojo`** (559 lines): Complete training system demonstration
-- **`simple_network.mojo`** (300 lines): Simplified network for testing
 
 ### Data Processing (`src/pendulum/data/`)
 - **`loader.mojo`** (300 lines): Data loading and preprocessing
