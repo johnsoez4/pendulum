@@ -7,35 +7,7 @@ optimization, training loops, validation, early stopping, and model checkpointin
 
 from collections import List, Dict
 from memory import UnsafePointer
-
-
-# Helper functions for missing math operations
-
-
-fn sqrt(x: Float64) -> Float64:
-    """Return square root of x."""
-    if x <= 0.0:
-        return 0.0
-    var guess = x / 2.0
-    for _ in range(10):
-        guess = (guess + x / guess) / 2.0
-    return guess
-
-
-fn exp(x: Float64) -> Float64:
-    """Approximate exponential function."""
-    if x > 10.0:
-        return 22026.0  # Approximate e^10
-    if x < -10.0:
-        return 0.0001  # Approximate e^-10
-
-    # Taylor series approximation for e^x
-    var result = 1.0
-    var term = 1.0
-    for i in range(1, 15):
-        term *= x / Float64(i)
-        result += term
-    return result
+from math import sqrt, exp
 
 
 # Training configuration constants
@@ -81,7 +53,6 @@ struct AdamOptimizer(Copyable, Movable):
     var t: Int  # Time step counter
 
     fn update_parameters(
-        """TODO: Add function description."""
         mut self, gradients: List[Float64], parameters: List[Float64]
     ) -> List[Float64]:
         """
@@ -158,7 +129,6 @@ struct LossFunctions:
 
     @staticmethod
     fn physics_informed_loss(
-        """TODO: Add function description."""
         current_state: List[Float64], predicted_state: List[Float64]
     ) -> Float64:
         """
@@ -219,7 +189,6 @@ struct DataSplitter:
 
     @staticmethod
     fn split_data(
-        """TODO: Add function description."""
         data: List[List[Float64]], validation_ratio: Float64
     ) -> (List[List[Float64]], List[List[Float64]]):
         """
@@ -254,7 +223,6 @@ struct BatchGenerator:
 
     @staticmethod
     fn create_batches(
-        """TODO: Add function description."""
         inputs: List[List[Float64]],
         targets: List[List[Float64]],
         batch_size: Int,
@@ -312,7 +280,6 @@ struct PendulumTrainer(Copyable, Movable):
     var is_training: Bool
 
     fn train_model(
-        """TODO: Add function description."""
         mut self,
         train_data: List[List[Float64]],
         target_data: List[List[Float64]],
@@ -410,9 +377,7 @@ struct PendulumTrainer(Copyable, Movable):
             epoch_val_loss = self._validate_epoch(val_inputs, val_targets)
 
             # Physics loss computation
-            physics_loss = self._compute_physics_loss(
-                val_inputs, val_targets
-            )
+            physics_loss = self._compute_physics_loss(val_inputs, val_targets)
 
             # Record metrics
             metrics = TrainingMetrics(
@@ -479,7 +444,6 @@ struct PendulumTrainer(Copyable, Movable):
         return batch_loss / Float64(batch.size) if batch.size > 0 else 0.0
 
     fn _validate_epoch(
-        """TODO: Add function description."""
         self, val_inputs: List[List[Float64]], val_targets: List[List[Float64]]
     ) -> Float64:
         """Validate for one epoch."""
@@ -498,7 +462,6 @@ struct PendulumTrainer(Copyable, Movable):
         )
 
     fn _compute_physics_loss(
-        """TODO: Add function description."""
         self, inputs: List[List[Float64]], targets: List[List[Float64]]
     ) -> Float64:
         """Compute physics-informed loss component."""
@@ -575,7 +538,6 @@ struct TrainingUtils:
 
     @staticmethod
     fn prepare_training_data(
-        """TODO: Add function description."""
         raw_data: List[List[Float64]],
     ) -> (List[List[Float64]], List[List[Float64]]):
         """
@@ -614,7 +576,6 @@ struct TrainingUtils:
 
     @staticmethod
     fn validate_training_data(
-        """TODO: Add function description."""
         inputs: List[List[Float64]], targets: List[List[Float64]]
     ) -> Bool:
         """
@@ -646,46 +607,5 @@ struct TrainingUtils:
         return True
 
 
-fn main():
-    """
-    Example usage of the training infrastructure.
-    """
-    print("Pendulum Digital Twin Training Infrastructure")
-    print("============================================")
-
-    # Create trainer
-    trainer = TrainingUtils.create_trainer()
-
-    # Create sample training data
-    sample_data = List[List[Float64]]()
-    for i in range(100):
-        sample = List[Float64]()
-        sample.append(Float64(i) * 0.1)  # actuator position
-        sample.append(Float64(i) * 2.0)  # pendulum velocity
-        sample.append(180.0 - Float64(i))  # pendulum angle
-        sample.append(0.1 * Float64(i % 10))  # control voltage
-        sample.append(40.0)  # elapsed time
-        sample_data.append(sample)
-
-    # Prepare training data
-    data_prep = TrainingUtils.prepare_training_data(sample_data)
-    inputs = data_prep[0]
-    targets = data_prep[1]
-
-    # Validate data
-    if TrainingUtils.validate_training_data(inputs, targets):
-        print("Training data validation: PASSED")
-
-        # Configure training
-        config = TrainingConfig.get_default_config()
-        config["max_epochs"] = 50.0  # Reduced for demo
-
-        # Train model
-        success = trainer.train_model(inputs, targets, config)
-
-        if success:
-            print("Training completed successfully!")
-        else:
-            print("Training failed!")
-    else:
-        print("Training data validation: FAILED")
+# Example usage can be found in separate demo files
+# This module provides training infrastructure components for import
