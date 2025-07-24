@@ -149,14 +149,23 @@ fn gpu_vector_operations_kernel(
             output[0] = sum
 
 
-# GPU kernel for real element-wise operations (simplified for demonstration)
 fn gpu_element_wise_kernel(
     result: LayoutTensor[mut=True, DType.float32, Layout.row_major(512, 512)],
     a: LayoutTensor[mut=True, DType.float32, Layout.row_major(512, 512)],
     b: LayoutTensor[mut=True, DType.float32, Layout.row_major(512, 512)],
     size: Int,
 ):
-    """Real GPU element-wise operations kernel using thread parallelism."""
+    """
+    Real GPU element-wise operations kernel using thread parallelism.
+
+    Performs element-wise multiplication on GPU tensors with optimized thread distribution.
+
+    Args:
+        result: Output tensor for storing computation results.
+        a: First input tensor for element-wise operations.
+        b: Second input tensor for element-wise operations.
+        size: Size dimension for tensor operations.
+    """
     row = thread_idx.y + block_idx.y * block_dim.y
     col = thread_idx.x + block_idx.x * block_dim.x
 
@@ -165,15 +174,21 @@ fn gpu_element_wise_kernel(
         result[row, col] = a[row, col] * b[row, col]
 
 
-# GPU kernel with proper tensor indexing and SIMD vector extraction
 fn gpu_neural_network_kernel(
     output_buffer: LayoutTensor[
         mut=True, DType.float32, Layout.row_major(1, 3)
     ],
     input_buffer: LayoutTensor[mut=True, DType.float32, Layout.row_major(1, 4)],
 ):
-    """GPU neural network kernel - functionally equivalent to CPU with proper tensor indexing.
-    Uses SIMD vector extraction ([0]) and compile-time loop optimization.
+    """
+    GPU neural network kernel - functionally equivalent to CPU with proper tensor indexing.
+
+    Uses SIMD vector extraction and compile-time loop optimization for performance.
+    Implements neural network forward pass with identical weight formula and tanh activation.
+
+    Args:
+        output_buffer: Output tensor buffer for storing neural network results.
+        input_buffer: Input tensor buffer containing network input data.
     """
     idx = thread_idx.x + block_idx.x * block_dim.x
 
@@ -206,7 +221,6 @@ fn gpu_neural_network_kernel(
         output_buffer[0, idx] = tanh_result
 
 
-# GPU kernel for parallel control optimization (simplified for type compatibility)
 fn gpu_control_optimization_kernel(
     control_buffer: LayoutTensor[
         mut=True, DType.float32, Layout.row_major(1, 50)
@@ -214,7 +228,17 @@ fn gpu_control_optimization_kernel(
     cost_buffer: LayoutTensor[mut=True, DType.float32, Layout.row_major(1, 50)],
     horizon: Int,
 ):
-    """Real GPU control optimization kernel using parallel thread processing."""
+    """
+    Real GPU control optimization kernel using parallel thread processing.
+
+    Performs parallel control optimization with each thread handling one control step.
+    Implements simplified optimization algorithm with cost computation.
+
+    Args:
+        control_buffer: Output buffer for storing optimized control values.
+        cost_buffer: Output buffer for storing computed cost values.
+        horizon: Number of control steps to optimize in parallel.
+    """
     idx = thread_idx.x + block_idx.x * block_dim.x
 
     if idx < horizon:
@@ -242,10 +266,14 @@ alias ComputeMode_CPU_ONLY = 2
 alias ComputeMode_HYBRID = 3
 
 
-struct BenchmarkResult(
-    Copyable, Movable
-):  # Required for List[BenchmarkResult] usage
-    """Structure to hold benchmark results."""
+struct BenchmarkResult(Copyable, Movable):
+    """
+    Structure to hold comprehensive benchmark results for GPU vs CPU performance comparison.
+
+    This struct stores timing data, throughput metrics, memory usage, and test status
+    for individual benchmark operations. Supports both Copyable and Movable traits
+    for efficient use in collections and data structures.
+    """
 
     var test_name: String
     var cpu_time_ms: Float64
@@ -257,7 +285,12 @@ struct BenchmarkResult(
     var test_passed: Bool
 
     fn __init__(out self, test_name: String):
-        """Initialize benchmark result."""
+        """
+        Initialize benchmark result with test name and default values.
+
+        Args:
+            test_name: Name identifier for the benchmark test.
+        """
         self.test_name = test_name
         self.cpu_time_ms = 0.0
         self.gpu_time_ms = 0.0
@@ -268,7 +301,12 @@ struct BenchmarkResult(
         self.test_passed = False
 
     fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
+        """
+        Copy constructor for creating duplicate benchmark results.
+
+        Args:
+            other: Source BenchmarkResult to copy from.
+        """
         self.test_name = other.test_name
         self.cpu_time_ms = other.cpu_time_ms
         self.gpu_time_ms = other.gpu_time_ms
@@ -279,14 +317,24 @@ struct BenchmarkResult(
         self.test_passed = other.test_passed
 
     fn calculate_speedup(mut self):
-        """Calculate speedup factor from timing results."""
+        """
+        Calculate speedup factor from timing results.
+
+        Computes the performance ratio between CPU and GPU execution times.
+        Sets speedup_factor to 1.0 if GPU time is zero to avoid division errors.
+        """
         if self.gpu_time_ms > 0.0:
             self.speedup_factor = self.cpu_time_ms / self.gpu_time_ms
         else:
             self.speedup_factor = 1.0
 
     fn print_summary(self):
-        """Print benchmark result summary with clear CPU vs GPU comparison."""
+        """
+        Print comprehensive benchmark result summary with clear CPU vs GPU comparison.
+
+        Displays performance metrics including execution times, speedup factors,
+        throughput measurements, and memory usage in a formatted output.
+        """
         print("Performance Comparison:")
         print("  CPU Time:     ", self.cpu_time_ms, "ms")
         print("  GPU Time:     ", self.gpu_time_ms, "ms")
@@ -301,17 +349,22 @@ struct BenchmarkResult(
         print("  Memory Usage: ", self.memory_usage_mb, "MB")
 
 
-struct RealGPUCPUBenchmark(
-    Copyable, Movable
-):  # Required: returned by create_real_benchmark_system()
+struct RealGPUCPUBenchmark(Copyable, Movable):
     """
     Real GPU vs CPU benchmarking system using MAX Engine DeviceContext API.
 
-    This class provides real benchmarking capabilities for:
-    - Real GPU matrix operations vs CPU
-    - Real GPU neural network inference vs CPU
-    - Real GPU memory operations vs CPU
-    - Real GPU control algorithm optimization vs CPU
+    This struct provides comprehensive benchmarking capabilities for performance
+    comparison between GPU-accelerated and CPU-only implementations. Supports
+    real GPU hardware acceleration with automatic CPU fallback when GPU is unavailable.
+
+    Benchmark Categories:
+        - Matrix operations: GPU vs CPU matrix multiplication performance
+        - Neural network inference: GPU vs CPU forward pass computation
+        - Memory operations: GPU vs CPU data transfer and processing
+        - Control optimization: GPU vs CPU algorithm optimization performance
+
+    The system automatically detects GPU availability and provides accurate
+    timing measurements with proper GPU synchronization.
     """
 
     var ctx: DeviceContext
@@ -321,7 +374,16 @@ struct RealGPUCPUBenchmark(
     var results: List[BenchmarkResult]
 
     fn __init__(out self) raises:
-        """Initialize real GPU benchmark system."""
+        """
+        Initialize real GPU benchmark system with hardware detection.
+
+        Sets up DeviceContext for GPU operations, detects available GPU hardware,
+        and initializes benchmark tracking structures. Automatically configures
+        CPU fallback when GPU hardware is not available.
+
+        Raises:
+            Error: If DeviceContext initialization fails.
+        """
         self.ctx = DeviceContext()
         self.benchmark_initialized = True
         self.num_results = 0
@@ -338,7 +400,19 @@ struct RealGPUCPUBenchmark(
             print("No GPU detected - CPU-only benchmarking")
 
     fn benchmark_real_gpu_matrix_operations(mut self) raises -> BenchmarkResult:
-        """Benchmark real GPU matrix multiplication operations."""
+        """
+        Benchmark real GPU matrix multiplication operations against CPU implementation.
+
+        Performs comprehensive performance comparison between GPU-accelerated and
+        CPU-only matrix multiplication using 512x512 matrices over multiple iterations.
+        Includes proper GPU synchronization and timing measurements.
+
+        Returns:
+            BenchmarkResult: Complete performance metrics including timing, throughput, and speedup.
+
+        Raises:
+            Error: If matrix operations or GPU timing fails.
+        """
         result = BenchmarkResult("Real GPU Matrix Operations")
 
         # Test parameters
@@ -392,7 +466,19 @@ struct RealGPUCPUBenchmark(
         return result
 
     fn benchmark_neural_network_inference(mut self) raises -> BenchmarkResult:
-        """Benchmark neural network forward pass."""
+        """
+        Benchmark neural network forward pass performance between GPU and CPU.
+
+        Tests neural network inference performance using a batch of 1000 samples
+        with 4-dimensional input vectors representing pendulum system state.
+        Compares GPU-accelerated vs CPU-only forward pass computation.
+
+        Returns:
+            BenchmarkResult: Performance metrics for neural network inference comparison.
+
+        Raises:
+            Error: If neural network operations or timing fails.
+        """
         result = BenchmarkResult("Neural Network Inference")
 
         # Test parameters
@@ -1107,12 +1193,34 @@ struct RealGPUCPUBenchmark(
 
 
 fn create_real_benchmark_system() raises -> RealGPUCPUBenchmark:
-    """Create and initialize real GPU benchmark system."""
+    """
+    Create and initialize real GPU benchmark system.
+
+    Initializes a comprehensive benchmarking system with GPU hardware detection,
+    DeviceContext setup, and automatic CPU fallback configuration.
+
+    Returns:
+        RealGPUCPUBenchmark: Initialized benchmark system ready for testing.
+
+    Raises:
+        Error: If benchmark system initialization fails.
+    """
     return RealGPUCPUBenchmark()
 
 
 fn run_real_gpu_benchmark() raises -> RealGPUCPUBenchmark:
-    """Run a real GPU vs CPU benchmark test."""
+    """
+    Run a real GPU vs CPU benchmark test.
+
+    Executes a single matrix operations benchmark to demonstrate GPU vs CPU
+    performance comparison. Provides immediate feedback on system performance.
+
+    Returns:
+        RealGPUCPUBenchmark: Benchmark system with completed test results.
+
+    Raises:
+        Error: If benchmark execution fails.
+    """
     benchmark = create_real_benchmark_system()
 
     print("Running REAL GPU vs CPU benchmark...")
@@ -1123,10 +1231,19 @@ fn run_real_gpu_benchmark() raises -> RealGPUCPUBenchmark:
 
 
 fn main() raises:
-    """Main function to run GPU vs CPU benchmarks.
+    """
+    Main function to run comprehensive GPU vs CPU benchmarks.
+
+    Executes the complete benchmark suite including matrix operations, neural network
+    inference, and control optimization tests. Provides detailed performance comparison
+    between GPU-accelerated and CPU-only implementations.
 
     Note: This function enables standalone execution of the benchmark script.
-    The compiler warning about main() in packages is acceptable for executable scripts.
+    The compiler warning about main() in packages is acceptable design pattern
+    for executable scripts per mojo_syntax.md guidelines.
+
+    Raises:
+        Error: If benchmark system initialization or execution fails.
     """
     print("=" * 70)
     print("PENDULUM AI CONTROL SYSTEM - GPU vs CPU BENCHMARK")
