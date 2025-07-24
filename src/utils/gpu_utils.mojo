@@ -8,6 +8,7 @@ with graceful CPU fallback and provides configuration options for compute mode s
 
 from collections import List
 from memory import UnsafePointer
+from time import perf_counter_ns as now
 
 # Real MAX Engine imports for GPU operations (VERIFIED WORKING)
 from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
@@ -48,16 +49,27 @@ struct GPUDeviceInfo:
         self.memory_free_mb = memory_free_mb
         self.compute_capability = compute_capability
 
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.is_valid = other.is_valid
-        self.name = other.name
-        self.memory_total_mb = other.memory_total_mb
-        self.memory_free_mb = other.memory_free_mb
-        self.compute_capability = other.compute_capability
+    # Note: __copyinit__ method removed - Copyable trait provides default field-by-field copying
+    # which is identical to the manual implementation and reduces code complexity
 
 
-struct GPUCapabilities:
+struct GPUDetectionResult(Copyable):
+    """Result of GPU detection with detailed information."""
+
+    var gpu_available: Bool
+    var gpu_type: String  # "nvidia", "amd", "none"
+    var device_count: Int
+    var recommended_mode: String  # "gpu", "cpu", "hybrid"
+
+    fn __init__(out self):
+        """Initialize with default values indicating no GPU."""
+        self.gpu_available = False
+        self.gpu_type = "none"
+        self.device_count = 0
+        self.recommended_mode = "cpu"
+
+
+struct GPUCapabilities(Copyable):
     """
     Structure to hold GPU capability information.
     """
@@ -79,16 +91,6 @@ struct GPUCapabilities:
         self.memory_free = 0
         self.compute_capability = "None"
         self.max_engine_available = GPU_AVAILABLE
-
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.gpu_available = other.gpu_available
-        self.device_count = other.device_count
-        self.device_name = other.device_name
-        self.memory_total = other.memory_total
-        self.memory_free = other.memory_free
-        self.compute_capability = other.compute_capability
-        self.max_engine_available = other.max_engine_available
 
 
 struct ComputeMode:
@@ -656,8 +658,6 @@ struct GPUManager:
             return 0.0
 
         try:
-            from time import perf_counter_ns as now
-
             device_context = DeviceContext()
             test_size = 1024 * 1024  # 1M elements
 
@@ -791,3 +791,64 @@ fn test_gpu_functionality() raises -> Bool:
         print("GPU functionality test: FAILED")
 
     return is_functional
+
+
+fn detect_gpu_hardware(context: String = "general") -> GPUDetectionResult:
+    """
+    Centralized GPU detection with context-specific messaging.
+
+    Args:
+        context: Context for detection (e.g., "neural_network", "matrix_ops", "validation").
+
+    Returns:
+        GPUDetectionResult with detection details.
+    """
+    result = GPUDetectionResult()
+
+    has_nvidia = has_nvidia_gpu_accelerator()
+    has_amd = has_amd_gpu_accelerator()
+
+    if has_nvidia:
+        print("✓ NVIDIA GPU detected for", context)
+        result.gpu_available = True
+        result.gpu_type = "nvidia"
+        result.recommended_mode = "gpu"
+        result.device_count = 1  # Simplified for now
+    elif has_amd:
+        print("✓ AMD GPU detected for", context)
+        result.gpu_available = True
+        result.gpu_type = "amd"
+        result.recommended_mode = "gpu"
+        result.device_count = 1  # Simplified for now
+    else:
+        print("⚠️  No GPU detected for", context, "- using CPU fallback")
+        result.gpu_available = False
+        result.gpu_type = "none"
+        result.recommended_mode = "cpu"
+        result.device_count = 0
+
+    return result
+
+
+fn create_device_context_safe(
+    context: String = "operation",
+) raises -> DeviceContext:
+    """
+    Safely create DeviceContext with error handling.
+
+    Args:
+        context: Context description for error messages.
+
+    Returns:
+        DeviceContext if successful.
+
+    Raises:
+        Error: If DeviceContext creation fails.
+    """
+    try:
+        ctx = DeviceContext()
+        print("✓ DeviceContext created successfully for", context)
+        return ctx
+    except e:
+        print("❌ DeviceContext creation failed for", context, ":", String(e))
+        raise e

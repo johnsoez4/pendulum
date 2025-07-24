@@ -10,7 +10,6 @@ from collections import List
 from math import exp, tanh, sqrt
 
 # Real MAX Engine imports for GPU neural network operations (VERIFIED WORKING)
-from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
 from gpu.host import DeviceContext
 from gpu import thread_idx
 from layout import Layout, LayoutTensor
@@ -23,6 +22,12 @@ from src.utils.gpu_matrix import (
     ComputeMode_CPU_ONLY,
     ComputeMode_HYBRID,
 )
+
+# Import shared physics constraints
+from src.utils.physics_constraints import apply_physics_constraints
+
+# Import centralized GPU detection
+from src.utils.gpu_utils import detect_gpu_hardware
 
 # Note: These are the verified working MAX Engine imports for GPU acceleration
 # Current implementation uses DeviceContext and GPU kernels for real GPU operations
@@ -43,6 +48,15 @@ fn gpu_neural_layer_kernel(
 
     This implements fused linear transformation + activation:
     output[i] = activation(sum(input[j] * weights[i*input_size + j]) + biases[i])
+
+    Args:
+        output: Output buffer for layer results.
+        input: Input data buffer.
+        weights: Weight matrix buffer.
+        biases: Bias vector buffer.
+        input_size: Size of input dimension.
+        output_size: Size of output dimension.
+        activation_type: Activation function type (0=tanh, 1=relu, 2=sigmoid).
     """
     # Get thread index for parallel execution
     idx = thread_idx.x + thread_idx.y * 32
@@ -68,59 +82,6 @@ fn gpu_neural_layer_kernel(
             output[idx] = sum  # linear
 
 
-fn gpu_neural_batch_kernel(
-    output: UnsafePointer[Scalar[DType.float64]],
-    input: UnsafePointer[Scalar[DType.float64]],
-    weights: UnsafePointer[Scalar[DType.float64]],
-    biases: UnsafePointer[Scalar[DType.float64]],
-    batch_size: Int,
-    input_size: Int,
-    output_size: Int,
-    activation_type: Int,
-):
-    """
-    GPU kernel for batch neural network processing with optimized memory access.
-
-    Args:
-        output: Output buffer for batch results.
-        input: Input batch data buffer.
-        weights: Weight matrix buffer.
-        biases: Bias vector buffer.
-        batch_size: Number of samples in batch.
-        input_size: Size of input dimension.
-        output_size: Size of output dimension.
-        activation_type: Activation function type (0=tanh, 1=relu, 2=sigmoid).
-    """
-    # Get thread indices
-    batch_idx = thread_idx.x
-    neuron_idx = thread_idx.y
-
-    if batch_idx < batch_size and neuron_idx < output_size:
-        var sum = Scalar[DType.float64](0.0)
-
-        # Compute linear transformation for this batch item and neuron
-        for j in range(input_size):
-            var input_val = input[batch_idx * input_size + j]
-            var weight_val = weights[neuron_idx * input_size + j]
-            sum += input_val * weight_val
-
-        # Add bias
-        sum += biases[neuron_idx]
-
-        # Apply activation and store result
-        var result: Scalar[DType.float64]
-        if activation_type == 0:  # tanh
-            result = tanh(sum)
-        elif activation_type == 1:  # relu
-            result = sum if sum > 0.0 else 0.0
-        elif activation_type == 2:  # sigmoid
-            result = 1.0 / (1.0 + exp(-sum))
-        else:
-            result = sum  # linear
-
-        output[batch_idx * output_size + neuron_idx] = result
-
-
 # Define model constants locally to avoid import issues
 alias MODEL_INPUT_DIM = 4
 alias MODEL_OUTPUT_DIM = 3
@@ -135,7 +96,7 @@ alias MODEL_LEARNING_RATE = 0.001
 # Note: Using proper GPUMatrix from src.utils.gpu_matrix module
 
 
-struct GPUNeuralLayer(Copyable, Movable):
+struct GPUNeuralLayer(Copyable):
     """GPU-accelerated neural network layer."""
 
     var weights: GPUMatrix
@@ -178,7 +139,11 @@ struct GPUNeuralLayer(Copyable, Movable):
         self._initialize_weights()
 
     fn _initialize_weights(mut self) raises:
-        """Initialize weights using Xavier initialization."""
+        """Initialize weights using Xavier initialization.
+
+        Raises:
+            Error: If weight initialization fails.
+        """
         scale = sqrt(2.0 / Float64(self.input_size + self.output_size))
 
         for i in range(self.input_size):
@@ -260,19 +225,17 @@ struct GPUNeuralLayer(Copyable, Movable):
                         bias_host[i] = self.biases[i]
 
                 # Determine activation type
-                var activation_type = 0  # tanh
+                activation_type = 0  # tanh
                 if self.activation == "relu":
                     activation_type = 1
                 elif self.activation == "sigmoid":
                     activation_type = 2
 
                 # Launch real GPU kernel for neural layer computation
-                var block_size = 32
-                var grid_size = (
-                    self.output_size + block_size - 1
-                ) // block_size
+                block_size = 32
+                grid_size = (self.output_size + block_size - 1) // block_size
 
-                var compiled_kernel = ctx.compile_function[
+                compiled_kernel = ctx.compile_function[
                     gpu_neural_layer_kernel
                 ]()
                 ctx.enqueue_function(
@@ -292,7 +255,7 @@ struct GPUNeuralLayer(Copyable, Movable):
                 ctx.synchronize()
 
                 # Create output matrix and copy results back
-                var output = GPUMatrix(1, self.output_size, self.use_gpu)
+                output = GPUMatrix(1, self.output_size, self.use_gpu)
                 with output_buffer.map_to_host() as output_host:
                     for i in range(self.output_size):
                         output.set(0, i, Float64(output_host[i]))
@@ -309,108 +272,23 @@ struct GPUNeuralLayer(Copyable, Movable):
                     String(e),
                 )
                 # CPU fallback
-                var output = input.multiply(self.weights)
+                mut_input = input
+                mut_weights = self.weights
+                output = mut_input.multiply(mut_weights)
                 output.add_bias(self.biases)
                 output.apply_activation(self.activation)
                 return output
         else:
             # CPU fallback
-            output = input.multiply(self.weights)
+            mut_input = input
+            mut_weights = self.weights
+            output = mut_input.multiply(mut_weights)
             output.add_bias(self.biases)
             output.apply_activation(self.activation)
             return output
 
-    fn forward_batch(self, inputs: List[GPUMatrix]) raises -> List[GPUMatrix]:
-        """
-        Advanced GPU batch processing for multiple inputs.
 
-        This enables efficient processing of multiple pendulum states
-        simultaneously on GPU for improved throughput.
-        """
-        outputs = List[GPUMatrix]()
-
-        if self.use_gpu and len(inputs) > 1:
-            print("GPU batch processing:", len(inputs), "inputs through layer")
-
-            try:
-                ctx = DeviceContext()
-                print("✓ DeviceContext created for batch processing")
-
-                # Process all inputs in batch on GPU
-                for i in range(len(inputs)):
-                    output = self.forward(inputs[i])
-                    outputs.append(output)
-
-                # Batch synchronization
-                ctx.synchronize()
-                print("✓ GPU batch processing completed")
-
-            except e:
-                print(
-                    (
-                        "⚠️  GPU batch processing failed, using sequential CPU."
-                        " Error:"
-                    ),
-                    String(e),
-                )
-                # Sequential CPU fallback
-                for i in range(len(inputs)):
-                    var output = inputs[i].multiply(self.weights)
-                    output.add_bias(self.biases)
-                    output.apply_activation(self.activation)
-                    outputs.append(output)
-        else:
-            # Sequential processing for single input or CPU mode
-            for i in range(len(inputs)):
-                output = self.forward(inputs[i])
-                outputs.append(output)
-
-        return outputs
-
-    fn forward_optimized(self, input: GPUMatrix) raises -> GPUMatrix:
-        """
-        Optimized GPU forward pass for single input.
-
-        This implements memory-efficient GPU computation:
-        1. Minimize GPU-CPU transfers
-        2. Use in-place operations where possible
-        3. Leverage GPU memory locality
-        """
-        if self.use_gpu:
-            print(
-                "GPU optimized layer forward pass:",
-                input.rows,
-                "x",
-                input.cols,
-                "->",
-                self.output_size,
-                "neurons",
-            )
-
-            # CURRENT GPU IMPLEMENTATION:
-            # This uses real GPU acceleration through DeviceContext and GPU kernels:
-            # - GPUMatrix.multiply() uses gpu_matrix_multiply_kernel with DeviceContext
-            # - GPU memory allocation via enqueue_create_buffer
-            # - Real GPU synchronization with ctx.synchronize()
-            # - Automatic GPU/CPU fallback for robustness
-            #
-            # OPTIMIZE: FUTURE OPTIMIZATION OPPORTUNITY:
-            # Could be further optimized with MAX engine high-level graph operations:
-            # from max.graph import ops
-            # output = ops.matmul(input_tensor, weights_tensor) + bias_tensor
-            # activated = ops.tanh(output)
-            # (Verified: MAX engine ops.matmul and ops.tanh are available in current version)
-
-            # Use real GPU matrix operations with DeviceContext
-            output = input.multiply(self.weights)
-            output.add_bias(self.biases)
-            output.apply_activation(self.activation)
-            return output
-        else:
-            return self.forward(input)
-
-
-struct GPUPendulumNeuralNetwork(Copyable, Movable):
+struct GPUPendulumNeuralNetwork(Copyable):
     """
     GPU-accelerated physics-informed neural network for pendulum digital twin.
 
@@ -433,25 +311,17 @@ struct GPUPendulumNeuralNetwork(Copyable, Movable):
 
     fn __init__(out self, use_gpu: Bool = True) raises:
         """Initialize GPU-accelerated neural network architecture with real GPU detection.
+
+        Args:
+            use_gpu: Whether to attempt GPU acceleration.
+
+        Raises:
+            Error: If neural network initialization fails.
         """
 
-        # Real GPU hardware detection
-        var actual_gpu_available = False
-        if use_gpu:
-            has_nvidia = has_nvidia_gpu_accelerator()
-            has_amd = has_amd_gpu_accelerator()
-
-            if has_nvidia:
-                print(
-                    "✓ Compatible GPU detected for neural network acceleration"
-                )
-                actual_gpu_available = True
-            elif has_amd:
-                print("✓ AMD GPU detected for neural network acceleration")
-                actual_gpu_available = True
-            else:
-                print("⚠️  No GPU detected, using CPU mode for neural network")
-                actual_gpu_available = False
+        # Real GPU hardware detection using centralized detection
+        gpu_detection = detect_gpu_hardware("neural_network")
+        actual_gpu_available = gpu_detection.gpu_available and use_gpu
 
         # Initialize individual layers with actual GPU availability
         self.layer1 = GPUNeuralLayer(
@@ -477,7 +347,11 @@ struct GPUPendulumNeuralNetwork(Copyable, Movable):
     # _build_architecture method removed - layers are now initialized directly in __init__
 
     fn _initialize_normalization(mut self):
-        """Initialize normalization parameters with default values."""
+        """Initialize normalization parameters with default values.
+
+        Sets up input and output normalization parameters with default values
+        that will be updated during training.
+        """
         # Input normalization (will be updated during training)
         for _ in range(MODEL_INPUT_DIM):
             self.input_means.append(0.0)
@@ -489,7 +363,14 @@ struct GPUPendulumNeuralNetwork(Copyable, Movable):
             self.output_stds.append(1.0)
 
     fn normalize_input(self, input: List[Float64]) -> List[Float64]:
-        """Normalize input using stored statistics."""
+        """Normalize input using stored statistics.
+
+        Args:
+            input: Input vector to normalize.
+
+        Returns:
+            Normalized input vector.
+        """
         normalized = List[Float64]()
 
         for i in range(len(input)):
@@ -502,7 +383,14 @@ struct GPUPendulumNeuralNetwork(Copyable, Movable):
         return normalized
 
     fn denormalize_output(self, output: List[Float64]) -> List[Float64]:
-        """Denormalize output using stored statistics."""
+        """Denormalize output using stored statistics.
+
+        Args:
+            output: Output vector to denormalize.
+
+        Returns:
+            Denormalized output vector.
+        """
         denormalized = List[Float64]()
 
         for i in range(len(output)):
@@ -614,148 +502,7 @@ struct GPUPendulumNeuralNetwork(Copyable, Movable):
         final_output = self.denormalize_output(raw_output)
 
         # Apply physics constraints
-        return self._apply_physics_constraints(input, final_output)
-
-    fn _apply_physics_constraints(
-        self, input: List[Float64], prediction: List[Float64]
-    ) -> List[Float64]:
-        """
-        Apply physics constraints to network predictions for realistic pendulum behavior.
-
-        Args:
-            input: Input state vector.
-            prediction: Raw network prediction.
-
-        Returns:
-            Physics-constrained prediction vector.
-        """
-        constrained = List[Float64]()
-
-        # Extract current state
-        _ = input[0]  # current_la_pos
-        _ = input[1]  # current_pend_vel
-        current_pend_pos = input[2]
-        _ = input[3]  # current_cmd_volts
-
-        # Extract predictions
-        pred_la_pos = prediction[0]
-        pred_pend_vel = prediction[1]
-        pred_pend_pos = prediction[2]
-
-        # Apply actuator position constraints
-        constrained_la_pos = max(-4.0, min(4.0, pred_la_pos))
-        constrained.append(constrained_la_pos)
-
-        # Apply velocity constraints
-        constrained_pend_vel = max(-1000.0, min(1000.0, pred_pend_vel))
-        constrained.append(constrained_pend_vel)
-
-        # Apply angle continuity (no sudden jumps)
-        angle_diff = pred_pend_pos - current_pend_pos
-        if abs(angle_diff) > 180.0:
-            # Handle angle wrapping
-            if angle_diff > 180.0:
-                pred_pend_pos -= 360.0
-            elif angle_diff < -180.0:
-                pred_pend_pos += 360.0
-
-        constrained.append(pred_pend_pos)
-
-        return constrained
-
-    fn gpu_performance_benchmark(
-        self, num_iterations: Int = 100
-    ) raises -> Float64:
-        """
-        Benchmark GPU neural network performance.
-
-        This method measures the actual performance improvement
-        achieved by GPU acceleration vs CPU baseline.
-        """
-        print("GPU Neural Network Performance Benchmark")
-        print("-" * 50)
-
-        # Test input (typical pendulum state)
-        test_input = List[Float64](1.0, 0.5, 0.2, 0.1)
-
-        if self.use_gpu:
-            try:
-                ctx = DeviceContext()
-                print(
-                    "✓ GPU benchmark starting with",
-                    num_iterations,
-                    "iterations",
-                )
-
-                # GPU performance test
-                for _ in range(num_iterations):
-                    var _ = self.forward(test_input)
-
-                ctx.synchronize()
-                print("✓ GPU benchmark completed")
-                print("✓ GPU neural network performance verified")
-
-                return 1.0  # Success indicator
-
-            except e:
-                print("❌ GPU benchmark failed. Error:", String(e))
-                return 0.0
-        else:
-            print("⚠️  GPU not available for benchmark")
-            return 0.0
-
-    fn optimize_gpu_memory(mut self) raises:
-        """
-        Optimize GPU memory usage for neural network.
-
-        This method implements advanced GPU memory management
-        techniques for improved performance.
-        """
-        if self.use_gpu:
-            print("Optimizing GPU memory for neural network...")
-
-            try:
-                ctx = DeviceContext()
-
-                # Pre-allocate GPU memory for all layers
-                print("✓ Pre-allocating GPU memory buffers")
-
-                # Layer 1 memory optimization
-                layer1_input_size = MODEL_INPUT_DIM
-                layer1_output_size = MODEL_HIDDEN_SIZE
-                _ = ctx.enqueue_create_buffer[DType.float64](
-                    layer1_input_size * layer1_output_size
-                )
-
-                # Layer 2 memory optimization
-                layer2_input_size = MODEL_HIDDEN_SIZE
-                layer2_output_size = MODEL_HIDDEN_SIZE
-                _ = ctx.enqueue_create_buffer[DType.float64](
-                    layer2_input_size * layer2_output_size
-                )
-
-                # Output layer memory optimization
-                output_input_size = MODEL_HIDDEN_SIZE
-                output_output_size = MODEL_OUTPUT_DIM
-                _ = ctx.enqueue_create_buffer[DType.float64](
-                    output_input_size * output_output_size
-                )
-
-                ctx.synchronize()
-                print("✓ GPU memory optimization completed")
-                print("✓ Neural network ready for high-performance inference")
-
-            except e:
-                print("⚠️  GPU memory optimization failed. Error:", String(e))
-        else:
-            print("⚠️  GPU not available for memory optimization")
-
-    fn get_compute_info(self) -> String:
-        """Get information about compute mode being used."""
-        if self.use_gpu:
-            return "GPU-accelerated neural network"
-        else:
-            return "CPU-only neural network"
+        return apply_physics_constraints(input, final_output)
 
     fn set_normalization_parameters(
         mut self,
@@ -801,7 +548,7 @@ struct GPUPendulumNeuralNetwork(Copyable, Movable):
 
             # Process batch with GPU operations
             for i in range(len(input_batch)):
-                var output = self.forward(input_batch[i])
+                output = self.forward(input_batch[i])
                 output_batch.append(output)
 
             print("  - ✓ GPU: Batch processing completed")
@@ -812,18 +559,3 @@ struct GPUPendulumNeuralNetwork(Copyable, Movable):
                 output_batch.append(output)
 
         return output_batch
-
-
-fn create_gpu_neural_network(
-    use_gpu: Bool = True,
-) raises -> GPUPendulumNeuralNetwork:
-    """
-    Create a GPU-accelerated pendulum neural network.
-
-    Args:
-        use_gpu: Whether to use GPU acceleration.
-
-    Returns:
-        Initialized GPUPendulumNeuralNetwork.
-    """
-    return GPUPendulumNeuralNetwork(use_gpu)

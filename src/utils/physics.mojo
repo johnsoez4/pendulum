@@ -30,7 +30,7 @@ alias DEGREES_TO_RADIANS = pi / 180.0  # conversion factor
 
 
 @fieldwise_init
-struct PendulumState(Copyable, Movable):
+struct PendulumState:
     """
     Complete state of the pendulum system.
 
@@ -130,7 +130,7 @@ struct PendulumState(Copyable, Movable):
         return cart_ke + pend_ke + pend_pe
 
 
-struct PendulumPhysics(Copyable, Movable):
+struct PendulumPhysics:
     """
     Physics model for inverted pendulum system.
 

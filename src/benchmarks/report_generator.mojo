@@ -26,7 +26,7 @@ from gpu.host import DeviceContext, DeviceAttribute
 from time import perf_counter_ns as now
 
 
-struct SystemInfo(Copyable, Movable):
+struct SystemInfo(Copyable):
     """System information for benchmark reports."""
 
     var cpu_model: String
@@ -616,7 +616,7 @@ struct BenchmarkMetrics(Copyable, Movable):
             pass
 
 
-struct BenchmarkReportGenerator(Copyable, Movable):
+struct BenchmarkReportGenerator:
     """
     Comprehensive benchmark report generator.
 

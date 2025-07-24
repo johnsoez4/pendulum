@@ -6,6 +6,7 @@ directly with the training infrastructure for Task 3 completion.
 """
 
 from collections import List, Dict
+from src.utils.physics_constraints import apply_physics_constraints
 
 
 # Helper functions for missing math operations
@@ -136,37 +137,9 @@ struct SimpleNeuralNetwork(Copyable, Movable):
             output.append(sum)
 
         # Apply physics constraints
-        return self.apply_constraints(input, output)
+        return apply_physics_constraints(input, output)
 
-    fn apply_constraints(
-        """TODO: Add function description."""
-        self, input: List[Float64], prediction: List[Float64]
-    ) -> List[Float64]:
-        """Apply physics constraints to predictions."""
-        constrained = List[Float64]()
 
-        # Constrain actuator position to [-4, 4] inches
-        la_pos = max(-4.0, min(4.0, prediction[0]))
-        constrained.append(la_pos)
-
-        # Constrain pendulum velocity to [-1000, 1000] deg/s
-        pend_vel = max(-1000.0, min(1000.0, prediction[1]))
-        constrained.append(pend_vel)
-
-        # Handle angle continuity (no sudden jumps > 180 degrees)
-        current_angle = input[2] if len(input) > 2 else 0.0
-        var pred_angle = prediction[2]
-        angle_diff = pred_angle - current_angle
-
-        if abs(angle_diff) > 180.0:
-            if angle_diff > 180.0:
-                pred_angle -= 360.0
-            elif angle_diff < -180.0:
-                pred_angle += 360.0
-
-        constrained.append(pred_angle)
-
-        return constrained
 
     fn compute_physics_loss(
         """TODO: Add function description."""

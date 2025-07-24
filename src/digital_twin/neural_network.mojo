@@ -12,6 +12,7 @@ from memory import UnsafePointer
 
 # Import project modules
 from src.utils.physics import PendulumState, PendulumPhysics
+from src.utils.physics_constraints import apply_physics_constraints
 
 # Model configuration constants (from config/pendulum_config.mojo)
 alias MODEL_INPUT_DIM = 4  # [la_pos, pend_vel, pend_pos, cmd_volts]
@@ -252,54 +253,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         final_output = self.denormalize_output(raw_output)
 
         # Apply physics constraints
-        return self._apply_physics_constraints(input, final_output)
-
-    fn _apply_physics_constraints(
-        self, input: List[Float64], prediction: List[Float64]
-    ) -> List[Float64]:
-        """
-        Apply physics constraints to network predictions.
-
-        Args:
-            input: Original input state
-            prediction: Raw network prediction
-
-        Returns:
-            Physics-constrained prediction
-        """
-        constrained = List[Float64]()
-
-        # Extract current state
-        current_la_pos = input[0]
-        current_pend_vel = input[1]
-        current_pend_pos = input[2]
-        current_cmd_volts = input[3]
-
-        # Extract predictions
-        pred_la_pos = prediction[0]
-        pred_pend_vel = prediction[1]
-        pred_pend_pos = prediction[2]
-
-        # Apply actuator position constraints
-        constrained_la_pos = max(-4.0, min(4.0, pred_la_pos))
-        constrained.append(constrained_la_pos)
-
-        # Apply velocity constraints
-        constrained_pend_vel = max(-1000.0, min(1000.0, pred_pend_vel))
-        constrained.append(constrained_pend_vel)
-
-        # Apply angle continuity (no sudden jumps)
-        angle_diff = pred_pend_pos - current_pend_pos
-        if abs(angle_diff) > 180.0:
-            # Handle angle wrapping
-            if angle_diff > 180.0:
-                pred_pend_pos -= 360.0
-            elif angle_diff < -180.0:
-                pred_pend_pos += 360.0
-
-        constrained.append(pred_pend_pos)
-
-        return constrained
+        return apply_physics_constraints(input, final_output)
 
     fn predict_next_state(
         self, current_state: List[Float64], dt: Float64 = 0.04

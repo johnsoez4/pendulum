@@ -118,7 +118,7 @@ fn gpu_element_wise_add_kernel(
         output[idx] = a[idx] + b[idx]
 
 
-struct GPUMemoryManager(Copyable, Movable):
+struct GPUMemoryManager(Copyable):
     """
     Real GPU Memory Manager using MAX Engine DeviceContext API.
 
@@ -622,7 +622,7 @@ struct GPUMemoryManager(Copyable, Movable):
         return successful_allocations
 
 
-struct AdvancedGPUMemoryPool(Copyable, Movable):
+struct AdvancedGPUMemoryPool:
     """
     Advanced GPU memory pool for optimized memory allocation and reuse.
 
@@ -764,7 +764,7 @@ struct AdvancedGPUMemoryPool(Copyable, Movable):
             print("⚠️  GPU memory layout optimization failed:", e)
 
 
-struct AsyncGPUTransferManager(Copyable, Movable):
+struct AsyncGPUTransferManager:
     """
     Advanced Asynchronous GPU Transfer Manager using MAX Engine DeviceContext.
 
@@ -1177,7 +1177,7 @@ struct AsyncGPUTransferManager(Copyable, Movable):
             return False
 
 
-struct AdvancedGPUMemoryOptimizer(Copyable, Movable):
+struct AdvancedGPUMemoryOptimizer:
     """
     Advanced GPU Memory Optimizer using MAX Engine DeviceContext API.
 
@@ -1529,7 +1529,7 @@ struct AdvancedGPUMemoryOptimizer(Copyable, Movable):
         print("  - Advanced optimization features: ACTIVE")
 
 
-struct GPUTensor(Copyable, Movable):
+struct GPUTensor(Copyable):
     """
     Real GPU tensor operations using MAX Engine.
 
@@ -1981,7 +1981,7 @@ struct GPUTensor(Copyable, Movable):
         return result
 
 
-struct GPUMatrix(Copyable, Movable):
+struct GPUMatrix(Copyable):
     """
     GPU-accelerated matrix implementation with CPU fallback.
 
@@ -3041,7 +3041,7 @@ struct GPUMatrix(Copyable, Movable):
 
 
 # Legacy CPU-only Matrix struct for backward compatibility
-struct Matrix(Copyable, Movable):
+struct Matrix(Copyable):
     """
     CPU-only matrix implementation for backward compatibility.
     """
