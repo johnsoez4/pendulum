@@ -10,8 +10,8 @@ from collections import List
 # No math imports needed - abs, max, min are builtin
 
 # Import system integration components
-from .complete_system_integration import CompleteSystemIntegration, SystemPerformanceMetrics
-from .comprehensive_validation import ComprehensiveValidation, ValidationResults
+from src.system.complete_system_integration import CompleteSystemIntegration, SystemPerformanceMetrics
+from src.system.comprehensive_validation import ComprehensiveValidation, ValidationResults
 
 struct FinalSystemDemo:
     """Complete system integration and validation demonstration."""

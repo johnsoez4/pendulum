@@ -11,13 +11,16 @@ from collections import List
 # No math imports needed - abs, max, min are builtin
 
 # Import training and evaluation components
-from .parameter_optimizer import (
+from src.control.parameter_optimizer import (
     ParameterOptimizer,
     ParameterSet,
     OptimizationResult,
 )
-from .control_trainer import ControlTrainer, TrainingResults
-from .performance_evaluator import PerformanceEvaluator, PerformanceMetrics
+from src.control.control_trainer import ControlTrainer, TrainingResults
+from src.control.performance_evaluator import (
+    PerformanceEvaluator,
+    PerformanceMetrics,
+)
 
 
 struct TrainingDemo:

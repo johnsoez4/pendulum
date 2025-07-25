@@ -60,9 +60,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
             for j in range(HIDDEN_SIZE):
                 # Xavier initialization with better scaling
                 scale = 0.1 / (Float64(INPUT_DIM + HIDDEN_SIZE) ** 0.5)
-                val = scale * (
-                    Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5
-                )
+                val = scale * (Float64((i * 7 + j * 13) % 1000) / 1000.0 - 0.5)
                 row.append(val)
             self.weights1.append(row)
 
@@ -75,9 +73,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
             row = List[Float64]()
             for j in range(HIDDEN_SIZE):
                 scale = 0.1 / (Float64(HIDDEN_SIZE + HIDDEN_SIZE) ** 0.5)
-                val = scale * (
-                    Float64((i * 11 + j * 17) % 1000) / 1000.0 - 0.5
-                )
+                val = scale * (Float64((i * 11 + j * 17) % 1000) / 1000.0 - 0.5)
                 row.append(val)
             self.weights2.append(row)
 
@@ -90,9 +86,7 @@ struct PendulumNeuralNetwork(Copyable, Movable):
             row = List[Float64]()
             for j in range(OUTPUT_DIM):
                 scale = 0.1 / (Float64(HIDDEN_SIZE + OUTPUT_DIM) ** 0.5)
-                val = scale * (
-                    Float64((i * 19 + j * 23) % 1000) / 1000.0 - 0.5
-                )
+                val = scale * (Float64((i * 19 + j * 23) % 1000) / 1000.0 - 0.5)
                 row.append(val)
             self.weights3.append(row)
 
@@ -140,7 +134,6 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         return self.apply_physics_constraints(input, output)
 
     fn apply_physics_constraints(
-        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> List[Float64]:
         """Apply physics constraints to predictions."""
@@ -170,19 +163,9 @@ struct PendulumNeuralNetwork(Copyable, Movable):
         return constrained
 
     fn compute_physics_loss(
-        """TODO: Add function description."""
         self, input: List[Float64], prediction: List[Float64]
     ) -> Float64:
-        """
-        Compute physics-informed loss component.
-
-        Args:
-            input: Input state.
-            prediction: Network prediction.
-
-        Returns:
-            Physics loss value.
-        """
+        """Compute physics-based loss for predictions."""
         physics_loss = 0.0
 
         # Energy conservation check (simplified)
@@ -262,26 +245,15 @@ struct IntegratedTrainer:
 
     @staticmethod
     fn generate_training_data(
-        """TODO: Add function description."""
         num_samples: Int = 1000,
     ) -> (List[List[Float64]], List[List[Float64]]):
-        """
-        Generate synthetic training data for pendulum dynamics.
-
-        Args:
-            num_samples: Number of training samples to generate.
-
-        Returns:
-            Tuple of (input_data, target_data) for training.
-        """
+        """Generate training data for the neural network."""
         inputs = List[List[Float64]]()
         targets = List[List[Float64]]()
 
         for i in range(num_samples):
             # Generate diverse input states
-            la_pos = (
-                Float64(i % 100) / 100.0 - 0.5
-            ) * 8.0  # -4 to 4 inches
+            la_pos = (Float64(i % 100) / 100.0 - 0.5) * 8.0  # -4 to 4 inches
             pend_vel = (
                 Float64((i * 7) % 200) / 200.0 - 0.5
             ) * 400.0  # -200 to 200 deg/s
@@ -298,9 +270,7 @@ struct IntegratedTrainer:
 
             # Generate target using simplified physics (for demonstration)
             dt = 0.04  # 40ms time step
-            next_la_pos = (
-                la_pos + cmd_volts * dt * 0.1
-            )  # Simple actuator model
+            next_la_pos = la_pos + cmd_volts * dt * 0.1  # Simple actuator model
             var next_pend_vel = (
                 pend_vel + cmd_volts * dt * 5.0
             )  # Simplified dynamics
@@ -330,7 +300,6 @@ struct IntegratedTrainer:
 
     @staticmethod
     fn compute_mse_loss(
-        """TODO: Add function description."""
         prediction: List[Float64], target: List[Float64]
     ) -> Float64:
         """Compute Mean Squared Error loss."""
@@ -347,13 +316,12 @@ struct IntegratedTrainer:
 
     @staticmethod
     fn update_weights_simplified(
-        """TODO: Add function description."""
         mut network: PendulumNeuralNetwork,
         input: List[Float64],
         target: List[Float64],
         learning_rate: Float64,
     ):
-        """Simplified weight update (placeholder for actual backpropagation)."""
+        """Simplified weight update for training."""
         # This is a simplified update - in practice would use proper gradients
         prediction = network.forward(input)
         error_scale = 0.0001  # Small adjustment factor
@@ -505,9 +473,7 @@ fn main():
         mse_loss = IntegratedTrainer.compute_mse_loss(
             prediction, val_targets[i]
         )
-        physics_loss = network.compute_physics_loss(
-            val_inputs[i], prediction
-        )
+        physics_loss = network.compute_physics_loss(val_inputs[i], prediction)
 
         val_loss += mse_loss + 0.1 * physics_loss
 

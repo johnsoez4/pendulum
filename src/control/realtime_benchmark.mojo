@@ -10,9 +10,9 @@ from collections import List
 from math import sqrt
 
 # Import control system components
-from .mpc_controller import MPCController, MPCPrediction
-from .enhanced_ai_controller import EnhancedAIController
-from .integrated_control_system import IntegratedControlSystem
+from src.control.mpc_controller import MPCController, MPCPrediction
+from src.control.enhanced_ai_controller import EnhancedAIController
+from src.control.integrated_control_system import IntegratedControlSystem
 
 # Benchmark constants
 alias BENCHMARK_CYCLES = 250  # 10 seconds at 25 Hz

@@ -7,17 +7,16 @@ control solution for the inverted pendulum system.
 """
 
 from collections import List
-from time import now
 
 # Import control system components
-from .ai_controller import AIController, ControlCommand, ControlState
-from .safety_monitor import (
+from src.control.ai_controller import AIController, ControlCommand, ControlState
+from src.control.safety_monitor import (
     SafetyMonitor,
     SafetyStatus,
     SafetyViolation,
 )
-from .state_estimator import StateEstimator, FilteredState
-from ..digital_twin.integrated_trainer import PendulumNeuralNetwork
+from src.control.state_estimator import StateEstimator, FilteredState
+from src.digital_twin.integrated_trainer import PendulumNeuralNetwork
 
 # System constants
 alias CONTROL_LOOP_FREQUENCY = 25.0  # Hz
@@ -146,11 +145,11 @@ struct IntegratedControlSystem:
         Execute one complete control cycle.
 
         Args:
-            raw_sensor_data: [la_position, pend_velocity, pend_position, cmd_volts]
-            timestamp: Current timestamp
+            raw_sensor_data: Sensor data [la_position, pend_velocity, pend_position, cmd_volts].
+            timestamp: Current timestamp.
 
         Returns:
-            Control command for actuator
+            Control command for actuator.
         """
         if not self.control_loop_active:
             return self._create_safe_command(timestamp)
@@ -284,7 +283,7 @@ struct IntegratedControlSystem:
         Get comprehensive system performance metrics.
 
         Returns:
-            (success_rate, current_inversion_time, uptime, total_cycles)
+            Tuple containing (success_rate, current_inversion_time, uptime, total_cycles).
         """
         success_rate = self.system_status.get_success_rate()
         return (
@@ -299,7 +298,7 @@ struct IntegratedControlSystem:
         Get status of all subsystems.
 
         Returns:
-            (ai_controller_status, safety_monitor_status, state_estimator_status)
+            Tuple containing (ai_controller_status, safety_monitor_status, state_estimator_status).
         """
         ai_status = (
             "operational" if self.ai_controller.initialized else "not_initialized"

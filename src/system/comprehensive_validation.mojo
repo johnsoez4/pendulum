@@ -11,8 +11,8 @@ from math import sqrt, sin, cos
 from random import random
 
 # Import system components
-from .complete_system_integration import CompleteSystemIntegration, SystemPerformanceMetrics
-from ..control.parameter_optimizer import ParameterSet
+from src.system.complete_system_integration import CompleteSystemIntegration, SystemPerformanceMetrics
+from src.control.parameter_optimizer import ParameterSet
 
 # Validation constants
 alias STRESS_TEST_DURATION = 300.0     # 5 minutes stress testing

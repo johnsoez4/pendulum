@@ -10,10 +10,10 @@ from collections import List
 from math import sqrt, exp, sin, cos
 
 # Import project modules
-from ..utils.physics import PendulumState, PendulumPhysics
-from ..digital_twin.integrated_trainer import PendulumNeuralNetwork
-from .ai_controller import AIController, ControlCommand, ControlState
-from .mpc_controller import MPCController, MPCPrediction
+from src.utils.physics import PendulumState, PendulumPhysics
+from src.digital_twin.integrated_trainer import PendulumNeuralNetwork
+from src.control.ai_controller import AIController, ControlCommand, ControlState
+from src.control.mpc_controller import MPCController, MPCPrediction
 
 # Enhanced control constants
 alias ENHANCED_CONTROL_MODES = 5  # Number of control modes
@@ -161,11 +161,11 @@ struct EnhancedAIController:
         Compute optimal control using enhanced AI algorithms.
 
         Args:
-            current_state: [la_position, pend_velocity, pend_position, cmd_volts]
-            timestamp: Current timestamp
+            current_state: State vector [la_position, pend_velocity, pend_position, cmd_volts].
+            timestamp: Current timestamp.
 
         Returns:
-            Optimal control command with enhanced performance
+            Optimal control command with enhanced performance.
         """
         if not self.enhanced_initialized:
             return self._create_safe_command(timestamp)
@@ -210,7 +210,7 @@ struct EnhancedAIController:
         """Determine optimal control mode based on state and performance."""
         pend_angle = current_state[2]
         pend_velocity = current_state[1]
-        la_position = current_state[0]
+        _ = current_state[0]  # la_position not used in this function
 
         abs_angle = abs(pend_angle)
         abs_velocity = abs(pend_velocity)
@@ -462,7 +462,7 @@ struct EnhancedAIController:
         Get enhanced controller performance metrics.
 
         Returns:
-            (success_rate, average_error, control_effort, current_mode)
+            Tuple containing (success_rate, average_error, control_effort, current_mode).
         """
         var current_mode = "unknown"
         if len(self.control_mode_history) > 0:

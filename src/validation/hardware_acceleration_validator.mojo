@@ -109,7 +109,7 @@ struct GPUExecutionValidator:
 
             return True
 
-        except:
+        except Exception:
             print("  ❌ GPU execution validation failed for", operation_name)
             return False
 
@@ -143,7 +143,7 @@ struct GPUExecutionValidator:
 
             return memory_valid
 
-        except:
+        except Exception:
             print("  ❌ GPU memory validation failed")
             return False
 
@@ -191,7 +191,7 @@ struct GPUExecutionValidator:
 
             return utilization_valid
 
-        except:
+        except Exception:
             print("  ❌ GPU utilization validation failed")
             return False
 
@@ -238,7 +238,7 @@ struct GPUExecutionValidator:
 
             return self.hardware_acceleration_verified
 
-        except:
+        except Exception:
             print("  ❌ Hardware acceleration validation failed")
             return False
 
@@ -341,9 +341,7 @@ struct GPUPerformanceMonitor:
 
             # Start performance timing
             self.device_context.synchronize()
-            start_time = (
-                Float64(now()) / 1_000_000_000.0
-            )  # Convert to seconds
+            start_time = Float64(now()) / 1_000_000_000.0  # Convert to seconds
 
             # Create and execute GPU operation
             gpu_buffer = self.device_context.enqueue_create_buffer[
@@ -382,7 +380,7 @@ struct GPUPerformanceMonitor:
 
             return execution_time_ms
 
-        except:
+        except Exception:
             print("  ❌ GPU performance monitoring failed for", operation_name)
             return 0.0
 
@@ -397,13 +395,11 @@ struct GPUPerformanceMonitor:
             avg_execution_time = self.total_execution_time_ms / Float64(
                 self.performance_samples
             )
-            avg_memory_bandwidth = (
-                self.total_memory_bandwidth_gb_s
-                / Float64(self.performance_samples)
+            avg_memory_bandwidth = self.total_memory_bandwidth_gb_s / Float64(
+                self.performance_samples
             )
-            avg_compute_throughput = (
-                self.total_compute_throughput
-                / Float64(self.performance_samples)
+            avg_compute_throughput = self.total_compute_throughput / Float64(
+                self.performance_samples
             )
 
             print("  - Average Execution Time:", avg_execution_time, "ms")
@@ -472,9 +468,7 @@ fn validate_hardware_acceleration_system() raises -> Bool:
     var _ = monitor.monitor_gpu_operation("Memory Operations", 2048)
 
     # Validate overall system
-    memory_valid = validator.validate_gpu_memory_usage(
-        10.0
-    )  # Expected 10MB
+    memory_valid = validator.validate_gpu_memory_usage(10.0)  # Expected 10MB
     utilization_valid = validator.validate_gpu_utilization()
     acceleration_valid = validator.validate_hardware_acceleration()
 

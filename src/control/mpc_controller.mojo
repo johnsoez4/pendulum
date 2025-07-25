@@ -8,11 +8,12 @@ performance with constraint satisfaction.
 
 from collections import List
 from math import sqrt, exp, sin, cos
+from time import perf_counter
 
 # Import project modules
-from ..utils.physics import PendulumState, PendulumPhysics
-from ..digital_twin.integrated_trainer import PendulumNeuralNetwork
-from .ai_controller import ControlCommand, ControlState
+from src.utils.physics import PendulumState, PendulumPhysics
+from src.digital_twin.integrated_trainer import PendulumNeuralNetwork
+from src.control.ai_controller import ControlCommand, ControlState
 
 # MPC configuration constants
 alias MPC_PREDICTION_HORIZON = 10  # Number of prediction steps
@@ -109,9 +110,19 @@ struct MPCController:
         biases1 = List[Float64]()
         weights2 = List[List[Float64]]()
         biases2 = List[Float64]()
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
 
         self.digital_twin = PendulumNeuralNetwork(
-            weights1, biases1, weights2, biases2, True, 0.0, 0.0
+            weights1=weights1,
+            biases1=biases1,
+            weights2=weights2,
+            biases2=biases2,
+            weights3=weights3,
+            biases3=biases3,
+            trained=True,
+            training_loss=0.0,
+            validation_loss=0.0,
         )
         self.physics_model = PendulumPhysics()
 
@@ -161,21 +172,21 @@ struct MPCController:
         Compute optimal control using Model Predictive Control.
 
         Args:
-            current_state: [la_position, pend_velocity, pend_position, cmd_volts]
-            timestamp: Current timestamp
+            current_state: State vector [la_position, pend_velocity, pend_position, cmd_volts].
+            timestamp: Current timestamp.
 
         Returns:
-            Optimal control command
+            Optimal control command.
         """
         if not self.initialized:
             return self._create_emergency_command(timestamp)
 
-        start_time = timestamp  # Simplified timing
+        start_time = perf_counter()  # Actual performance timing
 
         # Solve MPC optimization problem
         mpc_prediction = self._solve_mpc_optimization(current_state)
 
-        end_time = timestamp + 0.001  # Simplified timing
+        end_time = perf_counter()  # Actual performance timing
         mpc_prediction.computation_time = (
             end_time - start_time
         ) * 1000.0  # Convert to ms
@@ -194,7 +205,7 @@ struct MPCController:
         )
 
         # Create control command
-        var predicted_state = List[Float64]()
+        var predicted_state: List[Float64]
         if len(mpc_prediction.predicted_states) > 1:
             predicted_state = mpc_prediction.predicted_states[
                 1
@@ -233,7 +244,7 @@ struct MPCController:
         converged = False
 
         # Gradient descent optimization
-        for iteration in range(MPC_MAX_ITERATIONS):
+        for _ in range(MPC_MAX_ITERATIONS):
             # Evaluate current control sequence
             prediction = self._predict_trajectory(
                 current_state, control_sequence
@@ -284,7 +295,7 @@ struct MPCController:
 
         for i in range(MPC_PREDICTION_HORIZON):
             # Get control input for this step
-            var control_input = 0.0
+            var control_input: Float64
             if i < len(control_sequence):
                 control_input = control_sequence[i]
             else:
@@ -482,7 +493,7 @@ struct MPCController:
         Get MPC performance metrics.
 
         Returns:
-            (avg_computation_time, max_computation_time, total_predictions, convergence_rate)
+            Tuple containing (avg_computation_time, max_computation_time, total_predictions, convergence_rate).
         """
         if len(self.optimization_stats) == 0:
             return (0.0, 0.0, 0, 0.0)

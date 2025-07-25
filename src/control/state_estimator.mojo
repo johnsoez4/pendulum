@@ -10,7 +10,7 @@ from collections import List
 from math import sqrt, exp
 
 # Import project modules
-from ..utils.physics import PendulumState, PendulumPhysics
+from src.utils.physics import PendulumState, PendulumPhysics
 
 # State estimation constants
 alias FILTER_ALPHA = 0.8  # Low-pass filter coefficient

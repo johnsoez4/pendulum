@@ -8,12 +8,12 @@ Target: >90% inversion success rate and >30 second stability.
 
 from collections import List
 from math import sqrt, exp, sin, cos, tanh
-from random import random
+from random import random_float64
 
 # Import project modules
-from ..utils.physics import PendulumState, PendulumPhysics
-from ..digital_twin.integrated_trainer import PendulumNeuralNetwork
-from .ai_controller import ControlCommand, ControlState
+from src.utils.physics import PendulumState, PendulumPhysics
+from src.digital_twin.integrated_trainer import PendulumNeuralNetwork
+from src.control.ai_controller import ControlCommand, ControlState
 
 # RL constants
 alias RL_STATE_DIM = 6  # [pos, vel, angle, ang_vel, target_angle, time_in_state]
@@ -107,26 +107,28 @@ struct RLNeuralNetwork:
         self.biases3 = List[Float64]()
 
         # Initialize first layer (input_dim -> hidden_dim)
-        for i in range(hidden_dim):
+        for _ in range(hidden_dim):
             var row = List[Float64]()
-            for j in range(input_dim):
-                row.append((random() - 0.5) * 0.2)  # Small random weights
+            for _ in range(input_dim):
+                row.append(
+                    (random_float64() - 0.5) * 0.2
+                )  # Small random weights
             self.weights1.append(row)
             self.biases1.append(0.0)
 
         # Initialize second layer (hidden_dim -> hidden_dim)
-        for i in range(hidden_dim):
+        for _ in range(hidden_dim):
             var row = List[Float64]()
-            for j in range(hidden_dim):
-                row.append((random() - 0.5) * 0.2)
+            for _ in range(hidden_dim):
+                row.append((random_float64() - 0.5) * 0.2)
             self.weights2.append(row)
             self.biases2.append(0.0)
 
         # Initialize output layer (hidden_dim -> output_dim)
-        for i in range(output_dim):
+        for _ in range(output_dim):
             row = List[Float64]()
-            for j in range(hidden_dim):
-                row.append((random() - 0.5) * 0.2)
+            for _ in range(hidden_dim):
+                row.append((random_float64() - 0.5) * 0.2)
             self.weights3.append(row)
             self.biases3.append(0.0)
 
@@ -243,11 +245,11 @@ struct RLController:
         Compute control action using reinforcement learning.
 
         Args:
-            current_state: [la_position, pend_velocity, pend_position, cmd_volts]
-            timestamp: Current timestamp
+            current_state: State vector [la_position, pend_velocity, pend_position, cmd_volts].
+            timestamp: Current timestamp.
 
         Returns:
-            RL-optimized control command
+            RL-optimized control command.
         """
         if not self.rl_initialized:
             return self._create_safe_command(timestamp)
@@ -332,9 +334,9 @@ struct RLController:
     fn _select_action(mut self, state: RLState) -> Int:
         """Select action using epsilon-greedy policy."""
         # Epsilon-greedy exploration
-        if random() < self.exploration_rate:
+        if random_float64() < self.exploration_rate:
             # Random action (exploration)
-            return Int(random() * Float64(RL_ACTION_DIM))
+            return Int(random_float64() * Float64(RL_ACTION_DIM))
         else:
             # Greedy action (exploitation)
             state_vector = state.to_vector()
@@ -417,10 +419,12 @@ struct RLController:
             return
 
         # Sample random batch from experience buffer
-        for batch_idx in range(
-            min(4, RL_BATCH_SIZE // 8)
-        ):  # Simplified training
-            exp_idx = Int(random() * Float64(len(self.experience_buffer)))
+        for _ in range(min(4, RL_BATCH_SIZE // 8)):  # Simplified training
+            exp_idx = Int(
+                random_float64() * Float64(len(self.experience_buffer))
+            )
+            if exp_idx >= len(self.experience_buffer):
+                exp_idx = len(self.experience_buffer) - 1
             experience = self.experience_buffer[exp_idx]
 
             if not experience.is_valid():
@@ -496,7 +500,7 @@ struct RLController:
         Get RL performance metrics.
 
         Returns:
-            (average_reward, exploration_rate, episodes_completed, success_rate_estimate)
+            (average_reward, exploration_rate, episodes_completed, success_rate_estimate).
         """
         var avg_reward = 0.0
         if len(self.performance_history) > 0:

@@ -10,8 +10,8 @@ from collections import List
 from math import sqrt
 
 # Import project modules
-from ..utils.physics import PendulumState, PendulumPhysics
-from .ai_controller import ControlCommand, ControlState
+from src.utils.physics import PendulumState, PendulumPhysics
+from src.control.ai_controller import ControlCommand, ControlState
 
 # Safety system constants
 alias MAX_ACTUATOR_POSITION = 4.0  # inches
@@ -118,11 +118,11 @@ struct SafetyMonitor:
         Comprehensive safety check of current state and control command.
 
         Args:
-            current_state: [la_position, pend_velocity, pend_position, cmd_volts]
-            command: Proposed control command
+            current_state: State vector [la_position, pend_velocity, pend_position, cmd_volts].
+            command: Proposed control command.
 
         Returns:
-            Updated safety status
+            Updated safety status.
         """
         if not self.safety_status.monitoring_enabled:
             return self.safety_status
@@ -355,7 +355,7 @@ struct SafetyMonitor:
         Get safety system report.
 
         Returns:
-            (total_violations, critical_violations, uptime_percentage, system_safe)
+            Tuple containing (total_violations, critical_violations, uptime_percentage, system_safe).
         """
         total_violations = len(self.violation_history)
         var critical_count = 0

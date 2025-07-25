@@ -10,16 +10,16 @@ from collections import List
 from math import sqrt
 
 # Import all system components
-from ..digital_twin.integrated_trainer import PendulumNeuralNetwork
-from ..control.integrated_control_system import (
+from src.digital_twin.integrated_trainer import PendulumNeuralNetwork
+from src.control.integrated_control_system import (
     IntegratedControlSystem,
     SystemStatus,
 )
-from ..control.enhanced_ai_controller import EnhancedAIController
-from ..control.advanced_hybrid_controller import AdvancedHybridController
-from ..control.rl_controller import RLController
-from ..control.safety_monitor import SafetyMonitor, SafetyStatus
-from ..control.state_estimator import StateEstimator
+from src.control.enhanced_ai_controller import EnhancedAIController
+from src.control.advanced_hybrid_controller import AdvancedHybridController
+from src.control.rl_controller import RLController
+from src.control.safety_monitor import SafetyMonitor, SafetyStatus
+from src.control.state_estimator import StateEstimator
 
 # System integration constants
 alias SYSTEM_VERSION = "2.0.0"  # Complete system version
@@ -135,8 +135,18 @@ struct CompleteSystemIntegration:
         biases1 = List[Float64]()
         weights2 = List[List[Float64]]()
         biases2 = List[Float64]()
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
         self.digital_twin = PendulumNeuralNetwork(
-            weights1, biases1, weights2, biases2, True, 0.0, 0.0
+            weights1=weights1,
+            biases1=biases1,
+            weights2=weights2,
+            biases2=biases2,
+            weights3=weights3,
+            biases3=biases3,
+            trained=True,
+            training_loss=0.0,
+            validation_loss=0.0,
         )
 
         # Initialize control systems
@@ -466,7 +476,7 @@ struct CompleteSystemIntegration:
         Get comprehensive system status.
 
         Returns:
-            (production_ready, success_rate, stability_time, overall_score, control_mode)
+            Tuple containing (production_ready, success_rate, stability_time, overall_score, control_mode).
         """
         return (
             self.system_config.production_ready,
@@ -484,24 +494,24 @@ struct CompleteSystemIntegration:
         report += "Validation Date: 2025-06-29\n"
         report += (
             "Production Ready: "
-            + str(self.system_config.production_ready)
+            + String(self.system_config.production_ready)
             + "\n\n"
         )
 
         report += "PERFORMANCE SUMMARY:\n"
         report += (
             "- Success Rate: "
-            + str(self.performance_metrics.overall_success_rate * 100.0)
+            + String(self.performance_metrics.overall_success_rate * 100.0)
             + "%\n"
         )
         report += (
             "- Stability Time: "
-            + str(self.performance_metrics.average_stability_time)
+            + String(self.performance_metrics.average_stability_time)
             + "s\n"
         )
         report += (
             "- Overall Score: "
-            + str(self.performance_metrics.overall_system_score * 100.0)
+            + String(self.performance_metrics.overall_system_score * 100.0)
             + "%\n\n"
         )
 

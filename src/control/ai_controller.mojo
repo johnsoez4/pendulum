@@ -10,8 +10,8 @@ from collections import List
 from math import sqrt, exp, sin, cos
 
 # Import project modules
-from ..utils.physics import PendulumState, PendulumPhysics
-from ..digital_twin.integrated_trainer import PendulumNeuralNetwork
+from src.utils.physics import PendulumState, PendulumPhysics
+from src.digital_twin.integrated_trainer import PendulumNeuralNetwork
 
 # Control system constants
 alias CONTROL_FREQUENCY = 25.0  # Hz
@@ -85,8 +85,20 @@ struct AIController:
         weights2 = List[List[Float64]]()
         biases2 = List[Float64]()
 
+        # Initialize weights3 and biases3 for the output layer
+        weights3 = List[List[Float64]]()
+        biases3 = List[Float64]()
+
         self.digital_twin = PendulumNeuralNetwork(
-            weights1, biases1, weights2, biases2, True, 0.0, 0.0
+            weights1=weights1,
+            biases1=biases1,
+            weights2=weights2,
+            biases2=biases2,
+            weights3=weights3,
+            biases3=biases3,
+            trained=True,
+            training_loss=0.0,
+            validation_loss=0.0,
         )
         self.physics_model = PendulumPhysics()
 
@@ -127,35 +139,36 @@ struct AIController:
             return False
 
     fn compute_control(
-        """TODO: Add function description."""
         mut self, current_state: List[Float64], timestamp: Float64
     ) -> ControlCommand:
         """
         Compute control command using AI algorithm.
 
         Args:
-            current_state: [la_position, pend_velocity, pend_position, cmd_volts]
-            timestamp: Current time in seconds
+            current_state: State vector [la_position, pend_velocity, pend_position, cmd_volts].
+            timestamp: Current time in seconds.
 
         Returns:
-            Control command with voltage and metadata
+            Control command with voltage and metadata.
         """
         if not self.initialized:
             return self._emergency_stop_command(timestamp)
 
         # Extract current state
-        la_position = current_state[0]
-        pend_velocity = current_state[1]
+        _ = current_state[0]  # la_position not used in this function
+        _ = current_state[1]  # pend_velocity not used in this function
         pend_angle = current_state[2]
-        last_voltage = current_state[3] if len(current_state) > 3 else 0.0
+        _ = (
+            current_state[3] if len(current_state) > 3 else 0.0
+        )  # last_voltage not used
 
         # Determine control mode based on current state
         control_mode = self._determine_control_mode(pend_angle)
         self.control_state.control_mode = control_mode
 
         # Compute control voltage based on mode
-        var control_voltage = 0.0
-        var predicted_state = List[Float64]()
+        var control_voltage: Float64
+        var predicted_state: List[Float64]
 
         if control_mode == "stabilize":
             control_voltage = self._stabilize_control(current_state)
@@ -253,15 +266,13 @@ struct AIController:
 
         pend_angle = current_state[2]
         pend_velocity = current_state[1]
-        predicted_angle = (
-            prediction[2] if len(prediction) > 2 else pend_angle
-        )
+        predicted_angle = prediction[2] if len(prediction) > 2 else pend_angle
 
         # MPC-like control (simplified single-step)
-        angle_cost = abs(
+        _ = abs(
             predicted_angle
-        )  # Cost of being away from inverted
-        velocity_cost = abs(pend_velocity) * 0.1  # Penalize high velocities
+        )  # angle_cost - Cost of being away from inverted
+        _ = abs(pend_velocity) * 0.1  # velocity_cost - Penalize high velocities
 
         # Try different control actions and pick best
         best_voltage = 0.0
@@ -288,8 +299,7 @@ struct AIController:
         return best_voltage
 
     fn _apply_safety_constraints(
-        """TODO: Add function description."""
-        self, voltage: Float64, current_state: List[Float64]
+        mut self, voltage: Float64, current_state: List[Float64]
     ) -> Float64:
         """Apply safety constraints to control voltage."""
         # Clamp voltage to safe limits
@@ -328,7 +338,6 @@ struct AIController:
         )
 
     fn _update_performance_metrics(
-        """TODO: Add function description."""
         mut self, current_state: List[Float64], command: ControlCommand
     ):
         """Update performance tracking metrics."""
@@ -345,7 +354,7 @@ struct AIController:
         Get performance summary.
 
         Returns:
-            (inversion_success_rate, average_stability_time, total_commands)
+            Tuple containing (inversion_success_rate, average_stability_time, total_commands).
         """
         if len(self.performance_metrics) == 0:
             return (0.0, 0.0, 0)
