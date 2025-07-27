@@ -12,7 +12,7 @@ from gpu.host import DeviceContext
 from time import perf_counter_ns as now
 
 
-struct SystemIntegrationResult:
+struct SystemIntegrationResult(Copyable, Movable):
     """System integration test result."""
 
     var test_name: String

@@ -10,10 +10,12 @@ from collections import List
 from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
 from gpu.host import DeviceContext
 from time import perf_counter_ns as now
-from math import abs
+
+# No math imports needed - abs, max, min are builtin
 
 
-struct PerformanceTarget:
+@fieldwise_init
+struct PerformanceTarget(Copyable, Movable):
     """Performance target specification for regression testing."""
 
     var operation_name: String
@@ -57,8 +59,8 @@ struct PerformanceTarget:
         print("  - Simulated speedup:", self.simulated_speedup, "x")
         print("  - Target speedup:", self.target_speedup, "x")
         print("  - Actual speedup:", actual_speedup, "x")
-        print("  - Meets target:", meets_target)
-        print("  - Within tolerance:", within_tolerance)
+        print("  - Meets target:", String(meets_target))
+        print("  - Within tolerance:", String(within_tolerance))
         print("  - Test result:", "PASS" if self.test_passed else "FAIL")
 
         return self.test_passed
@@ -99,7 +101,7 @@ struct PerformanceRegressionTester:
         self._initialize_performance_targets()
 
         print("✓ Performance Regression Tester initialized")
-        print("✓ GPU Hardware Available:", self.gpu_available)
+        print("✓ GPU Hardware Available:", String(self.gpu_available))
         if self.gpu_available:
             print("✓ Testing real GPU performance on NVIDIA A10")
         else:
@@ -451,10 +453,10 @@ struct PerformanceRegressionTester:
         overall_success = self.passed_tests == self.total_tests
 
         print("OVERALL REGRESSION TEST RESULTS:")
-        print("  - Total tests:", self.total_tests)
-        print("  - Passed tests:", self.passed_tests)
+        print("  - Total tests:", String(self.total_tests))
+        print("  - Passed tests:", String(self.passed_tests))
         print("  - Pass rate:", pass_rate, "%")
-        print("  - Regression detected:", self.regression_detected)
+        print("  - Regression detected:", String(self.regression_detected))
         print("  - Overall result:", "PASS" if overall_success else "FAIL")
 
         if overall_success:

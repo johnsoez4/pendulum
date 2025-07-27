@@ -278,23 +278,23 @@ struct TrainingDemo:
             "  Inversion Success Rate (>70%):",
             "✓" if success_rate_target else "✗",
             "("
-            + str(performance_metrics.inversion_success_rate * 100.0)
+            + String(performance_metrics.inversion_success_rate * 100.0)
             + "%)",
         )
         print(
             "  Stability Time (>15s):",
             "✓" if stability_time_target else "✗",
-            "(" + str(performance_metrics.average_stability_time) + "s)",
+            "(" + String(performance_metrics.average_stability_time) + "s)",
         )
         print(
             "  Robustness Score (>60%):",
             "✓" if robustness_target else "✗",
-            "(" + str(performance_metrics.robustness_score * 100.0) + "%)",
+            "(" + String(performance_metrics.robustness_score * 100.0) + "%)",
         )
         print(
             "  Safety Compliance (>95%):",
             "✓" if safety_target else "✗",
-            "(" + str(performance_metrics.safety_compliance * 100.0) + "%)",
+            "(" + String(performance_metrics.safety_compliance * 100.0) + "%)",
         )
         print()
 

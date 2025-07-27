@@ -12,7 +12,7 @@ from gpu.host import DeviceContext
 from time import perf_counter_ns as now
 
 
-struct ProductionValidationResult:
+struct ProductionValidationResult(Copyable, Movable):
     """Production validation test result."""
 
     var test_name: String

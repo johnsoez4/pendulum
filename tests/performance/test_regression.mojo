@@ -100,7 +100,7 @@ fn main():
 
         print("✅ Performance Regression Tester Initialization: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Performance regression tester initialization failed")
 
     # Test 3: Matrix Operations Performance Regression Testing
@@ -158,9 +158,7 @@ fn main():
             gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
 
             # Calculate speedup
-            speedup = (
-                cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
-            )
+            speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
 
             # Validate performance
             simulated_speedup = 4.0
@@ -190,7 +188,7 @@ fn main():
 
         print("✅ Matrix Operations Performance Regression: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Matrix operations performance regression failed")
 
     # Test 4: Neural Network Performance Regression Testing
@@ -271,9 +269,7 @@ fn main():
             gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
 
             # Calculate speedup
-            speedup = (
-                cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
-            )
+            speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
 
             # Validate performance
             simulated_speedup = 3.3
@@ -303,7 +299,7 @@ fn main():
 
         print("✅ Neural Network Performance Regression: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Neural network performance regression failed")
 
     # Test 5: Memory Operations Performance Regression Testing
@@ -359,9 +355,7 @@ fn main():
             gpu_time_ms = (gpu_end_time - gpu_start_time) * 1000.0
 
             # Calculate speedup
-            speedup = (
-                cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
-            )
+            speedup = cpu_time_ms / gpu_time_ms if gpu_time_ms > 0.0 else 1.0
 
             # Validate performance
             simulated_speedup = 2.8
@@ -391,7 +385,7 @@ fn main():
 
         print("✅ Memory Operations Performance Regression: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Memory operations performance regression failed")
 
     # Test 6: Comprehensive Regression Test Summary
@@ -434,7 +428,7 @@ fn main():
 
         print("✅ Comprehensive Regression Test Summary: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Comprehensive regression test summary failed")
 
     # Summary

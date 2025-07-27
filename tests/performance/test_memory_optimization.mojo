@@ -64,14 +64,14 @@ fn main():
         # Simulate memory pool operations
         var allocated_blocks = 0
         var available_blocks = pool_size
-        peak_usage_mb = 0
-        fragmentation_ratio = 0.0
-        allocation_efficiency = 1.0
+        _ = 0  # peak_usage_mb
+        _ = 0.0  # fragmentation_ratio
+        _ = 1.0  # allocation_efficiency
 
         # Pre-allocate GPU memory blocks
         block_size = 1024 * 1024  # 1MB blocks
-        for i in range(min(pool_size, 32)):  # Limit for testing
-            buffer = ctx.enqueue_create_buffer[DType.float64](block_size)
+        for _ in range(min(pool_size, 32)):  # Limit for testing
+            _ = ctx.enqueue_create_buffer[DType.float64](block_size)
             allocated_blocks += 1
             available_blocks -= 1
 
@@ -80,7 +80,7 @@ fn main():
         print("✓ Pre-allocated", allocated_blocks, "memory blocks")
         print("✅ Advanced GPU Memory Pool Management: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Advanced GPU memory pool management failed")
 
     # Test 3: Memory Allocation and Deallocation Optimization
@@ -103,15 +103,12 @@ fn main():
         for i in range(len(test_sizes)):
             rows = test_sizes[i][0]
             cols = test_sizes[i][1]
-            buffer_size = rows * cols
+            buffer_size = Int(rows * cols)
 
             print("  Test", i + 1, "- Matrix size:", rows, "x", cols)
 
-            # Calculate memory usage
-            memory_mb = (buffer_size * 8) / (
-                1024 * 1024
-            )  # 8 bytes per Float64
-            print("    - Memory required:", memory_mb, "MB")
+            # Calculate memory usage (8 bytes per Float64)
+            print("    - Memory allocation for buffer size:", buffer_size)
 
             # Allocate GPU buffer
             buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
@@ -126,7 +123,7 @@ fn main():
         print("✓ All memory allocation tests completed")
         print("✅ Memory Allocation and Deallocation Optimization: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Memory allocation and deallocation optimization failed")
 
     # Test 4: Memory Fragmentation Prevention
@@ -146,7 +143,7 @@ fn main():
 
         # Allocate buffers of varying sizes
         for i in range(num_allocations):
-            buffer_size = (i + 1) * 1024  # Varying sizes
+            buffer_size = Int((i + 1) * 1024)  # Varying sizes
             buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
             fragmentation_test_buffers.append(buffer_size)
 
@@ -157,16 +154,14 @@ fn main():
         print("✓ Allocated", num_allocations, "buffers of varying sizes")
 
         # Memory defragmentation simulation
-        defrag_buffer = ctx.enqueue_create_buffer[DType.float64](
-            1024 * 1024
-        )
+        defrag_buffer = ctx.enqueue_create_buffer[DType.float64](1024 * 1024)
         print("✓ Memory defragmentation buffer created")
 
         ctx.synchronize()
         print("✓ Memory fragmentation prevention completed")
         print("✅ Memory Fragmentation Prevention: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Memory fragmentation prevention failed")
 
     # Test 5: Memory Transfer Optimization
@@ -204,7 +199,7 @@ fn main():
         print("✓ All memory transfer optimizations completed")
         print("✅ Memory Transfer Optimization: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Memory transfer optimization failed")
 
     # Test 6: Real-time Memory Monitoring
@@ -224,7 +219,7 @@ fn main():
         # Allocate and monitor memory usage
         for i in range(10):
             buffer_size = (i + 1) * 8192
-            buffer = ctx.enqueue_create_buffer[DType.float64](buffer_size)
+            _ = ctx.enqueue_create_buffer[DType.float64](buffer_size)
             monitoring_buffers.append(buffer_size)
 
             # Calculate memory usage
@@ -241,7 +236,7 @@ fn main():
         print("✓ Total memory monitored:", total_allocated_mb, "MB")
         print("✅ Real-time Memory Monitoring: SUCCESS")
 
-    except:
+    except Exception:
         print("❌ Real-time memory monitoring failed")
 
     # Summary
