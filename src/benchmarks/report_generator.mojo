@@ -12,16 +12,8 @@ from sys import (
     has_amd_gpu_accelerator,
     num_logical_cores,
     num_physical_cores,
-    os_is_linux,
-    os_is_macos,
-    os_is_windows,
-    is_apple_m1,
-    is_apple_m2,
-    is_apple_m3,
-    is_apple_silicon,
-    CompilationTarget,
 )
-from sys.info import _current_arch
+from sys.info import CompilationTarget
 from gpu.host import DeviceContext, DeviceAttribute
 from time import perf_counter_ns as now
 
@@ -77,7 +69,7 @@ struct SystemInfo(Copyable):
     @staticmethod
     fn _detect_cpu_model() -> String:
         """Detect real CPU model and specifications."""
-        var cpu_arch = String(_current_arch())
+        var cpu_arch = String(CompilationTarget._arch())
         var cpu_features = String("")
 
         # Detect CPU features
@@ -95,7 +87,7 @@ struct SystemInfo(Copyable):
             cpu_features += " NEON"
 
         # Detect specific CPU models
-        if is_apple_m1():
+        if CompilationTarget.is_apple_m1():
             return (
                 "Apple M1"
                 + cpu_features
@@ -103,7 +95,7 @@ struct SystemInfo(Copyable):
                 + String(num_physical_cores())
                 + " cores)"
             )
-        elif is_apple_m2():
+        elif CompilationTarget.is_apple_m2():
             return (
                 "Apple M2"
                 + cpu_features
@@ -111,7 +103,7 @@ struct SystemInfo(Copyable):
                 + String(num_physical_cores())
                 + " cores)"
             )
-        elif is_apple_m3():
+        elif CompilationTarget.is_apple_m3():
             return (
                 "Apple M3"
                 + cpu_features
@@ -119,7 +111,7 @@ struct SystemInfo(Copyable):
                 + String(num_physical_cores())
                 + " cores)"
             )
-        elif is_apple_silicon():
+        elif CompilationTarget.is_apple_silicon():
             return (
                 "Apple Silicon"
                 + cpu_features
@@ -191,13 +183,13 @@ struct SystemInfo(Copyable):
                 version_parts.append("standard")
 
             # Add OS information
-            from sys import os_is_linux, os_is_macos, os_is_windows
+            # Use CompilationTarget methods for OS detection
 
-            if os_is_linux():
+            if CompilationTarget.is_linux():
                 version_parts.append("linux")
-            elif os_is_macos():
+            elif CompilationTarget.is_macos():
                 version_parts.append("macos")
-            elif os_is_windows():
+            elif CompilationTarget.is_windows():
                 version_parts.append("windows")
 
             # Combine into version string with runtime detection indicator
@@ -269,12 +261,12 @@ struct SystemInfo(Copyable):
             version_parts.append("24.0+")  # Standard systems
 
         # Add system context
-        from sys import os_is_linux, os_is_macos, os_is_windows
-        if os_is_linux():
+        # Use CompilationTarget methods for OS detection
+        if CompilationTarget.is_linux():
             version_parts.append("linux")
-        elif os_is_macos():
+        elif CompilationTarget.is_macos():
             version_parts.append("macos")
-        elif os_is_windows():
+        elif CompilationTarget.is_windows():
             version_parts.append("windows")
 
         # Combine version string
@@ -772,7 +764,7 @@ struct BenchmarkReportGenerator:
         # Real CPU specifications
         hardware += "CPU SPECIFICATIONS:\n"
         hardware += "- Model: " + self.system_info.cpu_model + "\n"
-        hardware += "- Architecture: " + String(_current_arch()) + "\n"
+        hardware += "- Architecture: " + String(CompilationTarget._arch()) + "\n"
         hardware += "- Physical Cores: " + String(num_physical_cores()) + "\n"
         hardware += "- Logical Cores: " + String(num_logical_cores()) + "\n"
         hardware += "- Operating System: " + self._detect_os() + "\n\n"
@@ -812,11 +804,11 @@ struct BenchmarkReportGenerator:
 
     fn _detect_os(self) -> String:
         """Detect the operating system."""
-        if os_is_linux():
+        if CompilationTarget.is_linux():
             return "Linux"
-        elif os_is_macos():
+        elif CompilationTarget.is_macos():
             return "macOS"
-        elif os_is_windows():
+        elif CompilationTarget.is_windows():
             return "Windows"
         else:
             return "Unknown OS"
