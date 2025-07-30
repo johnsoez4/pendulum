@@ -8,6 +8,7 @@ version = "0.1.0"
 update = "sh update.sh"
 
 [dependencies]
+mojo = ">=25.5.0.dev2025072805"
 # max = ">=25.5.0.dev2025071505"
 max = "*"
 python = ">=3.10,<3.13"
