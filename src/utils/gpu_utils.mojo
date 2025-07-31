@@ -11,7 +11,11 @@ from memory import UnsafePointer
 from time import perf_counter_ns as now
 
 # Real MAX Engine imports for GPU operations (VERIFIED WORKING)
-from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
+from sys import (
+    has_nvidia_gpu_accelerator,
+    has_amd_gpu_accelerator,
+    has_accelerator,
+)
 from gpu.host import DeviceContext
 from layout import Layout, LayoutTensor
 
@@ -20,9 +24,10 @@ from layout import Layout, LayoutTensor
 # Future optimization could use: from max.graph import ops (verified available)
 
 # GPU availability determined at runtime using real MAX Engine API
-alias GPU_AVAILABLE = True  # Dynamically checked via has_nvidia_gpu_accelerator()
+# All GPU availability checks now use has_accelerator() for dynamic detection
 
 
+@fieldwise_init
 struct GPUDeviceInfo:
     """
     Structure to hold information about a specific GPU device.
@@ -34,32 +39,14 @@ struct GPUDeviceInfo:
     var memory_free_mb: Int
     var compute_capability: String
 
-    fn __init__(
-        out self,
-        is_valid: Bool,
-        name: String,
-        memory_total_mb: Int,
-        memory_free_mb: Int,
-        compute_capability: String,
-    ):
-        """Initialize GPU device info."""
-        self.is_valid = is_valid
-        self.name = name
-        self.memory_total_mb = memory_total_mb
-        self.memory_free_mb = memory_free_mb
-        self.compute_capability = compute_capability
-
-    # Note: __copyinit__ method removed - Copyable trait provides default field-by-field copying
-    # which is identical to the manual implementation and reduces code complexity
-
 
 struct GPUDetectionResult(Copyable):
     """Result of GPU detection with detailed information."""
 
     var gpu_available: Bool
-    var gpu_type: String  # "nvidia", "amd", "none"
+    var gpu_type: String
     var device_count: Int
-    var recommended_mode: String  # "gpu", "cpu", "hybrid"
+    var recommended_mode: String
 
     fn __init__(out self):
         """Initialize with default values indicating no GPU."""
@@ -90,7 +77,8 @@ struct GPUCapabilities(Copyable):
         self.memory_total = 0
         self.memory_free = 0
         self.compute_capability = "None"
-        self.max_engine_available = GPU_AVAILABLE
+        # MAX Engine availability will be determined at runtime
+        self.max_engine_available = False
 
 
 struct ComputeMode:
@@ -146,17 +134,21 @@ struct GPUManager:
         print("Detecting GPU capabilities...")
 
         # Use real MAX Engine GPU detection API
-        has_nvidia = has_nvidia_gpu_accelerator()
-        has_amd = has_amd_gpu_accelerator()
+        if has_accelerator():
+            # Check specific GPU types for detailed information
+            has_nvidia = has_nvidia_gpu_accelerator()
+            has_amd = has_amd_gpu_accelerator()
 
-        if has_nvidia:
-            print("✓ NVIDIA GPU detected and available for acceleration")
+            if has_nvidia:
+                print("✓ NVIDIA GPU detected and available for acceleration")
+            elif has_amd:
+                print("✓ AMD GPU detected and available for acceleration")
+            else:
+                print("✓ GPU accelerator detected and available")
+
             self.capabilities.gpu_available = True
-            self.capabilities.max_engine_available = True
-        elif has_amd:
-            print("✓ AMD GPU detected and available for acceleration")
-            self.capabilities.gpu_available = True
-            self.capabilities.max_engine_available = True
+            # Get detailed GPU information
+            self.capabilities.max_engine_available = self._try_gpu_detection()
         else:
             print("⚠️  No GPU accelerator detected - using CPU fallback")
             self.capabilities.gpu_available = False
@@ -179,21 +171,10 @@ struct GPUManager:
 
         print("Real MAX Engine: GPU device detection starting...")
 
-        # Check if MAX engine GPU support is available
-        if not self._check_max_engine_availability():
-            print("Real MAX Engine: GPU support not available")
-            return False
-
-        # Attempt to enumerate GPU devices
-        device_count = self._get_gpu_device_count()
-        if device_count == 0:
-            print("Real MAX Engine: No GPU devices found")
-            return False
-
-        # Get information about the first available GPU
-        gpu_info = self._get_gpu_device_info(0)
+        # Get information about the primary GPU
+        gpu_info = self._query_gpu_device()
         if gpu_info.is_valid:
-            self.capabilities.device_count = device_count
+            self.capabilities.device_count = 1
             self.capabilities.device_name = gpu_info.name
             self.capabilities.memory_total = gpu_info.memory_total_mb
             self.capabilities.memory_free = gpu_info.memory_free_mb
@@ -216,185 +197,21 @@ struct GPUManager:
             print("Real MAX Engine: Failed to get GPU device information")
             return False
 
-    fn _check_max_engine_availability(self) raises -> Bool:
+    fn _query_gpu_device(self) -> GPUDeviceInfo:
         """
-        Check if MAX Engine GPU support is available and functional.
+        Query GPU device information for the primary GPU.
 
         Returns:
-            True if MAX Engine GPU modules are available, False otherwise
+            GPUDeviceInfo with device information
         """
-        # Real MAX Engine availability check implementation
-        # This function verifies MAX Engine GPU modules are available and functional
+        # GPU device query implementation
+        # This function interfaces with GPU hardware detection
 
-        # Step 1: Check for MAX Engine installation
-        if not self._check_max_engine_installation():
-            return False
-
-        # Step 2: Check for GPU device availability
-        if not self._check_gpu_device_availability():
-            return False
-
-        # Step 3: Verify MAX Engine can access GPU
-        return self._verify_max_engine_gpu_access()
-
-    fn _check_max_engine_installation(self) -> Bool:
-        """
-        Check if MAX Engine is installed and available.
-
-        Returns:
-            True if MAX Engine is installed, False otherwise
-        """
-        # Real MAX Engine installation check
-        # This would verify MAX Engine binaries and libraries are available
-
-        # When MAX Engine is available, this will check:
-        # - MAX Engine binary availability
-        # - MAX Engine library imports
-        # - Version compatibility
-
-        # Current implementation: Check for MAX Engine indicators
-        return True  # Assuming MAX Engine structure is ready
-
-    fn _check_gpu_device_availability(self) raises -> Bool:
-        """
-        Check if GPU devices are available for MAX Engine.
-
-        Returns:
-            True if GPU devices are available, False otherwise
-        """
-        # Real GPU device availability check
-        # This would use MAX Engine APIs to enumerate devices
-
-        # When MAX Engine is available:
-        # try:
-        #     from max.device import get_device_count
-        #     return get_device_count() > 0
-        # except ImportError:
-        #     return False
-
-        # Current implementation: Check for GPU hardware presence
-        return self._detect_nvidia_gpu()
-
-    fn _verify_max_engine_gpu_access(self) raises -> Bool:
-        """
-        Verify MAX Engine can access and use GPU devices.
-
-        Returns:
-            True if MAX Engine can access GPU, False otherwise
-        """
-        # Real MAX Engine GPU access verification
-        # This would test actual MAX Engine GPU operations
-
-        # When MAX Engine is available:
-        # try:
-        #     from max.device import get_device
-        #     device = get_device(0)
-        #     # Test basic device operations
-        #     return device.is_available()
-        # except:
-        #     return False
-
-        # Current implementation: Verify GPU readiness for MAX Engine
-        return True  # GPU is ready for MAX Engine integration
-
-    fn _get_gpu_device_count(self) -> Int:
-        """
-        Get the number of available GPU devices using real detection.
-
-        Returns:
-            Number of GPU devices available
-        """
-        # Real MAX Engine device enumeration implementation
-        # This function uses actual device detection to count GPU devices
-
-        # When MAX Engine is available, this will use:
-        # from max.device import get_device_count
-        # return get_device_count()
-
-        # Current implementation: Real GPU device counting
-        return self._count_real_gpu_devices()
-
-    fn _count_real_gpu_devices(self) -> Int:
-        """
-        Count real GPU devices available in the system.
-
-        Returns:
-            Number of GPU devices detected
-        """
-        # Real GPU device counting implementation
-        # This function detects actual GPU hardware
-
-        var device_count = 0
-
-        # Check for compatible GPUs
-        if self._detect_nvidia_gpu():
-            device_count += 1
-
-        # Future: Add support for other GPU vendors
-        # if self._detect_amd_gpu():
-        #     device_count += 1
-        # if self._detect_intel_gpu():
-        #     device_count += 1
-
-        return device_count
-
-    fn _get_gpu_device_info(self, device_index: Int) -> GPUDeviceInfo:
-        """
-        Get information about a specific GPU device using MAX Engine APIs.
-
-        Args:
-            device_index: Index of the GPU device to query
-
-        Returns:
-            GPUDeviceInfo structure with device information
-        """
-        # Real MAX Engine device info implementation
-        # This function uses actual MAX Engine APIs to get device information
-
-        # When MAX Engine is available, this will use:
-        # from max.device import get_device
-        # device = get_device(device_index)
-        # return GPUDeviceInfo(
-        #     is_valid=True,
-        #     name=device.name,
-        #     memory_total_mb=device.memory_total // (1024*1024),
-        #     memory_free_mb=device.memory_free // (1024*1024),
-        #     compute_capability=device.compute_capability
-        # )
-
-        # Current implementation: Real GPU device detection
-        # This will be replaced with actual MAX Engine device queries
-        if device_index == 0 and GPU_AVAILABLE:
-            # Attempt to get real GPU device information
-            # This would query actual hardware when MAX Engine is available
-            return self._query_real_gpu_device(device_index)
-        else:
-            return GPUDeviceInfo(
-                is_valid=False,
-                name="No Device",
-                memory_total_mb=0,
-                memory_free_mb=0,
-                compute_capability="0.0",
-            )
-
-    fn _query_real_gpu_device(self, device_index: Int) -> GPUDeviceInfo:
-        """
-        Query real GPU device information.
-
-        Args:
-            device_index: Index of the GPU device to query
-
-        Returns:
-            GPUDeviceInfo with real device information
-        """
-        # Real GPU device query implementation
-        # This function interfaces with actual GPU hardware detection
-
-        # Attempt to detect real GPU hardware
-        gpu_detected = self._detect_nvidia_gpu()
+        # Attempt to detect GPU hardware (any accelerator)
+        gpu_detected = has_accelerator()
 
         if gpu_detected:
-            # Get real GPU properties
+            # Get GPU properties
             gpu_name = self._get_gpu_name()
             memory_info = self._get_gpu_memory_info()
             compute_cap = self._get_compute_capability()
@@ -402,8 +219,8 @@ struct GPUManager:
             return GPUDeviceInfo(
                 is_valid=True,
                 name=gpu_name,
-                memory_total_mb=memory_info[0],  # Total memory in MB
-                memory_free_mb=memory_info[1],  # Free memory in MB
+                memory_total_mb=memory_info[0],
+                memory_free_mb=memory_info[1],
                 compute_capability=compute_cap,
             )
         else:
@@ -415,80 +232,173 @@ struct GPUManager:
                 compute_capability="0.0",
             )
 
-    fn _detect_nvidia_gpu(self) -> Bool:
-        """
-        Detect if compatible GPU is present in the system.
-
-        Returns:
-            True if compatible GPU is detected, False otherwise
-        """
-        # Real GPU hardware detection
-        # This checks for actual GPU presence
-
-        # For systems with GPU, this would check:
-        # - GPU driver availability
-        # - GPU management tools
-        # - GPU device enumeration
-
-        # Current implementation: Check for GPU indicators
-        # This will be enhanced with actual hardware detection
-        return True  # Assuming GPU is available as mentioned
-
     fn _get_gpu_name(self) -> String:
         """
-        Get the actual GPU device name.
+        Get the actual GPU device name by reading from hardware.
 
         Returns:
-            GPU device name string
+            GPU device name string read from actual GPU hardware
         """
-        # Real GPU name detection
-        # This would query actual GPU hardware for device name
+        try:
+            if has_nvidia_gpu_accelerator():
+                # Read actual NVIDIA GPU name from hardware
+                var ctx = DeviceContext(0, api="cuda")
+                var gpu_name = ctx.name()
+                return gpu_name
 
-        # When MAX Engine is available:
-        # device = get_device(0)
-        # return device.name
+            elif has_amd_gpu_accelerator():
+                # Read actual AMD GPU name from hardware
+                var ctx = DeviceContext(0, api="hip")
+                var gpu_name = ctx.name()
+                return gpu_name
 
-        # Current implementation: Return detected GPU name
-        return "Compatible GPU (Hardware Detected)"
+            else:
+                # Generic GPU - try default DeviceContext
+                _ = DeviceContext()  # Test if DeviceContext works
+                return "Generic GPU"
+
+        except Exception:
+            # If hardware reading fails, return fallback based on detection
+            if has_nvidia_gpu_accelerator():
+                return "NVIDIA GPU (Detection Failed)"
+            elif has_amd_gpu_accelerator():
+                return "AMD GPU (Detection Failed)"
+            else:
+                return "Unknown GPU"
 
     fn _get_gpu_memory_info(self) -> (Int, Int):
         """
-        Get real GPU memory information.
+        Get real GPU memory information by reading from hardware.
 
         Returns:
-            Tuple of (total_memory_mb, free_memory_mb)
+            Tuple of (total_memory_mb, free_memory_mb) read from actual GPU hardware.
         """
-        # Real GPU memory detection
-        # This would query actual GPU hardware for memory information
+        try:
+            if has_nvidia_gpu_accelerator():
+                # Read actual NVIDIA GPU memory from hardware
+                var ctx = DeviceContext(0, api="cuda")
+                var memory_info = ctx.get_memory_info()
+                var free_memory_bytes = memory_info[0]
+                var total_memory_bytes = memory_info[1]
 
-        # When MAX Engine is available:
-        # device = get_device(0)
-        # total_mb = device.memory_total() // (1024*1024)
-        # free_mb = device.memory_free() // (1024*1024)
-        # return (total_mb, free_mb)
+                # Convert bytes to MB
+                var total_memory_mb = Int(
+                    Float64(total_memory_bytes) / (1024.0 * 1024.0)
+                )
+                var free_memory_mb = Int(
+                    Float64(free_memory_bytes) / (1024.0 * 1024.0)
+                )
 
-        # Current implementation: Return realistic GPU memory values
-        # These values represent typical GPU memory configurations
-        total_memory_mb = 24576  # 24GB typical for modern GPUs
-        free_memory_mb = 23000  # Accounting for driver overhead
-        return (total_memory_mb, free_memory_mb)
+                print(
+                    "✓ Real GPU memory detected:",
+                    total_memory_mb,
+                    "MB total,",
+                    free_memory_mb,
+                    "MB free",
+                )
+                return (total_memory_mb, free_memory_mb)
+
+            elif has_amd_gpu_accelerator():
+                # Read actual AMD GPU memory from hardware
+                var ctx = DeviceContext(0, api="hip")
+                var memory_info = ctx.get_memory_info()
+                var free_memory_bytes = memory_info[0]
+                var total_memory_bytes = memory_info[1]
+
+                # Convert bytes to MB
+                var total_memory_mb = Int(
+                    Float64(total_memory_bytes) / (1024.0 * 1024.0)
+                )
+                var free_memory_mb = Int(
+                    Float64(free_memory_bytes) / (1024.0 * 1024.0)
+                )
+
+                print(
+                    "✓ Real GPU memory detected:",
+                    total_memory_mb,
+                    "MB total,",
+                    free_memory_mb,
+                    "MB free",
+                )
+                return (total_memory_mb, free_memory_mb)
+
+            else:
+                # Generic GPU - try default DeviceContext
+                var ctx = DeviceContext()
+                var memory_info = ctx.get_memory_info()
+                var free_memory_bytes = memory_info[0]
+                var total_memory_bytes = memory_info[1]
+
+                # Convert bytes to MB
+                var total_memory_mb = Int(
+                    Float64(total_memory_bytes) / (1024.0 * 1024.0)
+                )
+                var free_memory_mb = Int(
+                    Float64(free_memory_bytes) / (1024.0 * 1024.0)
+                )
+
+                return (total_memory_mb, free_memory_mb)
+
+        except Exception:
+            print("⚠️  Could not query real GPU memory, using fallback values")
+
+            # Fallback to hardware-specific estimates if direct query fails
+            if has_nvidia_gpu_accelerator():
+                return (16384, 15360)
+            elif has_amd_gpu_accelerator():
+                return (12288, 11520)
+            else:
+                return (8192, 7680)
 
     fn _get_compute_capability(self) -> String:
         """
-        Get GPU compute capability.
+        Get GPU compute capability by reading actual values from GPU hardware.
 
         Returns:
-            Compute capability string (e.g., "8.6")
+            Compute capability string read from actual GPU hardware
         """
-        # Real compute capability detection
-        # This would query actual GPU hardware for compute capability
+        try:
+            if has_nvidia_gpu_accelerator():
+                # Read actual NVIDIA GPU compute capability from hardware
+                var ctx = DeviceContext(0, api="cuda")
+                var compute_capability = ctx.compute_capability()
 
-        # When MAX Engine is available:
-        # device = get_device(0)
-        # return device.compute_capability
+                # Format compute capability as "major.minor" (e.g., "8.6")
+                var major = compute_capability // 10
+                var minor = compute_capability % 10
+                return String(major) + "." + String(minor)
 
-        # Current implementation: Return modern GPU compute capability
-        return "8.6"  # Modern GPU compute capability
+            elif has_amd_gpu_accelerator():
+                # Read actual AMD GPU information from hardware
+                var ctx = DeviceContext(0, api="hip")
+                var gpu_name = ctx.name()
+
+                # Extract architecture from actual GPU name
+                if "MI300" in gpu_name or "MI355" in gpu_name:
+                    return "CDNA3"  # Latest AMD data center architecture
+                elif "MI250" in gpu_name or "MI210" in gpu_name:
+                    return "CDNA2"  # Previous generation data center
+                elif "RX 7" in gpu_name or "RDNA3" in gpu_name:
+                    return "RDNA3"  # Consumer RDNA3 architecture
+                elif "RX 6" in gpu_name or "RDNA2" in gpu_name:
+                    return "RDNA2"  # Consumer RDNA2 architecture
+                else:
+                    # Return generic identifier for unknown AMD GPUs
+                    return "AMD-" + gpu_name[:10]  # First 10 chars of GPU name
+
+            else:
+                # Generic GPU - try to get basic information
+                _ = DeviceContext()  # Test if DeviceContext works
+                return "Generic"
+
+        except Exception:
+            # If hardware reading fails, return fallback based on detection
+            if has_nvidia_gpu_accelerator():
+                return "Unknown-NVIDIA"  # Conservative NVIDIA fallback
+            elif has_amd_gpu_accelerator():
+                return "Unknown-AMD"  # Conservative AMD fallback
+            else:
+                return "Unknown"
 
     fn _initialize_compute_device(mut self) raises:
         """Initialize compute device based on detected capabilities and mode."""
@@ -587,19 +497,6 @@ struct GPUManager:
             and self.compute_mode != ComputeMode.CPU_ONLY
         )
 
-    fn get_compute_mode_string(self) -> String:
-        """Get human-readable compute mode string."""
-        if self.compute_mode == ComputeMode.AUTO:
-            return "AUTO"
-        elif self.compute_mode == ComputeMode.GPU_ONLY:
-            return "GPU_ONLY"
-        elif self.compute_mode == ComputeMode.CPU_ONLY:
-            return "CPU_ONLY"
-        elif self.compute_mode == ComputeMode.HYBRID:
-            return "HYBRID"
-        else:
-            return "UNKNOWN"
-
     fn allocate_gpu_buffer(
         self, size: Int, dtype: DType = DType.float64
     ) raises -> Bool:
@@ -647,151 +544,6 @@ struct GPUManager:
             )
             return False
 
-    fn test_gpu_memory_bandwidth(self) raises -> Float64:
-        """
-        Test real GPU memory bandwidth using DeviceContext operations.
-
-        Returns:
-            Memory bandwidth in GB/s, or 0.0 if test fails.
-        """
-        if not self.is_gpu_available():
-            return 0.0
-
-        try:
-            device_context = DeviceContext()
-            test_size = 1024 * 1024  # 1M elements
-
-            # Allocate GPU buffer
-            buffer = device_context.enqueue_create_buffer[DType.float64](
-                test_size
-            )
-
-            # Measure memory fill performance
-            start_time = now()
-            _ = buffer.enqueue_fill(3.14159)
-            device_context.synchronize()
-            end_time = now()
-
-            # Calculate bandwidth
-            time_seconds = Float64(end_time - start_time) / 1e9
-            bytes_transferred = Float64(test_size * 8)  # 8 bytes per float64
-            bandwidth_gbps = (bytes_transferred / time_seconds) / 1e9
-
-            print("✓ Real GPU memory bandwidth test:", bandwidth_gbps, "GB/s")
-            return bandwidth_gbps
-
-        except e:
-            print("⚠️  GPU memory bandwidth test failed:", String(e))
-            return 0.0
-
-    fn print_capabilities(self) raises:
-        """Print detailed GPU capabilities and status."""
-        print("=" * 60)
-        print("GPU CAPABILITIES AND STATUS")
-        print("=" * 60)
-        print("MAX Engine Available:", self.capabilities.max_engine_available)
-        print("GPU Available:", self.capabilities.gpu_available)
-        print("Device Count:", self.capabilities.device_count)
-        print("Device Name:", self.capabilities.device_name)
-        print("Memory Total:", self.capabilities.memory_total, "MB")
-        print("Memory Free:", self.capabilities.memory_free, "MB")
-        print("Compute Capability:", self.capabilities.compute_capability)
-        print("Compute Mode:", self.get_compute_mode_string())
-        print("Device Initialized:", self.device_initialized)
-        print("Using CPU Fallback:", self.fallback_to_cpu)
-
-        # Test real GPU memory bandwidth if available
-        if self.is_gpu_available():
-            bandwidth = self.test_gpu_memory_bandwidth()
-            print("Real GPU Memory Bandwidth:", String(bandwidth), "GB/s")
-
-        print("=" * 60)
-
-    fn benchmark_device_performance(mut self) raises -> Float64:
-        """
-        Run a simple benchmark to assess device performance.
-
-        Returns:
-            Performance score (operations per second).
-        """
-        print("Running device performance benchmark...")
-
-        # Simple matrix multiplication benchmark
-        matrix_size = 512
-        iterations = 10
-
-        # Simulate benchmark timing
-        _ = 0.0  # Would use actual timing
-
-        for _ in range(iterations):
-            # Simulate matrix operations
-            _ = matrix_size * matrix_size * matrix_size
-
-        end_time = 0.001 * Float64(iterations)  # Simulated timing
-        ops_per_second = (
-            Float64(iterations * matrix_size * matrix_size) / end_time
-        )
-
-        self.performance_stats.append(ops_per_second)
-
-        print("Benchmark completed - Performance:", ops_per_second, "ops/sec")
-        return ops_per_second
-
-
-fn create_gpu_manager(
-    compute_mode: Int = ComputeMode.AUTO,
-) raises -> GPUManager:
-    """
-    Create and initialize a GPU manager.
-
-    Args:
-        compute_mode: Desired compute mode.
-
-    Returns:
-        Initialized GPUManager instance.
-    """
-    return GPUManager(compute_mode)
-
-
-fn detect_gpu_capabilities() raises -> GPUCapabilities:
-    """
-    Detect GPU capabilities without initializing a full manager.
-
-    Returns:
-        GPUCapabilities structure with detected information.
-    """
-    manager = GPUManager(ComputeMode.AUTO)
-    return manager.capabilities
-
-
-fn test_gpu_functionality() raises -> Bool:
-    """
-    Test basic GPU functionality.
-
-    Returns:
-        True if GPU is functional, False otherwise.
-    """
-    print("Testing GPU functionality...")
-
-    manager = GPUManager(ComputeMode.AUTO)
-
-    if not manager.is_gpu_available():
-        print("GPU not available for testing")
-        return False
-
-    # Run performance benchmark as functionality test
-    performance = manager.benchmark_device_performance()
-
-    # Consider GPU functional if performance is reasonable
-    is_functional = performance > 1000.0  # Arbitrary threshold
-
-    if is_functional:
-        print("GPU functionality test: PASSED")
-    else:
-        print("GPU functionality test: FAILED")
-
-    return is_functional
-
 
 fn detect_gpu_hardware(context: String = "general") -> GPUDetectionResult:
     """
@@ -805,21 +557,26 @@ fn detect_gpu_hardware(context: String = "general") -> GPUDetectionResult:
     """
     result = GPUDetectionResult()
 
-    has_nvidia = has_nvidia_gpu_accelerator()
-    has_amd = has_amd_gpu_accelerator()
+    if has_accelerator():
+        # Check specific GPU types for detailed information
+        has_nvidia = has_nvidia_gpu_accelerator()
+        has_amd = has_amd_gpu_accelerator()
 
-    if has_nvidia:
-        print("✓ NVIDIA GPU detected for", context)
+        if has_nvidia:
+            print("✓ NVIDIA GPU detected for", context)
+            result.gpu_type = "nvidia"
+        elif has_amd:
+            print("✓ AMD GPU detected for", context)
+            result.gpu_type = "amd"
+        else:
+            print("✓ GPU accelerator detected for", context)
+            result.gpu_type = "unknown"
+
         result.gpu_available = True
-        result.gpu_type = "nvidia"
         result.recommended_mode = "gpu"
-        result.device_count = 1  # Simplified for now
-    elif has_amd:
-        print("✓ AMD GPU detected for", context)
-        result.gpu_available = True
-        result.gpu_type = "amd"
-        result.recommended_mode = "gpu"
-        result.device_count = 1  # Simplified for now
+        # For now, assume 1 device per GPU type detected
+        # In a full implementation, this would enumerate all available devices
+        result.device_count = 1
     else:
         print("⚠️  No GPU detected for", context, "- using CPU fallback")
         result.gpu_available = False
@@ -828,27 +585,3 @@ fn detect_gpu_hardware(context: String = "general") -> GPUDetectionResult:
         result.device_count = 0
 
     return result
-
-
-fn create_device_context_safe(
-    context: String = "operation",
-) raises -> DeviceContext:
-    """
-    Safely create DeviceContext with error handling.
-
-    Args:
-        context: Context description for error messages.
-
-    Returns:
-        DeviceContext if successful.
-
-    Raises:
-        Error: If DeviceContext creation fails.
-    """
-    try:
-        ctx = DeviceContext()
-        print("✓ DeviceContext created successfully for", context)
-        return ctx
-    except e:
-        print("❌ DeviceContext creation failed for", context, ":", String(e))
-        raise e

@@ -40,7 +40,9 @@ struct SystemInfo(Copyable):
         self.mojo_version = (
             SystemInfo._detect_mojo_version()
         )  # Real-time Mojo version
-        self.max_engine_version = SystemInfo._detect_max_engine_version()  # Real-time MAX Engine version
+        self.max_engine_version = (
+            SystemInfo._detect_max_engine_version()
+        )  # Real-time MAX Engine version
         self.gpu_available = False
         self.gpu_memory_gb = 0
 
@@ -153,130 +155,57 @@ struct SystemInfo(Copyable):
 
     @staticmethod
     fn _detect_mojo_version() -> String:
-        """Detect actual Mojo version from the system at runtime."""
-        # Try to detect Mojo version using compilation-time information
-            # Since Mojo doesn't currently expose runtime version info directly,
-            # we'll use a combination of approaches
+        """Detect actual Mojo version using mojo -v command via subprocess."""
+        try:
+            from subprocess import run
 
-            # Approach 1: Try to get version from environment or system
-            # This would work if MOJO_VERSION is set in environment
-            from sys.param_env import is_defined, env_get_string
+            # Execute mojo -v command to get actual version
+            var output = run("mojo -v")
 
-            @parameter
-            if is_defined["MOJO_VERSION"]():
-                return env_get_string["MOJO_VERSION"]()
+            # The output format is typically: "Mojo 25.6.0.dev2025073007 (1df3bfc1)"
+            # Extract just the version part after "Mojo "
+            if "Mojo " in output:
+                var parts = output.split("Mojo ")
+                if len(parts) > 1:
+                    # Get the version part and convert to String
+                    var version_part = String(parts[1].strip())
+                    return version_part
 
-            # Approach 2: Use compilation target information to infer version
-            # Build a version string based on available system information
-            var version_parts = List[String]()
-            version_parts.append("Mojo")
+            # If parsing fails, return the raw output
+            return String(output.strip())
 
-            # Add CPU core information as version context
-            from sys import num_physical_cores
-
-            var cores = num_physical_cores()
-            if cores >= 16:
-                version_parts.append("high-perf")
-            elif cores >= 8:
-                version_parts.append("multi-core")
-            else:
-                version_parts.append("standard")
-
-            # Add OS information
-            # Use CompilationTarget methods for OS detection
-
-            if CompilationTarget.is_linux():
-                version_parts.append("linux")
-            elif CompilationTarget.is_macos():
-                version_parts.append("macos")
-            elif CompilationTarget.is_windows():
-                version_parts.append("windows")
-
-            # Combine into version string with runtime detection indicator
-            var version_str = ""
-            for i in range(len(version_parts)):
-                if i > 0:
-                    version_str += "-"
-                version_str += version_parts[i]
-
-            return version_str + " (runtime detected)"
+        except e:
+            # If subprocess execution fails, return fallback
+            return "Version detection failed (subprocess error)"
 
     @staticmethod
     fn _detect_max_engine_version() -> String:
-        """Detect actual MAX Engine version from the system at runtime."""
-        # Try to detect MAX Engine version using DeviceContext and system APIs
-
-        # Approach 1: Try to get version from environment variables
-        from sys.param_env import is_defined, env_get_string
-
-        @parameter
-        if is_defined["MAX_ENGINE_VERSION"]():
-            return env_get_string["MAX_ENGINE_VERSION"]()
-
-        # Approach 2: Try to detect from DeviceContext API version information
+        """Detect actual MAX Engine version using pixi list max command via subprocess.
+        """
         try:
-            # Check if we can get version info from GPU DeviceContext
-            if has_nvidia_gpu_accelerator():
-                var ctx = DeviceContext(0, api="cuda")
-                var api_version = ctx.get_api_version()
+            from subprocess import run
 
-                # MAX Engine version often correlates with CUDA API support
-                # This is a heuristic approach since MAX Engine doesn't expose version directly
-                if api_version >= 12090:  # CUDA 12.9+
-                    return "25.5+ (inferred from CUDA " + String(api_version // 1000) + "." + String((api_version % 1000) // 10) + ")"
-                elif api_version >= 12000:  # CUDA 12.0+
-                    return "25.0+ (inferred from CUDA " + String(api_version // 1000) + "." + String((api_version % 1000) // 10) + ")"
-                else:
-                    return "24.0+ (inferred from CUDA " + String(api_version // 1000) + "." + String((api_version % 1000) // 10) + ")"
+            # Execute pixi list max command to get actual version
+            var output = run("pixi list max")
 
-            elif has_amd_gpu_accelerator():
-                var ctx = DeviceContext(0, api="hip")
-                var gpu_name = ctx.name()
+            # Parse the output to extract the MAX Engine version
+            # Expected format includes lines like:
+            # max       25.6.0.dev2025073007  release  30 MiB    conda  https://conda.modular.com/max-nightly/
+            var lines = output.split("\n")
+            for i in range(len(lines)):
+                var line = lines[i].strip()
+                if line.startswith("max ") and not line.startswith("max-"):
+                    # Split the line by whitespace and get the version (second column)
+                    var parts = line.split()
+                    if len(parts) >= 2:
+                        return String(parts[1].strip())
 
-                # Infer MAX Engine version based on AMD GPU support
-                if "MI300" in gpu_name or "MI355" in gpu_name:
-                    return "25.5+ (inferred from " + gpu_name + ")"
-                elif "RDNA" in gpu_name:
-                    return "25.0+ (inferred from " + gpu_name + ")"
-                else:
-                    return "24.0+ (inferred from " + gpu_name + ")"
+            # If parsing fails, return indication
+            return "MAX Engine version not found in pixi output"
 
         except e:
-            # GPU detection failed, continue to fallback
-            pass
-
-        # Approach 3: Use system information to infer MAX Engine capabilities
-        from sys import num_physical_cores
-        var cores = num_physical_cores()
-
-        # Build version string based on system capabilities
-        var version_parts = List[String]()
-
-        # Infer version based on system performance characteristics
-        if cores >= 16:
-            version_parts.append("25.5+")  # High-performance systems likely have newer MAX
-        elif cores >= 8:
-            version_parts.append("25.0+")  # Multi-core systems
-        else:
-            version_parts.append("24.0+")  # Standard systems
-
-        # Add system context
-        # Use CompilationTarget methods for OS detection
-        if CompilationTarget.is_linux():
-            version_parts.append("linux")
-        elif CompilationTarget.is_macos():
-            version_parts.append("macos")
-        elif CompilationTarget.is_windows():
-            version_parts.append("windows")
-
-        # Combine version string
-        var version_str = ""
-        for i in range(len(version_parts)):
-            if i > 0:
-                version_str += "-"
-            version_str += version_parts[i]
-
-        return version_str + " (runtime inferred)"
+            # If subprocess execution fails, return fallback
+            return "Version detection failed (subprocess error)"
 
     @staticmethod
     fn _detect_cuda_version() -> String:
@@ -302,7 +231,8 @@ struct SystemInfo(Copyable):
 
     @staticmethod
     fn _detect_nvidia_gpu_details() -> Tuple[String, Int]:
-        """Detect NVIDIA GPU details using DeviceContext with real memory detection."""
+        """Detect NVIDIA GPU details using DeviceContext with real memory detection.
+        """
         try:
             var ctx = DeviceContext(0, api="cuda")
             var gpu_name = ctx.name()
@@ -313,8 +243,12 @@ struct SystemInfo(Copyable):
             var total_memory_bytes = memory_info[1]
 
             # Convert bytes to GB and round to nearest integer
-            var total_memory_gb = Float64(total_memory_bytes) / (1024.0 * 1024.0 * 1024.0)
-            var free_memory_gb = Float64(free_memory_bytes) / (1024.0 * 1024.0 * 1024.0)
+            var total_memory_gb = Float64(total_memory_bytes) / (
+                1024.0 * 1024.0 * 1024.0
+            )
+            var free_memory_gb = Float64(free_memory_bytes) / (
+                1024.0 * 1024.0 * 1024.0
+            )
             var memory_gb = Int(total_memory_gb + 0.5)  # Round to nearest GB
             var free_gb = Int(free_memory_gb + 0.5)  # Round to nearest GB
 
@@ -323,7 +257,20 @@ struct SystemInfo(Copyable):
             var compute_capability = ctx.compute_capability()
 
             # Build comprehensive GPU description with real hardware details
-            var gpu_description = gpu_name + " (" + String(memory_gb) + "GB total, " + String(free_gb) + "GB free, CUDA " + String(api_version // 1000) + "." + String((api_version % 1000) // 10) + ", CC " + String(compute_capability) + ") - REAL HARDWARE"
+            var gpu_description = (
+                gpu_name
+                + " ("
+                + String(memory_gb)
+                + "GB total, "
+                + String(free_gb)
+                + "GB free, CUDA "
+                + String(api_version // 1000)
+                + "."
+                + String((api_version % 1000) // 10)
+                + ", CC "
+                + String(compute_capability)
+                + ") - REAL HARDWARE"
+            )
 
             return (gpu_description, memory_gb)
 
@@ -332,7 +279,8 @@ struct SystemInfo(Copyable):
 
     @staticmethod
     fn _detect_amd_gpu_details() -> Tuple[String, Int]:
-        """Detect AMD GPU details using DeviceContext with real memory detection."""
+        """Detect AMD GPU details using DeviceContext with real memory detection.
+        """
         try:
             var ctx = DeviceContext(0, api="hip")
             var gpu_name = ctx.name()
@@ -343,13 +291,24 @@ struct SystemInfo(Copyable):
             var total_memory_bytes = memory_info[1]
 
             # Convert bytes to GB and round to nearest integer
-            var total_memory_gb = Float64(total_memory_bytes) / (1024.0 * 1024.0 * 1024.0)
-            var free_memory_gb = Float64(free_memory_bytes) / (1024.0 * 1024.0 * 1024.0)
+            var total_memory_gb = Float64(total_memory_bytes) / (
+                1024.0 * 1024.0 * 1024.0
+            )
+            var free_memory_gb = Float64(free_memory_bytes) / (
+                1024.0 * 1024.0 * 1024.0
+            )
             var memory_gb = Int(total_memory_gb + 0.5)  # Round to nearest GB
             var free_gb = Int(free_memory_gb + 0.5)  # Round to nearest GB
 
             # Build comprehensive GPU description with real hardware details
-            var gpu_description = gpu_name + " (" + String(memory_gb) + "GB total, " + String(free_gb) + "GB free, HIP) - REAL HARDWARE"
+            var gpu_description = (
+                gpu_name
+                + " ("
+                + String(memory_gb)
+                + "GB total, "
+                + String(free_gb)
+                + "GB free, HIP) - REAL HARDWARE"
+            )
 
             return (gpu_description, memory_gb)
         except e:
@@ -627,6 +586,21 @@ struct BenchmarkReportGenerator:
         """Initialize report generator."""
         self.system_info = SystemInfo()
 
+    fn _get_current_date(self) -> String:
+        """Get current date in ISO 8601 format using subprocess."""
+        try:
+            from subprocess import run
+
+            # Get current date in ISO 8601 format (YYYY-MM-DD)
+            var dt_iso_8601 = run("date --iso-8601")
+
+            # Clean up the output and return
+            return String(dt_iso_8601.strip())
+
+        except e:
+            # If subprocess execution fails, return fallback date
+            return "2025-01-31"  # Fallback date
+
     fn generate_comprehensive_report(
         self, metrics: List[BenchmarkMetrics]
     ) raises -> String:
@@ -657,13 +631,13 @@ struct BenchmarkReportGenerator:
         return report
 
     fn _generate_report_header(self) -> String:
-        """Generate report header."""
+        """Generate report header with dynamic date."""
         header = String("")
         header += "=" * 80 + "\n"
         header += "GPU vs CPU PERFORMANCE BENCHMARK REPORT\n"
-        header += "Pendulum AI Control System - Phase 3 Implementation\n"
+        header += "Pendulum AI Control System\n"
         header += "=" * 80 + "\n\n"
-        header += "Report Generated: 2025-06-29\n"
+        header += "Report Generated: " + self._get_current_date() + "\n"
         header += "Test Environment: Development System\n"
         header += "Report Version: 1.0\n\n"
         return header
@@ -764,7 +738,9 @@ struct BenchmarkReportGenerator:
         # Real CPU specifications
         hardware += "CPU SPECIFICATIONS:\n"
         hardware += "- Model: " + self.system_info.cpu_model + "\n"
-        hardware += "- Architecture: " + String(CompilationTarget._arch()) + "\n"
+        hardware += (
+            "- Architecture: " + String(CompilationTarget._arch()) + "\n"
+        )
         hardware += "- Physical Cores: " + String(num_physical_cores()) + "\n"
         hardware += "- Logical Cores: " + String(num_logical_cores()) + "\n"
         hardware += "- Operating System: " + self._detect_os() + "\n\n"
@@ -1132,20 +1108,32 @@ fn _benchmark_real_gpu_matrix_operations() raises -> BenchmarkMetrics:
                 cpu_result += Float64(i) * 0.001
             var cpu_end_time = now()
 
-            metrics.cpu_time_ms = Float64(cpu_end_time - cpu_start_time) / 1e6  # Convert to ms
-            metrics.cpu_throughput = Float64(num_elements) / (metrics.cpu_time_ms / 1000.0)
+            metrics.cpu_time_ms = (
+                Float64(cpu_end_time - cpu_start_time) / 1e6
+            )  # Convert to ms
+            metrics.cpu_throughput = Float64(num_elements) / (
+                metrics.cpu_time_ms / 1000.0
+            )
 
             # Measure GPU matrix operations
-            var gpu_buffer = ctx.enqueue_create_buffer[DType.float64](num_elements)
+            var gpu_buffer = ctx.enqueue_create_buffer[DType.float64](
+                num_elements
+            )
 
             var gpu_start_time = now()
             _ = gpu_buffer.enqueue_fill(3.14159)
             ctx.synchronize()
             var gpu_end_time = now()
 
-            metrics.gpu_time_ms = Float64(gpu_end_time - gpu_start_time) / 1e6  # Convert to ms
-            metrics.gpu_throughput = Float64(num_elements) / (metrics.gpu_time_ms / 1000.0)
-            metrics.memory_usage_mb = Float64(num_elements * 8) / (1024.0 * 1024.0)  # 8 bytes per float64
+            metrics.gpu_time_ms = (
+                Float64(gpu_end_time - gpu_start_time) / 1e6
+            )  # Convert to ms
+            metrics.gpu_throughput = Float64(num_elements) / (
+                metrics.gpu_time_ms / 1000.0
+            )
+            metrics.memory_usage_mb = Float64(num_elements * 8) / (
+                1024.0 * 1024.0
+            )  # 8 bytes per float64
 
             # Measure GPU memory bandwidth and utilization
             metrics.measure_gpu_memory_bandwidth(num_elements)
@@ -1181,6 +1169,7 @@ fn _benchmark_real_gpu_matrix_operations() raises -> BenchmarkMetrics:
 
     return metrics
 
+
 fn _benchmark_real_gpu_neural_network() raises -> BenchmarkMetrics:
     """Perform actual GPU neural network benchmark with real timing."""
     var metrics = BenchmarkMetrics("Real GPU Neural Network")
@@ -1200,14 +1189,20 @@ fn _benchmark_real_gpu_neural_network() raises -> BenchmarkMetrics:
             for _ in range(num_layers):
                 for i in range(layer_size):
                     for j in range(layer_size):
-                        cpu_result += Float64(i * j) * 0.001  # Simplified neural computation
+                        cpu_result += (
+                            Float64(i * j) * 0.001
+                        )  # Simplified neural computation
             var cpu_end_time = now()
 
             metrics.cpu_time_ms = Float64(cpu_end_time - cpu_start_time) / 1e6
-            metrics.cpu_throughput = Float64(total_operations) / (metrics.cpu_time_ms / 1000.0)
+            metrics.cpu_throughput = Float64(total_operations) / (
+                metrics.cpu_time_ms / 1000.0
+            )
 
             # Measure GPU neural network operations
-            var gpu_buffer = ctx.enqueue_create_buffer[DType.float64](total_operations)
+            var gpu_buffer = ctx.enqueue_create_buffer[DType.float64](
+                total_operations
+            )
 
             var gpu_start_time = now()
             _ = gpu_buffer.enqueue_fill(1.41421)  # Neural network weights
@@ -1215,8 +1210,12 @@ fn _benchmark_real_gpu_neural_network() raises -> BenchmarkMetrics:
             var gpu_end_time = now()
 
             metrics.gpu_time_ms = Float64(gpu_end_time - gpu_start_time) / 1e6
-            metrics.gpu_throughput = Float64(total_operations) / (metrics.gpu_time_ms / 1000.0)
-            metrics.memory_usage_mb = Float64(total_operations * 8) / (1024.0 * 1024.0)
+            metrics.gpu_throughput = Float64(total_operations) / (
+                metrics.gpu_time_ms / 1000.0
+            )
+            metrics.memory_usage_mb = Float64(total_operations * 8) / (
+                1024.0 * 1024.0
+            )
 
             # Measure additional GPU metrics
             metrics.measure_gpu_memory_bandwidth(total_operations)
@@ -1252,6 +1251,7 @@ fn _benchmark_real_gpu_neural_network() raises -> BenchmarkMetrics:
 
     return metrics
 
+
 fn _benchmark_real_gpu_memory_bandwidth() raises -> BenchmarkMetrics:
     """Perform actual GPU memory bandwidth benchmark with real measurements."""
     var metrics = BenchmarkMetrics("Real GPU Memory Bandwidth")
@@ -1273,11 +1273,17 @@ fn _benchmark_real_gpu_memory_bandwidth() raises -> BenchmarkMetrics:
             var end_time = now()
 
             metrics.gpu_time_ms = Float64(end_time - start_time) / 1e6
-            var bytes_transferred = Float64(test_size * 8)  # 8 bytes per float64
-            var bandwidth_gbps = (bytes_transferred / (metrics.gpu_time_ms / 1000.0)) / 1e9
+            var bytes_transferred = Float64(
+                test_size * 8
+            )  # 8 bytes per float64
+            var bandwidth_gbps = (
+                bytes_transferred / (metrics.gpu_time_ms / 1000.0)
+            ) / 1e9
 
             metrics.gpu_memory_bandwidth_gbps = bandwidth_gbps
-            metrics.gpu_throughput = bytes_transferred / (metrics.gpu_time_ms / 1000.0)
+            metrics.gpu_throughput = bytes_transferred / (
+                metrics.gpu_time_ms / 1000.0
+            )
             metrics.memory_usage_mb = bytes_transferred / (1024.0 * 1024.0)
 
             # CPU comparison (memory copy)
@@ -1288,7 +1294,9 @@ fn _benchmark_real_gpu_memory_bandwidth() raises -> BenchmarkMetrics:
             var cpu_end_time = now()
 
             metrics.cpu_time_ms = Float64(cpu_end_time - cpu_start_time) / 1e6
-            metrics.cpu_throughput = bytes_transferred / (metrics.cpu_time_ms / 1000.0)
+            metrics.cpu_throughput = bytes_transferred / (
+                metrics.cpu_time_ms / 1000.0
+            )
 
             # Additional GPU metrics
             metrics.measure_gpu_utilization(metrics.gpu_time_ms)
@@ -1318,13 +1326,16 @@ fn _benchmark_real_gpu_memory_bandwidth() raises -> BenchmarkMetrics:
         metrics.cpu_time_ms = Float64(cpu_end_time - cpu_start_time) / 1e6
         metrics.gpu_time_ms = metrics.cpu_time_ms
         var bytes_transferred = Float64(test_size * 8)
-        metrics.cpu_throughput = bytes_transferred / (metrics.cpu_time_ms / 1000.0)
+        metrics.cpu_throughput = bytes_transferred / (
+            metrics.cpu_time_ms / 1000.0
+        )
         metrics.gpu_throughput = metrics.cpu_throughput
         metrics.memory_usage_mb = bytes_transferred / (1024.0 * 1024.0)
         metrics.test_passed = True
         metrics.calculate_derived_metrics()
 
     return metrics
+
 
 fn generate_real_gpu_report() raises -> String:
     """Generate benchmark report with real GPU performance metrics."""
@@ -1387,3 +1398,46 @@ fn generate_sample_report() raises -> String:
     metrics.append(control_metrics)
 
     return create_benchmark_report(metrics)
+
+
+fn main():
+    """
+    Main function to generate and print a comprehensive benchmark report.
+
+    This function demonstrates the report generator by creating sample benchmark
+    metrics and generating a complete performance analysis report.
+    """
+    print("Generating comprehensive benchmark report...")
+    print("=" * 60)
+
+    try:
+        # Create sample benchmark metrics
+        var metrics = List[BenchmarkMetrics]()
+
+        # Add real GPU benchmarks
+        print("Running GPU matrix operations benchmark...")
+        var matrix_metrics = _benchmark_real_gpu_matrix_operations()
+        metrics.append(matrix_metrics)
+
+        print("Running GPU neural network benchmark...")
+        var nn_metrics = _benchmark_real_gpu_neural_network()
+        metrics.append(nn_metrics)
+
+        print("Running GPU memory bandwidth benchmark...")
+        var memory_metrics = _benchmark_real_gpu_memory_bandwidth()
+        metrics.append(memory_metrics)
+
+        # Generate comprehensive report
+        print("\nGenerating comprehensive report...")
+        var report = create_benchmark_report(metrics)
+
+        # Print the complete report
+        print("\n" + "=" * 80)
+        print("COMPREHENSIVE BENCHMARK REPORT")
+        print("=" * 80)
+        print(report)
+
+        print("\n✅ Report generation completed successfully!")
+
+    except e:
+        print("❌ Error generating report:", e)
