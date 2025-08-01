@@ -100,14 +100,13 @@ struct GPUManager:
     - Automatic GPU detection and capability assessment
     - Graceful fallback to CPU when GPU is unavailable
     - Configuration options for compute mode selection
-    - Performance monitoring and device management
+    - Device management and memory allocation
     - Memory management and optimization
     """
 
     var capabilities: GPUCapabilities
     var compute_mode: Int
     var device_initialized: Bool
-    var performance_stats: List[Float64]
     var fallback_to_cpu: Bool
 
     fn __init__(out self, compute_mode: Int = ComputeMode.AUTO) raises:
@@ -120,7 +119,6 @@ struct GPUManager:
         self.capabilities = GPUCapabilities()
         self.compute_mode = compute_mode
         self.device_initialized = False
-        self.performance_stats = List[Float64]()
         self.fallback_to_cpu = False
 
         # Initialize GPU capabilities
@@ -339,16 +337,14 @@ struct GPUManager:
 
                 return (total_memory_mb, free_memory_mb)
 
-        except Exception:
-            print("⚠️  Could not query real GPU memory, using fallback values")
+        except e:
+            print("⚠️  GPU memory query failed:", String(e))
+            print("  - Hardware memory information unavailable")
+            print("  - GPU device may not support memory queries")
 
-            # Fallback to hardware-specific estimates if direct query fails
-            if has_nvidia_gpu_accelerator():
-                return (16384, 15360)
-            elif has_amd_gpu_accelerator():
-                return (12288, 11520)
-            else:
-                return (8192, 7680)
+            # Return zero values to indicate memory query failure
+            # Calling code should handle this appropriately
+            return (0, 0)
 
     fn _get_compute_capability(self) -> String:
         """
@@ -477,7 +473,7 @@ struct GPUManager:
         except e:
             print("⚠️  Real GPU device initialization failed:", String(e))
             print("  - DeviceContext creation failed")
-            print("  - Falling back to CPU simulation")
+            print("  - GPU hardware unavailable, using CPU processing")
 
             # Update capabilities to reflect GPU unavailability
             self.capabilities.max_engine_available = False

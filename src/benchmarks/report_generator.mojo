@@ -315,6 +315,73 @@ struct SystemInfo(Copyable):
             return ("AMD GPU - Detection Failed", 0)
 
 
+fn _measure_cpu_performance_standalone(
+    data_size: Int,
+) raises -> (Float64, Float64):
+    """
+    Measure actual CPU performance for comparison with GPU.
+
+    Args:
+        data_size: Size of data to process for benchmarking.
+
+    Returns:
+        Tuple of (cpu_time_ms, cpu_throughput_ops_per_sec).
+    """
+    print("Measuring real CPU performance...")
+
+    # Allocate CPU memory for testing
+    var cpu_buffer = UnsafePointer[Float64].alloc(data_size)
+
+    # Initialize CPU buffer with test data
+    for i in range(data_size):
+        cpu_buffer[i] = Float64(i) * 1.5
+
+    # Measure CPU memory operations performance
+    var start_time = now()
+
+    # Perform CPU memory operations (equivalent to GPU operations)
+    var num_iterations = 10
+    for iteration in range(num_iterations):
+        # Memory fill operation (equivalent to GPU enqueue_fill)
+        for i in range(data_size):
+            cpu_buffer[i] = Float64(iteration) * 2.5
+
+        # Memory copy operation (equivalent to GPU enqueue_copy_from)
+        var temp_buffer = UnsafePointer[Float64].alloc(data_size)
+        for i in range(data_size):
+            temp_buffer[i] = cpu_buffer[i]
+
+        # Copy back
+        for i in range(data_size):
+            cpu_buffer[i] = temp_buffer[i] * 1.1
+
+        temp_buffer.free()
+
+    var end_time = now()
+    var elapsed_ns = end_time - start_time
+    var elapsed_seconds = Float64(elapsed_ns) / 1_000_000_000.0
+    var elapsed_ms = elapsed_seconds * 1000.0
+
+    # Calculate CPU throughput (operations per second)
+    var total_operations = Float64(
+        num_iterations * data_size * 3
+    )  # 3 ops per element per iteration
+    var cpu_throughput = total_operations / elapsed_seconds
+
+    # Clean up
+    cpu_buffer.free()
+
+    print(
+        "✓ CPU performance measured:",
+        elapsed_ms,
+        "ms,",
+        cpu_throughput,
+        "ops/sec",
+    )
+
+    return (elapsed_ms, cpu_throughput)
+
+
 fn collect_real_gpu_metrics() raises -> BenchmarkMetrics:
     """Collect real GPU performance metrics using actual hardware."""
     metrics = BenchmarkMetrics("Real GPU Hardware Validation")
@@ -349,9 +416,10 @@ fn collect_real_gpu_metrics() raises -> BenchmarkMetrics:
 
             metrics.test_passed = True
 
-            # Simulate CPU equivalent for comparison
-            metrics.cpu_time_ms = metrics.gpu_time_ms * 2.0  # Estimated
-            metrics.cpu_throughput = metrics.gpu_throughput * 0.5  # Estimated
+            # Measure actual CPU performance for comparison
+            cpu_performance = _measure_cpu_performance_standalone(test_size)
+            metrics.cpu_time_ms = cpu_performance[0]
+            metrics.cpu_throughput = cpu_performance[1]
 
             metrics.calculate_derived_metrics()
 
@@ -410,7 +478,6 @@ struct BenchmarkMetrics(Copyable, Movable):
     var gpu_memory_bandwidth_gbps: Float64  # Real GPU memory bandwidth
     var system_memory_usage_mb: Float64  # Actual system memory usage
     var gpu_utilization_percent: Float64  # Real GPU utilization
-    var energy_efficiency: Float64
     var scalability_factor: Float64
     var test_passed: Bool
     var hardware_acceleration_verified: Bool  # Actual GPU execution verification
@@ -432,7 +499,6 @@ struct BenchmarkMetrics(Copyable, Movable):
         self.gpu_memory_bandwidth_gbps = 0.0
         self.system_memory_usage_mb = 0.0
         self.gpu_utilization_percent = 0.0
-        self.energy_efficiency = 0.0
         self.scalability_factor = 0.0
         self.test_passed = False
         self.hardware_acceleration_verified = False
@@ -462,7 +528,7 @@ struct BenchmarkMetrics(Copyable, Movable):
             # Fallback to reasonable default if detection fails
             self.system_memory_usage_mb = 1024.0  # 1GB default
 
-    fn calculate_derived_metrics(mut self):
+    fn calculate_derived_metrics(mut self) raises:
         """Calculate derived performance metrics."""
         # Calculate speedup factor
         if self.gpu_time_ms > 0.0:
@@ -470,21 +536,8 @@ struct BenchmarkMetrics(Copyable, Movable):
         else:
             self.speedup_factor = 1.0
 
-        # Calculate energy efficiency (throughput per watt - simulated)
-        cpu_power_watts = 65.0  # Typical CPU power
-        gpu_power_watts = 150.0  # A10 max power
-
-        cpu_efficiency = self.cpu_throughput / cpu_power_watts
-        gpu_efficiency = self.gpu_throughput / gpu_power_watts
-
-        self.energy_efficiency = (
-            gpu_efficiency / cpu_efficiency if cpu_efficiency > 0.0 else 1.0
-        )
-
-        # Calculate scalability factor (how well performance scales with problem size)
-        self.scalability_factor = (
-            self.speedup_factor * 0.8
-        )  # Simplified calculation
+        # Calculate scalability factor based on actual performance characteristics
+        self.scalability_factor = self._calculate_scalability_factor()
 
     fn measure_gpu_memory_bandwidth(mut self, data_size: Int) raises:
         """
@@ -525,7 +578,7 @@ struct BenchmarkMetrics(Copyable, Movable):
             self.gpu_memory_bandwidth_gbps = 0.0
             self.hardware_acceleration_verified = False
 
-    fn measure_gpu_utilization(mut self, operation_duration_ms: Float64):
+    fn measure_gpu_utilization(mut self, operation_duration_ms: Float64) raises:
         """
         Estimate GPU utilization based on operation timing.
 
@@ -533,18 +586,10 @@ struct BenchmarkMetrics(Copyable, Movable):
             operation_duration_ms: Duration of GPU operation in milliseconds.
         """
         if self.hardware_acceleration_verified and self.gpu_time_ms > 0.0:
-            # Estimate utilization based on actual vs theoretical performance
-            # This is a simplified calculation - real utilization would require
-            # hardware-specific monitoring APIs
-            var theoretical_min_time = (
-                operation_duration_ms * 0.1
-            )  # 10% theoretical minimum
-            if theoretical_min_time > 0.0:
-                self.gpu_utilization_percent = min(
-                    100.0, (theoretical_min_time / self.gpu_time_ms) * 100.0
-                )
-            else:
-                self.gpu_utilization_percent = 0.0
+            # Use hardware monitoring APIs for real GPU utilization
+            self.gpu_utilization_percent = (
+                self._measure_gpu_utilization_hardware()
+            )
         else:
             self.gpu_utilization_percent = 0.0
 
@@ -566,6 +611,196 @@ struct BenchmarkMetrics(Copyable, Movable):
             # Keep previous value if update fails
             pass
 
+    fn _measure_gpu_utilization_hardware(self) raises -> Float64:
+        """
+        Measure actual GPU utilization using hardware monitoring APIs.
+
+        Returns:
+            GPU utilization percentage (0.0 to 100.0).
+        """
+        from subprocess import run
+
+        if has_nvidia_gpu_accelerator():
+            # Use nvidia-smi to get real GPU utilization
+            try:
+                var utilization_output = run(
+                    "nvidia-smi --query-gpu=utilization.gpu"
+                    " --format=csv,noheader,nounits 2>/dev/null || echo '0'"
+                )
+                var utilization_str = String(utilization_output.strip())
+                if utilization_str != "0" and len(utilization_str) > 0:
+                    var utilization = Float64(atol(utilization_str))
+                    print("✓ Real GPU utilization measured:", utilization, "%")
+                    return utilization
+                else:
+                    print("⚠️  GPU utilization query returned no data")
+                    return 0.0
+            except e:
+                print("⚠️  nvidia-smi utilization query failed:", String(e))
+                return 0.0
+
+        elif has_amd_gpu_accelerator():
+            # AMD GPU utilization monitoring (if available)
+            try:
+                # Try rocm-smi for AMD GPUs
+                var utilization_output = run(
+                    "rocm-smi --showuse 2>/dev/null | grep 'GPU use' | awk"
+                    " '{print $4}' | tr -d '%' || echo '0'"
+                )
+                var utilization_str = String(utilization_output.strip())
+                if utilization_str != "0" and len(utilization_str) > 0:
+                    var utilization = Float64(atol(utilization_str))
+                    print(
+                        "✓ Real AMD GPU utilization measured:",
+                        utilization,
+                        "%",
+                    )
+                    return utilization
+                else:
+                    print("⚠️  AMD GPU utilization estimation: 75%")
+                    return (
+                        75.0  # Conservative estimate during active operations
+                    )
+            except e:
+                print(
+                    "⚠️  AMD GPU utilization measurement failed:",
+                    String(e),
+                    "using estimate",
+                )
+                return 75.0
+        else:
+            # Generic GPU - estimate based on operation timing
+            if self.gpu_time_ms > 0.0:
+                # Estimate utilization based on operation efficiency
+                var efficiency_estimate = min(
+                    90.0, max(50.0, 100.0 - (self.gpu_time_ms * 0.1))
+                )
+                print(
+                    "⚠️  Generic GPU utilization estimate:",
+                    efficiency_estimate,
+                    "%",
+                )
+                return efficiency_estimate
+            else:
+                return 0.0
+
+    fn _calculate_scalability_factor(self) raises -> Float64:
+        """
+        Calculate scalability factor based on actual hardware performance characteristics.
+
+        Returns:
+            Scalability factor indicating how well performance scales.
+        """
+        # Base scalability on real hardware performance indicators
+        var base_scalability = 1.0
+
+        # Factor 1: Speedup efficiency (how close to ideal speedup)
+        if self.speedup_factor > 1.0:
+            var speedup_efficiency = min(
+                1.0, self.speedup_factor / 4.0
+            )  # Ideal 4x speedup
+            base_scalability *= 0.4 + speedup_efficiency * 0.6
+
+        # Factor 2: GPU utilization efficiency (real hardware monitoring)
+        if self.gpu_utilization_percent > 0.0:
+            var utilization_efficiency = self.gpu_utilization_percent / 100.0
+            base_scalability *= 0.5 + utilization_efficiency * 0.5
+
+        # Factor 3: Memory efficiency (real GPU memory utilization)
+        var memory_efficiency = self._calculate_memory_efficiency()
+        if memory_efficiency > 0.0:
+            base_scalability *= 0.7 + memory_efficiency * 0.3
+
+        # Normalize to reasonable range (0.1 to 2.0)
+        var final_scalability = max(0.1, min(2.0, base_scalability))
+
+        return final_scalability
+
+    fn _calculate_memory_efficiency(self) raises -> Float64:
+        """
+        Calculate GPU memory efficiency based on actual memory utilization.
+
+        Returns:
+            Memory efficiency factor (0.0 to 1.0) based on GPU memory usage.
+        """
+        try:
+            if has_nvidia_gpu_accelerator():
+                # Get real GPU memory information for NVIDIA GPUs
+                var ctx = DeviceContext(0, api="cuda")
+                var memory_info = ctx.get_memory_info()
+                var free_memory_bytes = memory_info[0]
+                var total_memory_bytes = memory_info[1]
+
+                if total_memory_bytes > 0:
+                    var used_memory_bytes = (
+                        total_memory_bytes - free_memory_bytes
+                    )
+                    var memory_utilization = Float64(
+                        used_memory_bytes
+                    ) / Float64(total_memory_bytes)
+
+                    # Optimal memory utilization is around 70-80% for GPU workloads
+                    # Scale efficiency based on how close we are to optimal usage
+                    if memory_utilization <= 0.8:
+                        # Linear scaling up to 80% utilization
+                        return memory_utilization / 0.8
+                    else:
+                        # Diminishing returns above 80% utilization
+                        var excess = memory_utilization - 0.8
+                        return 1.0 - (
+                            excess * 0.5
+                        )  # Penalty for over-utilization
+
+            elif has_amd_gpu_accelerator():
+                # Get real GPU memory information for AMD GPUs
+                var ctx = DeviceContext(0, api="hip")
+                var memory_info = ctx.get_memory_info()
+                var free_memory_bytes = memory_info[0]
+                var total_memory_bytes = memory_info[1]
+
+                if total_memory_bytes > 0:
+                    var used_memory_bytes = (
+                        total_memory_bytes - free_memory_bytes
+                    )
+                    var memory_utilization = Float64(
+                        used_memory_bytes
+                    ) / Float64(total_memory_bytes)
+
+                    # Same optimal utilization logic for AMD GPUs
+                    if memory_utilization <= 0.8:
+                        return memory_utilization / 0.8
+                    else:
+                        var excess = memory_utilization - 0.8
+                        return 1.0 - (excess * 0.5)
+
+            else:
+                # Generic GPU - try default DeviceContext
+                var ctx = DeviceContext()
+                var memory_info = ctx.get_memory_info()
+                var free_memory_bytes = memory_info[0]
+                var total_memory_bytes = memory_info[1]
+
+                if total_memory_bytes > 0:
+                    var used_memory_bytes = (
+                        total_memory_bytes - free_memory_bytes
+                    )
+                    var memory_utilization = Float64(
+                        used_memory_bytes
+                    ) / Float64(total_memory_bytes)
+
+                    if memory_utilization <= 0.8:
+                        return memory_utilization / 0.8
+                    else:
+                        var excess = memory_utilization - 0.8
+                        return 1.0 - (excess * 0.5)
+
+            # If no GPU memory info available, return neutral efficiency
+            return 0.5
+
+        except e:
+            # If memory query fails, return neutral efficiency
+            return 0.5
+
 
 struct BenchmarkReportGenerator:
     """
@@ -586,7 +821,7 @@ struct BenchmarkReportGenerator:
         """Initialize report generator."""
         self.system_info = SystemInfo()
 
-    fn _get_current_date(self) -> String:
+    fn _get_current_date(self) raises -> String:
         """Get current date in ISO 8601 format using subprocess."""
         try:
             from subprocess import run
@@ -630,7 +865,7 @@ struct BenchmarkReportGenerator:
 
         return report
 
-    fn _generate_report_header(self) -> String:
+    fn _generate_report_header(self) raises -> String:
         """Generate report header with dynamic date."""
         header = String("")
         header += "=" * 80 + "\n"
@@ -723,7 +958,7 @@ struct BenchmarkReportGenerator:
         methodology += "- Execution time (milliseconds)\n"
         methodology += "- Throughput (operations per second)\n"
         methodology += "- Memory usage (megabytes)\n"
-        methodology += "- Energy efficiency (performance per watt)\n"
+        methodology += "- GPU utilization percentage\n"
         methodology += "- Scalability factors\n\n"
 
         return methodology
@@ -885,11 +1120,7 @@ struct BenchmarkReportGenerator:
                 + "{}".format(metrics[i].memory_usage_mb)
                 + " MB\n"
             )
-            result_parts.append(
-                "Energy Efficiency: "
-                + "{}".format(metrics[i].energy_efficiency)
-                + "x\n"
-            )
+
             result_parts.append(
                 "Status: "
                 + ("PASSED" if metrics[i].test_passed else "FAILED")
@@ -993,12 +1224,9 @@ struct BenchmarkReportGenerator:
             "- CPU fallback ensures compatibility across all systems\n\n"
         )
 
-        analysis += "ENERGY EFFICIENCY:\n"
-        analysis += (
-            "- GPU provides better performance per watt for parallel"
-            " workloads\n"
-        )
-        analysis += "- Total system power consumption may be higher\n"
+        analysis += "GPU UTILIZATION:\n"
+        analysis += "- GPU utilization indicates hardware efficiency\n"
+        analysis += "- Higher utilization suggests better resource usage\n"
         analysis += "- Optimal for compute-intensive applications\n\n"
 
         return analysis
@@ -1055,7 +1283,7 @@ struct BenchmarkReportGenerator:
 
         conclusions += "BUSINESS IMPACT:\n"
         conclusions += (
-            "- Reduced computational costs through improved efficiency\n"
+            "- Reduced computational costs through improved performance\n"
         )
         conclusions += (
             "- Enhanced real-time performance for control applications\n"
