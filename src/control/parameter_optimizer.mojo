@@ -395,36 +395,149 @@ struct ParameterOptimizer:
     fn _test_scenario_performance(
         self, initial_state: List[Float64], params: ParameterSet
     ) -> (Float64, Float64, Float64):
-        """Test performance for a single scenario with given parameters."""
-        # Simplified performance evaluation
+        """Test performance for a single scenario with given parameters using physics-based simulation.
+        """
+        # Real control system simulation
         var success_rate = 0.0
         var stability_time = 0.0
         var control_effort = 0.0
 
-        # Simulate control performance (simplified)
-        angle = initial_state[2]
+        # Extract initial conditions
+        position = initial_state[0]
         velocity = initial_state[1]
+        angle = initial_state[2]
 
-        # Estimate success based on initial conditions and parameters
-        if abs(angle) < 30.0:  # Near inverted
-            success_rate = 0.8 + params.kp_stabilize / 100.0
-            stability_time = 10.0 + params.kd_stabilize * 3.0
-            control_effort = params.mpc_weight_control * 5.0
-        elif abs(angle) < 90.0:  # Transition region
-            success_rate = 0.6 + params.mpc_weight_angle / 500.0
-            stability_time = 5.0 + params.learning_rate * 20.0
-            control_effort = params.mpc_weight_control * 8.0
-        else:  # Hanging or large angle
-            success_rate = 0.4 + params.ke_swing_up
-            stability_time = 2.0 + params.kp_position * 2.0
-            control_effort = params.mpc_weight_control * 10.0
+        # Physics-based performance simulation
+        var simulation_time = 30.0  # 30 second simulation
+        var dt = 0.02  # 50 Hz control rate
+        var steps = Int(simulation_time / dt)
 
-        # Apply bounds
-        success_rate = max(0.0, min(1.0, success_rate))
-        stability_time = max(0.0, min(30.0, stability_time))
-        control_effort = max(0.0, min(15.0, control_effort))
+        # State variables for simulation
+        var current_angle = angle
+        var current_velocity = velocity
+        var current_position = position
+        var current_angular_vel = 0.0
+
+        # Performance tracking
+        var stable_time = 0.0
+        var total_effort = 0.0
+        var inversion_achieved = False
+        var max_stable_duration = 0.0
+        var current_stable_duration = 0.0
+
+        # Run physics simulation
+        for step in range(steps):
+            timestamp = Float64(step) * dt
+
+            # Determine control mode based on angle
+            var control_voltage = 0.0
+            if abs(current_angle) < params.stabilize_angle_threshold:
+                # Stabilization control (PD controller)
+                control_voltage = -(
+                    params.kp_stabilize * current_angle
+                    + params.kd_stabilize * current_angular_vel
+                )
+                inversion_achieved = True
+                current_stable_duration += dt
+                if current_stable_duration > max_stable_duration:
+                    max_stable_duration = current_stable_duration
+            else:
+                # Swing-up control (energy-based)
+                var energy_error = self._calculate_energy_error(
+                    current_angle, current_angular_vel
+                )
+                control_voltage = (
+                    params.ke_swing_up * energy_error * cos(current_angle)
+                )
+                current_stable_duration = 0.0
+
+            # Apply MPC weighting to control effort
+            control_voltage *= 1.0 + params.mpc_weight_control
+
+            # Bound control voltage
+            control_voltage = max(-12.0, min(12.0, control_voltage))
+            total_effort += abs(control_voltage) * dt
+
+            # Physics integration (simplified pendulum dynamics)
+            var angular_accel = self._compute_angular_acceleration(
+                current_angle,
+                current_angular_vel,
+                current_position,
+                control_voltage,
+            )
+            current_angular_vel += angular_accel * dt
+            current_angle += current_angular_vel * dt
+
+            # Linear actuator dynamics
+            var actuator_accel = (
+                control_voltage * 0.5
+            )  # Simplified actuator model
+            velocity += actuator_accel * dt
+            current_position += velocity * dt
+
+            # Apply damping
+            current_angular_vel *= 0.999
+            velocity *= 0.995
+
+            # Track stability
+            if abs(current_angle) < 10.0:  # Within 10 degrees
+                stable_time += dt
+
+        # Calculate performance metrics
+        if inversion_achieved:
+            success_rate = min(
+                1.0, max_stable_duration / 15.0
+            )  # Target 15s stability
+        else:
+            success_rate = 0.0
+
+        stability_time = max_stable_duration
+        control_effort = total_effort / simulation_time  # Average effort
 
         return (success_rate, stability_time, control_effort)
+
+    fn _calculate_energy_error(
+        self, angle: Float64, angular_vel: Float64
+    ) -> Float64:
+        """Calculate energy error for swing-up control."""
+        # Target energy for inverted pendulum (potential energy at top)
+        var target_energy = 9.81 * 0.3  # g * L (assuming 0.3m pendulum)
+
+        # Current energy (kinetic + potential)
+        var kinetic_energy = (
+            0.5 * 0.1 * angular_vel * angular_vel
+        )  # 0.5 * m * v^2
+        var potential_energy = (
+            9.81 * 0.1 * 0.3 * (1.0 - cos(angle))
+        )  # m * g * L * (1 - cos(θ))
+        var current_energy = kinetic_energy + potential_energy
+
+        return target_energy - current_energy
+
+    fn _compute_angular_acceleration(
+        self,
+        angle: Float64,
+        angular_vel: Float64,
+        position: Float64,
+        control_voltage: Float64,
+    ) -> Float64:
+        """Compute angular acceleration using pendulum dynamics."""
+        # Simplified inverted pendulum dynamics
+        # θ̈ = (g/L)sin(θ) + (1/L)ẍ*cos(θ)
+
+        var g = 9.81  # gravity
+        var L = 0.3  # pendulum length
+        var m_cart = 1.0  # cart mass
+        var m_pend = 0.1  # pendulum mass
+
+        # Linear acceleration from control voltage
+        var linear_accel = control_voltage / m_cart
+
+        # Angular acceleration
+        var gravity_term = (g / L) * sin(angle)
+        var coupling_term = (linear_accel / L) * cos(angle)
+
+        return gravity_term + coupling_term
 
     fn _compute_parameter_gradients(
         self, params: ParameterSet, step_size: Float64
@@ -504,18 +617,45 @@ struct ParameterOptimizer:
     fn _create_optimization_result(
         self, params: ParameterSet, score: Float64, iterations: Int
     ) -> OptimizationResult:
-        """Create optimization result structure."""
-        meets_targets = score > 0.7  # Simplified target check
+        """Create optimization result structure with real performance measurements.
+        """
+        # Run comprehensive performance evaluation
+        var total_success = 0.0
+        var total_stability = 0.0
+        var total_effort = 0.0
+        var scenario_count = Float64(len(self.test_scenarios))
+
+        # Evaluate performance across all test scenarios
+        for i in range(len(self.test_scenarios)):
+            scenario = self.test_scenarios[i]
+            var result = self._test_scenario_performance(scenario, params)
+            total_success += result[0]
+            total_stability += result[1]
+            total_effort += result[2]
+
+        # Calculate real performance metrics
+        var measured_success_rate = total_success / scenario_count
+        var measured_stability_time = total_stability / scenario_count
+        var measured_control_effort = total_effort / scenario_count
+
+        # Determine if targets are met based on real measurements
+        var meets_targets = (
+            measured_success_rate >= TARGET_SUCCESS_RATE
+            and measured_stability_time >= TARGET_STABILITY_TIME
+        )
+
+        # Estimate optimization time based on iterations and complexity
+        var optimization_time = Float64(iterations) * 0.5 + scenario_count * 0.1
 
         return OptimizationResult(
             params,  # best_parameters
             score,  # best_performance
-            score * 0.8,  # success_rate (estimated)
-            score * 20.0,  # stability_time (estimated)
-            5.0,  # control_effort (estimated)
+            measured_success_rate,  # success_rate (real measurement)
+            measured_stability_time,  # stability_time (real measurement)
+            measured_control_effort,  # control_effort (real measurement)
             iterations,  # convergence_iterations
-            10.0,  # optimization_time (estimated)
-            meets_targets,  # meets_targets
+            optimization_time,  # optimization_time (estimated)
+            meets_targets,  # meets_targets (based on real metrics)
         )
 
     fn _create_failed_result(self) -> OptimizationResult:
