@@ -305,12 +305,31 @@ struct RLController:
         pend_velocity = raw_state[1]
         pend_angle = raw_state[2]
 
-        # Estimate linear actuator velocity (simplified)
+        # Estimate linear actuator velocity using advanced filtering
         var la_velocity = 0.0
         if self.episode_count > 0:
-            la_velocity = (
+            # Basic finite difference
+            var raw_velocity = (
                 la_position - self.current_state.la_position
             ) / 0.04  # 25 Hz
+
+            # Apply exponential smoothing filter to reduce noise
+            var alpha = (
+                0.3  # Smoothing factor (0 = no update, 1 = no smoothing)
+            )
+            la_velocity = (
+                alpha * raw_velocity
+                + (1.0 - alpha) * self.current_state.la_velocity
+            )
+
+            # Apply velocity bounds based on actuator physical limits
+            var max_velocity = 50.0  # inches/second (realistic actuator limit)
+            la_velocity = max(-max_velocity, min(max_velocity, la_velocity))
+
+            # Detect and handle velocity spikes (outlier rejection)
+            if abs(la_velocity - self.current_state.la_velocity) > 20.0:
+                # Large velocity change detected - use previous velocity with decay
+                la_velocity = self.current_state.la_velocity * 0.9
 
         # Target is always inverted state
         target_angle = 0.0
@@ -358,35 +377,87 @@ struct RLController:
         return Float64(action - 10)
 
     fn _compute_reward(self, state: RLState, action: Int) -> Float64:
-        """Compute reward for current state and action."""
+        """Compute sophisticated reward using advanced RL reward shaping techniques.
+        """
         var reward = 0.0
 
-        # Primary reward: Being inverted
+        # Extract state variables
         angle_error = abs(state.pend_angle)
-        if angle_error < 5.0:
-            reward += 10.0  # High reward for being very close to inverted
-        elif angle_error < 15.0:
-            reward += 5.0  # Medium reward for being near inverted
-        else:
-            reward -= angle_error * 0.1  # Penalty for being far from inverted
-
-        # Stability reward: Time spent in inverted region
-        if angle_error < 15.0:
-            reward += state.time_in_state * 0.5  # Reward for stability
-
-        # Velocity penalty: Discourage high velocities
-        reward -= abs(state.pend_velocity) * 0.001
-
-        # Control effort penalty: Discourage large control actions
         control_voltage = self._action_to_voltage(action)
-        reward -= abs(control_voltage) * 0.01
 
-        # Position penalty: Stay near center
-        reward -= abs(state.la_position) * 0.1
+        # 1. Primary reward: Inverted pendulum performance (exponential reward shaping)
+        if angle_error < 2.0:
+            reward += 20.0 * exp(
+                -angle_error / 2.0
+            )  # Exponential reward for precision
+        elif angle_error < 10.0:
+            reward += 10.0 * exp(
+                -angle_error / 10.0
+            )  # Medium reward with decay
+        elif angle_error < 30.0:
+            reward += 2.0 * exp(
+                -angle_error / 30.0
+            )  # Small reward for progress
+        else:
+            reward -= angle_error * 0.05  # Linear penalty for large errors
 
-        # Terminal state penalties
+        # 2. Stability reward with progressive bonus (reward shaping for long-term behavior)
+        if angle_error < 15.0:
+            # Progressive stability bonus: longer stability = exponentially higher reward
+            stability_bonus = state.time_in_state * (
+                1.0 + state.time_in_state / 10.0
+            )
+            reward += min(
+                15.0, stability_bonus
+            )  # Cap at 15 to prevent overflow
+
+        # 3. Velocity-based reward shaping (encourage smooth control)
+        var velocity_penalty = abs(state.pend_velocity) * 0.002
+        if abs(state.pend_velocity) < 50.0:  # Reward for controlled velocities
+            reward += (50.0 - abs(state.pend_velocity)) * 0.01
+        else:
+            reward -= velocity_penalty  # Penalty for excessive velocities
+
+        # 4. Control effort optimization (encourage efficient control)
+        var effort_penalty = abs(control_voltage) * 0.02
+        if abs(control_voltage) < 2.0:  # Reward for gentle control
+            reward += (2.0 - abs(control_voltage)) * 0.5
+        else:
+            reward -= effort_penalty  # Penalty for aggressive control
+
+        # 5. Position regulation (keep actuator centered)
+        var position_error = abs(state.la_position)
+        if position_error < 1.0:  # Reward for staying centered
+            reward += (1.0 - position_error) * 2.0
+        else:
+            reward -= position_error * 0.15  # Penalty for off-center operation
+
+        # 6. Advanced reward shaping: Action smoothness (discourage erratic control)
+        if self.episode_count > 0:
+            # Estimate previous action from previous state (simplified)
+            var prev_voltage = (
+                self.current_state.la_velocity * 0.1
+            )  # Rough estimate
+            var action_change = abs(control_voltage - prev_voltage)
+            if action_change < 1.0:  # Reward for smooth control transitions
+                reward += (1.0 - action_change) * 0.5
+            else:
+                reward -= action_change * 0.1  # Penalty for abrupt changes
+
+        # 7. Terminal state handling with shaped penalties
         if state.is_terminal():
-            reward -= 50.0  # Large penalty for terminal states
+            # Graduated terminal penalties based on how badly we failed
+            if angle_error > 150.0:  # Complete failure
+                reward -= 100.0
+            elif angle_error > 90.0:  # Significant failure
+                reward -= 50.0
+            else:  # Minor failure
+                reward -= 25.0
+
+        # 8. Exploration bonus for diverse actions (entropy regularization)
+        if self.exploration_rate > 0.1:
+            # Small bonus for exploration to encourage diverse policy learning
+            reward += 0.1
 
         return reward
 
@@ -509,8 +580,8 @@ struct RLController:
                 sum_reward += self.performance_history[i]
             avg_reward = sum_reward / Float64(len(self.performance_history))
 
-        # Estimate success rate based on recent performance
-        success_rate_estimate = max(0.0, min(1.0, (avg_reward + 100.0) / 200.0))
+        # Calculate success rate using sophisticated RL metrics
+        success_rate_estimate = self._calculate_rl_success_rate(avg_reward)
 
         return (
             avg_reward,
@@ -518,6 +589,86 @@ struct RLController:
             self.episode_count,
             success_rate_estimate,
         )
+
+    fn _calculate_rl_success_rate(self, avg_reward: Float64) -> Float64:
+        """Calculate success rate using sophisticated RL performance metrics."""
+        # Multi-factor success rate calculation
+        var base_success_rate = 0.0
+
+        # Factor 1: Reward-based success (normalized sigmoid)
+        var reward_factor = 1.0 / (
+            1.0 + exp(-(avg_reward + 50.0) / 30.0)
+        )  # Sigmoid normalization
+
+        # Factor 2: Episode consistency (variance penalty)
+        var consistency_factor = 1.0
+        if len(self.performance_history) >= 5:
+            # Calculate reward variance over recent episodes
+            var recent_episodes = min(10, len(self.performance_history))
+            var recent_sum = 0.0
+            var recent_sum_sq = 0.0
+
+            for i in range(
+                len(self.performance_history) - recent_episodes,
+                len(self.performance_history),
+            ):
+                var reward = self.performance_history[i]
+                recent_sum += reward
+                recent_sum_sq += reward * reward
+
+            var recent_mean = recent_sum / Float64(recent_episodes)
+            var variance = (recent_sum_sq / Float64(recent_episodes)) - (
+                recent_mean * recent_mean
+            )
+            var std_dev = sqrt(max(0.0, variance))
+
+            # Lower variance = higher consistency = higher success rate
+            consistency_factor = 1.0 / (
+                1.0 + std_dev / 50.0
+            )  # Normalize standard deviation
+
+        # Factor 3: Learning progress (trend analysis)
+        var progress_factor = 1.0
+        if len(self.performance_history) >= 10:
+            # Compare recent performance to earlier performance
+            var early_episodes = min(5, len(self.performance_history) // 2)
+            var recent_episodes = min(5, len(self.performance_history))
+
+            var early_avg = 0.0
+            for i in range(early_episodes):
+                early_avg += self.performance_history[i]
+            early_avg /= Float64(early_episodes)
+
+            var recent_avg = 0.0
+            for i in range(
+                len(self.performance_history) - recent_episodes,
+                len(self.performance_history),
+            ):
+                recent_avg += self.performance_history[i]
+            recent_avg /= Float64(recent_episodes)
+
+            # Positive progress increases success rate
+            var improvement = recent_avg - early_avg
+            progress_factor = max(0.5, min(1.5, 1.0 + improvement / 100.0))
+
+        # Factor 4: Exploration vs exploitation balance
+        var exploration_factor = 1.0
+        if self.exploration_rate < 0.1:  # Low exploration = confident policy
+            exploration_factor = 1.2
+        elif self.exploration_rate > 0.5:  # High exploration = still learning
+            exploration_factor = 0.8
+
+        # Combine all factors with weights
+        base_success_rate = (
+            0.4 * reward_factor
+            + 0.3 * consistency_factor  # 40% weight on reward performance
+            + 0.2 * progress_factor  # 30% weight on consistency
+            + 0.1  # 20% weight on learning progress
+            * exploration_factor  # 10% weight on exploration balance
+        )
+
+        # Apply bounds and return
+        return max(0.0, min(1.0, base_success_rate))
 
     fn reset_rl_controller(mut self):
         """Reset RL controller to initial state."""

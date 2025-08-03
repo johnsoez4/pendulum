@@ -38,6 +38,7 @@ wheels/
 .mojo/
 mojo_cache/
 .mojo_cache/
+kgen*
 
 # Compilation and build directories
 target/
