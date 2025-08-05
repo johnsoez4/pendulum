@@ -20,8 +20,8 @@ This guide documents the complete transformation from simulation-based GPU code 
 - **AMD GPUs** - MI250X, MI300X series (compatible with AMD GPU accelerator)
 
 ### Software Requirements
-- **Mojo 25.5.0** or later
-- **MAX Engine 25.5.0** or later
+- **Mojo 25.6.0** or later
+- **MAX Engine 25.6.0** or later
 - **GPU Drivers** - Latest stable drivers for your GPU vendor
 - **GPU Toolkit** - CUDA (for NVIDIA) or ROCm (for AMD)
 

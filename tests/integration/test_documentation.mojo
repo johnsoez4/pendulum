@@ -22,7 +22,7 @@ fn main():
         " DeviceContext API"
     )
     print("Hardware: NVIDIA A10 GPU (23GB)")
-    print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
+    print("Environment: Mojo 25.6.0 + MAX Engine 25.6.0 + CUDA 12.8")
     print(
         "Documentation: Real GPU Implementation, Migration, API,"
         " Troubleshooting"

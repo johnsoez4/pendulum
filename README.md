@@ -14,7 +14,7 @@ cd /path/to/pendulum
 pixi shell
 
 # Verify installation
-mojo -v  # Should show: Mojo 25.5.0.dev2025062905
+mojo -v  # Should show: Mojo 25.6.0.dev2025080505 (90bc2e90)
 
 # Run tests to verify everything works
 mojo run tests/run_all_tests.mojo
@@ -171,7 +171,7 @@ This project implements a four-phase approach to AI-based pendulum control:
 **Phase 4: Real MAX Engine GPU Implementation** - ✅ **COMPLETED**
 
 ### ✅ Phase 1 Achievements
-- **Environment Setup**: Mojo 25.5.0.dev2025062815 installed via pixi and validated
+- **Environment Setup**: Mojo 25.6.0.dev2025080505 installed via pixi and validated
 - **Data Analysis**: Complete analysis of 10,101 experimental samples
 - **Physics Model**: Complete pendulum physics implementation with equations of motion
 - **Neural Network Architecture**: Physics-informed neural network (4→64→64→3)
@@ -329,20 +329,20 @@ pendulum/
 ## Development Environment
 
 ### Requirements
-- **Mojo**: 25.5.0.dev2025062905 (installed via pixi)
+- **Mojo**: 25.6.0.dev2025080505 (installed via pixi)
 - **MAX Engine**: Available for GPU acceleration
 - **Pixi**: 0.48.2 for environment management
 - **System**: Linux/macOS with sufficient memory
 - **GPU**: Compatible GPU with appropriate drivers (optional, automatic CPU fallback)
 
 ### Environment Setup
-- **Mojo Installation**: ✅ Mojo 25.5.0.dev2025062905 installed via pixi environment
+- **Mojo Installation**: ✅ Mojo 25.6.0.dev2025080505 installed via pixi environment
 - **MAX Engine**: ✅ Configured in pixi.toml with GPU acceleration support
 - **Development Environment**: ✅ Clean and ready for development
 
 ### Setup Instructions
 1. **Activate Environment**: `pixi shell` (activates Mojo environment)
-2. **Verify Installation**: `mojo -v` (should show Mojo 25.5.0.dev2025062905)
+2. **Verify Installation**: `mojo -v` (should show Mojo 25.6.0.dev2025080505)
 3. **Development Ready**: All dependencies configured via pixi.toml
 4. **GPU Support**: Automatic detection with CPU fallback
 

@@ -22,8 +22,8 @@ This guide provides step-by-step instructions for migrating from simulation-base
 - [ ] CUDA 12.8+ (NVIDIA) or ROCm 6.0+ (AMD)
 
 ### Software Requirements
-- [ ] Mojo 25.5.0 or later
-- [ ] MAX Engine 25.5.0 or later
+- [ ] Mojo 25.6.0 or later
+- [ ] MAX Engine 25.6.0 or later
 - [ ] pixi environment activated
 - [ ] GPU drivers properly installed
 
@@ -31,8 +31,8 @@ This guide provides step-by-step instructions for migrating from simulation-base
 ```bash
 # Verify environment
 pixi shell
-mojo -v  # Should show: Mojo 25.5.0+
-max --version  # Should show: MAX Engine 25.5.0+
+mojo -v  # Should show: Mojo 25.6.0+
+max --version  # Should show: MAX Engine 25.6.0+
 
 # Verify GPU detection
 mojo -c "from sys import has_nvidia_gpu_accelerator; print('NVIDIA:', has_nvidia_gpu_accelerator())"

@@ -41,8 +41,8 @@ This report presents comprehensive benchmark results for the Pendulum AI Control
 - **Swap**: Disabled (0B)
 
 ### Software Environment
-- **MAX Engine**: 25.5.0.dev2025062905
-- **Mojo Compiler**: 25.5.0.dev2025062905 (9780afe3)
+- **MAX Engine**: 25.6.0.dev2025080505
+- **Mojo Compiler**: 25.6.0.dev2025080505 (90bc2e90)
 - **CUDA Runtime**: 12.8
 - **Operating System**: Linux x86_64
 
@@ -228,7 +228,7 @@ The transition from CPU simulation to real GPU acceleration represents a critica
 
 ---
 
-**Report Generated**: June 30, 2025
+**Report Generated**: August 5, 2025
 **Hardware**: NVIDIA A10 (23GB) + Intel Xeon Platinum 8358 (30 cores)
-**Software**: MAX Engine 25.5.0.dev2025062905, Mojo 25.5.0.dev2025062905
+**Software**: MAX Engine 25.6.0.dev2025080505, Mojo 25.6.0.dev2025080505
 **Status**: Phase 4 Complete ✅ | Phase 5 Optimization Ready 🚀

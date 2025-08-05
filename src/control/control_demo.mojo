@@ -73,7 +73,7 @@ struct ControlDemo:
         initial_state.append(0.0)  # cmd_volts
 
         start_time = 1.0
-        control_system.start_control_loop(initial_state, start_time)
+        _ = control_system.start_control_loop(initial_state, start_time)
 
         # Simulate control loop for stabilization
         current_state = initial_state
@@ -116,7 +116,7 @@ struct ControlDemo:
 
         # Reset and start with hanging state
         control_system.reset_system()
-        control_system.initialize_system(10.0)
+        _ = control_system.initialize_system(10.0)
 
         hanging_state = List[Float64]()
         hanging_state.append(0.0)  # la_position (center)
@@ -124,7 +124,7 @@ struct ControlDemo:
         hanging_state.append(180.0)  # pend_angle (hanging down)
         hanging_state.append(0.0)  # cmd_volts
 
-        control_system.start_control_loop(hanging_state, 10.0)
+        _ = control_system.start_control_loop(hanging_state, 10.0)
 
         # Simulate swing-up attempt
         var current_state = hanging_state
@@ -162,7 +162,7 @@ struct ControlDemo:
 
         # Reset system
         control_system.reset_system()
-        control_system.initialize_system(20.0)
+        _ = control_system.initialize_system(20.0)
 
         # Test with extreme state that should trigger safety
         extreme_state = List[Float64]()
@@ -171,7 +171,7 @@ struct ControlDemo:
         extreme_state.append(45.0)  # pend_angle
         extreme_state.append(0.0)  # cmd_volts
 
-        control_system.start_control_loop(extreme_state, 20.0)
+        _ = control_system.start_control_loop(extreme_state, 20.0)
 
         # Execute control cycle with extreme state
         command = control_system.execute_control_cycle(extreme_state, 20.1)
@@ -208,7 +208,7 @@ struct ControlDemo:
 
         # Reset system
         control_system.reset_system()
-        control_system.initialize_system(30.0)
+        _ = control_system.initialize_system(30.0)
 
         # Test with noisy measurements
         clean_state = List[Float64]()
@@ -217,7 +217,7 @@ struct ControlDemo:
         clean_state.append(15.0)
         clean_state.append(0.0)
 
-        control_system.start_control_loop(clean_state, 30.0)
+        _ = control_system.start_control_loop(clean_state, 30.0)
 
         # Add noise to measurements
         noisy_cycles = 10

@@ -315,8 +315,8 @@ mojo -c "import sys; print(sys.path)"
 pixi update
 
 # Verify versions
-mojo -v      # Should be 25.5.0+
-max --version # Should be 25.5.0+
+mojo -v      # Should be 25.6.0+
+max --version # Should be 25.6.0+
 ```
 
 **Solution 2: Fix Import Statements**
