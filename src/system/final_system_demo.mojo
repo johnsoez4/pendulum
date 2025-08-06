@@ -464,4 +464,6 @@ struct FinalSystemDemo:
             )
 
 
-# Main function removed - use FinalSystemDemo.run_final_system_demonstration() directly
+fn main():
+    """Run final system demonstration."""
+    FinalSystemDemo.run_final_system_demonstration()

@@ -176,7 +176,7 @@ struct CompleteSystemIntegration:
         self.deployment_checklist = List[Bool]()
 
         # Initialize deployment checklist (15 items)
-        for i in range(15):
+        for _ in range(15):  # i not used in current implementation
             self.deployment_checklist.append(False)
 
         self.system_initialized = False

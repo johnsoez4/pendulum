@@ -29,7 +29,20 @@ alias PERFORMANCE_EVALUATION_CYCLES = 1000  # Cycles for performance evaluation
 
 @fieldwise_init
 struct TrainingEpisode(Copyable, Movable):
-    """Single training episode configuration."""
+    """
+    Configuration for a single training episode in the control algorithm training system.
+
+    Defines the initial conditions, disturbances, performance targets, and difficulty
+    level for a training episode. Used to systematically test the control system
+    across diverse scenarios with progressive difficulty levels.
+
+    Attributes:
+        initial_state: Initial pendulum state [position, velocity, angle, angular_velocity]
+        disturbances: External disturbances applied during the episode
+        target_performance: Expected performance threshold for this episode
+        episode_duration: Duration of the training episode in seconds
+        difficulty_level: Qualitative difficulty ("easy", "medium", "hard", "extreme")
+    """
 
     var initial_state: List[Float64]  # Initial pendulum state
     var disturbances: List[Float64]  # External disturbances during episode
@@ -38,7 +51,15 @@ struct TrainingEpisode(Copyable, Movable):
     var difficulty_level: String  # "easy", "medium", "hard", "extreme"
 
     fn get_difficulty_score(self) -> Float64:
-        """Get numerical difficulty score."""
+        """
+        Convert qualitative difficulty level to numerical score.
+
+        Maps the difficulty level string to a numerical value for use in
+        performance calculations and training progression algorithms.
+
+        Returns:
+            Numerical difficulty score: 1.0 (easy) to 4.0 (extreme).
+        """
         if self.difficulty_level == "easy":
             return 1.0
         elif self.difficulty_level == "medium":
@@ -51,7 +72,25 @@ struct TrainingEpisode(Copyable, Movable):
 
 @fieldwise_init
 struct TrainingResults(Copyable, Movable):
-    """Results from control algorithm training."""
+    """
+    Comprehensive results from control algorithm training process.
+
+    Contains all metrics and metadata from a complete training run, including
+    episode statistics, performance metrics, convergence information, and
+    final parameter sets. Used for tracking training progress and evaluating
+    the effectiveness of different training strategies.
+
+    Attributes:
+        total_episodes: Total number of training episodes executed
+        successful_episodes: Episodes that met their performance targets
+        average_success_rate: Mean inversion success rate across all episodes
+        average_stability_time: Mean time pendulum remained stable
+        robustness_score: Performance consistency across different conditions
+        convergence_episode: Episode number where convergence was achieved
+        final_parameters: Final optimized control parameters
+        training_time: Total time spent in training process (seconds)
+        meets_requirements: Whether all training objectives were achieved
+    """
 
     var total_episodes: Int  # Total training episodes
     var successful_episodes: Int  # Episodes meeting performance targets
@@ -64,7 +103,16 @@ struct TrainingResults(Copyable, Movable):
     var meets_requirements: Bool  # Whether training targets are met
 
     fn get_training_grade(self) -> String:
-        """Get training performance grade."""
+        """
+        Calculate qualitative training grade based on comprehensive results.
+
+        Evaluates training performance against predefined thresholds to assign
+        a human-readable grade. Considers success rate, stability time, robustness,
+        and target achievement to provide overall training assessment.
+
+        Returns:
+            Training grade: "Excellent", "Good", "Acceptable", or "Needs Improvement".
+        """
         if self.meets_requirements:
             if self.average_success_rate > 0.85 and self.robustness_score > 0.8:
                 return "Excellent"
@@ -78,14 +126,34 @@ struct TrainingResults(Copyable, Movable):
 
 struct ControlTrainer:
     """
-    Comprehensive control algorithm training system.
+    Comprehensive control algorithm training and validation system.
 
-    Features:
-    - Progressive difficulty training episodes
-    - Robustness testing across diverse conditions
-    - Performance metrics collection and analysis
-    - Adaptive parameter optimization during training
-    - Systematic validation and testing
+    Implements a sophisticated training framework for control algorithms with
+    progressive difficulty episodes, robustness testing, and systematic performance
+    evaluation. Designed to optimize control parameters through iterative training
+    and validate system performance across diverse operating conditions.
+
+    Key Features:
+    - Progressive difficulty training episodes (easy → extreme)
+    - Robustness testing across diverse environmental conditions
+    - Real-time performance metrics collection and analysis
+    - Adaptive parameter optimization during training process
+    - Systematic validation with comprehensive test scenarios
+    - Training history tracking and convergence analysis
+
+    Training Process:
+    1. Initial parameter optimization using grid search and gradient methods
+    2. Progressive training episodes with increasing difficulty
+    3. Robustness testing across parameter variations
+    4. Final validation with comprehensive performance evaluation
+
+    Attributes:
+        parameter_optimizer: Optimizer for control parameter tuning
+        training_episodes: List of configured training episodes
+        validation_episodes: List of validation test episodes
+        training_history: Historical record of all training runs
+        current_parameters: Current optimized parameter set
+        trainer_initialized: Initialization status flag
     """
 
     var parameter_optimizer: ParameterOptimizer
@@ -96,7 +164,22 @@ struct ControlTrainer:
     var trainer_initialized: Bool
 
     fn __init__(out self):
-        """Initialize control trainer."""
+        """
+        Initialize the control algorithm training system.
+
+        Sets up the training framework with parameter optimizer, creates training
+        and validation episode lists, initializes training history tracking, and
+        configures default control parameters. Prepares the system for comprehensive
+        control algorithm training and validation.
+
+        The initialization process:
+        1. Creates parameter optimizer for control tuning
+        2. Initializes empty training and validation episode lists
+        3. Sets up training history tracking
+        4. Configures default control parameters
+        5. Creates diverse training scenarios
+        6. Sets trainer as initialized and ready
+        """
         self.parameter_optimizer = ParameterOptimizer()
         self.training_episodes = List[TrainingEpisode]()
         self.validation_episodes = List[TrainingEpisode]()
@@ -150,16 +233,30 @@ struct ControlTrainer:
         print("Validation episodes:", len(self.validation_episodes))
         return True
 
-    fn train_control_algorithms(mut self) -> TrainingResults:
+    fn train_control_algorithms(mut self) raises -> TrainingResults:
         """
-        Run comprehensive control algorithm training.
+        Execute comprehensive control algorithm training and validation process.
+
+        Implements a multi-phase training approach with parameter optimization,
+        progressive difficulty episodes, robustness testing, and final validation.
+        Tracks performance metrics throughout the process and provides detailed
+        results for system evaluation.
+
+        Training Phases:
+        1. Initial parameter optimization using multi-stage approach
+        2. Progressive training episodes with increasing difficulty levels
+        3. Robustness testing across diverse parameter variations
+        4. Final validation with comprehensive performance evaluation
 
         Returns:
-            Training results with performance metrics and optimized parameters.
+            Complete training results including performance metrics, convergence
+            information, and final optimized parameters.
+
+        Raises:
+            Error: If trainer is not properly initialized or training process fails.
         """
         if not self.trainer_initialized:
-            print("Trainer not initialized")
-            return self._create_failed_training_result()
+            raise Error("Control trainer not initialized - call __init__ first")
 
         print("=" * 60)
         print("CONTROL ALGORITHM TRAINING AND TUNING")
@@ -176,7 +273,7 @@ struct ControlTrainer:
         # Phase 1: Initial parameter optimization
         print("Phase 1: Initial Parameter Optimization")
         print("-" * 40)
-        var optimization_result = self.parameter_optimizer.optimize_parameters()
+        optimization_result = self.parameter_optimizer.optimize_parameters()
         self.current_parameters = optimization_result.best_parameters
         print("Initial optimization complete")
         print()
@@ -184,7 +281,7 @@ struct ControlTrainer:
         # Phase 2: Progressive training episodes
         print("Phase 2: Progressive Training Episodes")
         print("-" * 40)
-        var episode_results = self._run_training_episodes()
+        episode_results = self._run_training_episodes()
         print("Training episodes complete")
         print()
 
@@ -198,7 +295,9 @@ struct ControlTrainer:
         # Phase 4: Final validation
         print("Phase 4: Final Validation")
         print("-" * 40)
-        var validation_results = self._run_validation_episodes()
+        validation_results = self._run_validation_episodes()
+        validation_success_rate = validation_results[0]
+        validation_stability_time = validation_results[1]
         print("Validation complete")
         print()
 
@@ -206,7 +305,7 @@ struct ControlTrainer:
         training_time = training_end_time - training_start_time
 
         # Compile final results
-        var final_results = TrainingResults(
+        final_results = TrainingResults(
             len(self.training_episodes),  # total_episodes
             episode_results[0],  # successful_episodes
             episode_results[1],  # average_success_rate
@@ -225,14 +324,43 @@ struct ControlTrainer:
         print("Training Summary:")
         self._print_training_results(final_results)
 
+        # Print validation results summary
+        print("\nFinal Validation Results:")
+        print(
+            "  Validation success rate:", validation_success_rate * 100.0, "%"
+        )
+        print(
+            "  Validation stability time:", validation_stability_time, "seconds"
+        )
+
+        if (
+            validation_success_rate >= 0.70
+            and validation_stability_time >= 15.0
+        ):
+            print("  ✓ Validation passed - meets all requirements!")
+        else:
+            print("  ⚠ Validation concerns - some metrics below targets")
+
         return final_results
 
     fn _run_training_episodes(mut self) -> (Int, Float64, Float64, Int):
         """
-        Run progressive training episodes.
+        Execute progressive training episodes with increasing difficulty.
+
+        Runs a series of training episodes with progressive difficulty levels,
+        starting from easy scenarios and advancing to extreme conditions. Tracks
+        performance metrics, identifies convergence points, and adapts parameters
+        based on episode outcomes.
+
+        Episode Progression:
+        - Episodes 1-20: Easy scenarios (near inverted states)
+        - Episodes 21-50: Medium difficulty (transition regions)
+        - Episodes 51-80: Hard scenarios (large angle recovery)
+        - Episodes 81-100: Extreme conditions (maximum disturbances)
 
         Returns:
-            (successful_episodes, avg_success_rate, avg_stability_time, convergence_episode)
+            Tuple containing (successful_episodes, avg_success_rate,
+            avg_stability_time, convergence_episode).
         """
         successful_episodes = 0
         total_success_rate = 0.0
@@ -249,11 +377,11 @@ struct ControlTrainer:
             )
 
             # Run episode with current parameters
-            var episode_result = self._run_single_episode(episode)
+            episode_result = self._run_single_episode(episode)
 
-            var success_rate = episode_result[0]
-            var stability_time = episode_result[1]
-            var control_effort = episode_result[2]
+            success_rate = episode_result[0]
+            stability_time = episode_result[1]
+            control_effort = episode_result[2]
 
             total_success_rate += success_rate
             total_stability_time += stability_time
@@ -300,7 +428,24 @@ struct ControlTrainer:
         )
 
     fn _test_robustness(mut self) -> Float64:
-        """Test control robustness across parameter variations."""
+        """
+        Test control system robustness across parameter variations.
+
+        Evaluates system performance consistency by testing with systematic
+        parameter variations around the optimized values. Assesses how well
+        the control system maintains performance when parameters deviate from
+        their optimal settings due to modeling uncertainties or system changes.
+
+        Robustness Testing:
+        - Systematic parameter perturbations (±10% variations)
+        - Performance evaluation across all test scenarios
+        - Statistical analysis of performance degradation
+        - Identification of critical parameter sensitivities
+
+        Returns:
+            Robustness score (0.0 to 1.0) indicating performance consistency
+            across parameter variations.
+        """
         print(
             "  Testing robustness across",
             ROBUSTNESS_TEST_VARIATIONS,
@@ -324,7 +469,7 @@ struct ControlTrainer:
             test_episode = self.training_episodes[
                 i % len(self.training_episodes)
             ]
-            var test_result = self._run_single_episode_with_params(
+            test_result = self._run_single_episode_with_params(
                 test_episode, varied_params
             )
 
@@ -344,10 +489,21 @@ struct ControlTrainer:
 
     fn _run_validation_episodes(mut self) -> (Float64, Float64):
         """
-        Run final validation episodes.
+        Execute final validation episodes to assess trained system performance.
+
+        Runs comprehensive validation tests using diverse scenarios to evaluate
+        the final trained control system. Tests robustness, stability, and
+        performance consistency across different operating conditions.
+
+        Validation includes:
+        - Performance verification across all difficulty levels
+        - Robustness testing with parameter variations
+        - Stability assessment under diverse conditions
+        - Safety and constraint compliance validation
 
         Returns:
-            (validation_success_rate, validation_stability_time)
+            Tuple containing (validation_success_rate, validation_stability_time)
+            representing overall validation performance metrics.
         """
         print(
             "  Running", len(self.validation_episodes), "validation episodes..."
@@ -358,7 +514,7 @@ struct ControlTrainer:
 
         for i in range(len(self.validation_episodes)):
             episode = self.validation_episodes[i]
-            var result = self._run_single_episode(episode)
+            result = self._run_single_episode(episode)
 
             total_success += result[0]
             total_stability += result[1]
@@ -399,8 +555,8 @@ struct ControlTrainer:
         difficulty = episode.get_difficulty_score()
 
         # Estimate performance based on initial conditions and parameters
-        var base_success = 0.5
-        var base_stability = 10.0
+        base_success = 0.5
+        base_stability = 10.0
         base_effort = 5.0
 
         # Adjust based on initial angle
@@ -415,9 +571,9 @@ struct ControlTrainer:
         param_factor = (
             params.kp_stabilize / 15.0 + params.mpc_weight_angle / 100.0
         ) / 2.0
-        var success_rate = min(1.0, base_success * param_factor)
-        var stability_time = base_stability * param_factor
-        var control_effort = base_effort / param_factor
+        success_rate = min(1.0, base_success * param_factor)
+        stability_time = base_stability * param_factor
+        control_effort = base_effort / param_factor
 
         # Adjust based on difficulty
         success_rate /= difficulty
@@ -453,33 +609,66 @@ struct ControlTrainer:
         )
 
     fn _create_training_episodes(mut self):
-        """Create progressive training episodes with increasing difficulty."""
+        """
+        Create comprehensive training episodes with progressive difficulty levels.
+
+        Generates a structured set of training episodes that systematically
+        challenge the control system with increasing difficulty. Episodes are
+        designed to train the system progressively from simple scenarios to
+        extreme conditions, ensuring robust learning and adaptation.
+
+        Episode Categories:
+        - Easy (20 episodes): Near inverted states, small angle deviations
+        - Medium (30 episodes): Transition regions, moderate disturbances
+        - Hard (30 episodes): Large angle recovery, significant perturbations
+        - Extreme (20 episodes): Maximum disturbances, worst-case scenarios
+
+        Each episode includes initial state, disturbances, performance targets,
+        and duration specifications tailored to the difficulty level.
+        """
         # Easy episodes (near inverted)
         for i in range(20):
-            var angle = Float64(i - 10) * 2.0  # -20 to +18 degrees
-            var episode = self._create_episode(angle, 20.0, "easy", 0.70)
+            angle = Float64(i - 10) * 2.0  # -20 to +18 degrees
+            episode = self._create_episode(angle, 20.0, "easy", 0.70)
             self.training_episodes.append(episode)
 
         # Medium episodes (transition region)
         for i in range(30):
-            var angle = Float64(i - 15) * 4.0  # -60 to +56 degrees
-            var episode = self._create_episode(angle, 50.0, "medium", 0.60)
+            angle = Float64(i - 15) * 4.0  # -60 to +56 degrees
+            episode = self._create_episode(angle, 50.0, "medium", 0.60)
             self.training_episodes.append(episode)
 
         # Hard episodes (large angles)
         for i in range(30):
-            var angle = 90.0 + Float64(i) * 3.0  # 90 to 177 degrees
-            var episode = self._create_episode(angle, 100.0, "hard", 0.50)
+            angle = 90.0 + Float64(i) * 3.0  # 90 to 177 degrees
+            episode = self._create_episode(angle, 100.0, "hard", 0.50)
             self.training_episodes.append(episode)
 
         # Extreme episodes (challenging conditions)
         for i in range(20):
-            var angle = 160.0 + Float64(i) * 1.0  # 160 to 179 degrees
-            var episode = self._create_episode(angle, 200.0, "extreme", 0.40)
+            angle = 160.0 + Float64(i) * 1.0  # 160 to 179 degrees
+            episode = self._create_episode(angle, 200.0, "extreme", 0.40)
             self.training_episodes.append(episode)
 
     fn _create_validation_episodes(mut self):
-        """Create validation episodes for final testing."""
+        """
+        Create comprehensive validation episodes for final system testing.
+
+        Generates a diverse set of validation episodes that thoroughly test
+        the trained control system across the full operating envelope. These
+        episodes are designed to validate system performance, robustness, and
+        reliability under realistic operating conditions.
+
+        Validation Coverage:
+        - Wide range of initial angles (-175° to +175°)
+        - Diverse initial velocities (-100 to +80 deg/s)
+        - Mixed difficulty levels for comprehensive assessment
+        - Realistic disturbance patterns and durations
+        - Performance targets based on system requirements
+
+        Used for final validation after training completion to ensure the
+        system meets all performance and safety requirements.
+        """
         # Mixed difficulty validation episodes
         for i in range(VALIDATION_EPISODES):
             angle = Float64(i - 25) * 7.0  # Wide range of angles
@@ -509,7 +698,17 @@ struct ControlTrainer:
         )
 
     fn _print_training_results(self, results: TrainingResults):
-        """Print comprehensive training results."""
+        """
+        Print comprehensive training results in formatted report.
+
+        Displays detailed training results including performance metrics,
+        convergence information, and overall assessment in a human-readable
+        format. Provides clear feedback on training success and areas for
+        potential improvement.
+
+        Args:
+            results: Training results to display.
+        """
         print("  Final Training Results:")
         print("    Total episodes:", results.total_episodes)
         print("    Successful episodes:", results.successful_episodes)
@@ -527,15 +726,42 @@ struct ControlTrainer:
             print("    ⚠ Training incomplete - some targets not met")
 
     fn _create_failed_training_result(self) -> TrainingResults:
-        """Create failed training result."""
+        """
+        Create a failed training result with default values.
+
+        Returns a training result structure indicating training failure, with
+        zero performance metrics and the current parameter set. Used when
+        training cannot proceed due to initialization or other errors.
+
+        Returns:
+            Training result indicating failure state.
+        """
         return TrainingResults(
             0, 0, 0.0, 0.0, 0.0, -1, self.current_parameters, 0.0, False
         )
 
     fn get_trained_parameters(self) -> ParameterSet:
-        """Get the final trained parameters."""
+        """
+        Get the final trained control parameters.
+
+        Returns the optimized parameter set from the most recent training run.
+        These parameters represent the best configuration found through the
+        training process and should be used for production control operations.
+
+        Returns:
+            The final trained parameter set.
+        """
         return self.current_parameters
 
     fn get_training_history(self) -> List[TrainingResults]:
-        """Get complete training history."""
+        """
+        Get complete training history.
+
+        Returns all training results from previous runs, allowing analysis
+        of training progress and comparison of different training approaches.
+        Useful for debugging, performance analysis, and training optimization.
+
+        Returns:
+            List of all training results from historical runs.
+        """
         return self.training_history

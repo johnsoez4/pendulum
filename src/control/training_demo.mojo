@@ -27,7 +27,7 @@ struct TrainingDemo:
     """Comprehensive demonstration of control algorithm training and tuning."""
 
     @staticmethod
-    fn run_training_demonstration():
+    fn run_training_demonstration() raises:
         """Run complete training and tuning demonstration."""
         print("=" * 70)
         print("PHASE 2 TASK 3: CONTROL ALGORITHM TRAINING AND TUNING")
@@ -66,7 +66,7 @@ struct TrainingDemo:
         )
 
     @staticmethod
-    fn _demonstrate_parameter_optimization() -> OptimizationResult:
+    fn _demonstrate_parameter_optimization() raises -> OptimizationResult:
         """Demonstrate comprehensive parameter optimization."""
         print("STAGE 1: PARAMETER OPTIMIZATION")
         print("=" * 50)
@@ -121,7 +121,7 @@ struct TrainingDemo:
     @staticmethod
     fn _demonstrate_control_training(
         optimized_parameters: ParameterSet,
-    ) -> TrainingResults:
+    ) raises -> TrainingResults:
         """Demonstrate progressive control algorithm training."""
         print("STAGE 2: CONTROL ALGORITHM TRAINING")
         print("=" * 50)
@@ -473,4 +473,7 @@ struct TrainingDemo:
 
 fn main():
     """Run control algorithm training and tuning demonstration."""
-    TrainingDemo.run_training_demonstration()
+    try:
+        TrainingDemo.run_training_demonstration()
+    except e:
+        print("Error during training demonstration:", e)

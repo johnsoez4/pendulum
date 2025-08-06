@@ -30,7 +30,19 @@ alias CONVERGENCE_TOLERANCE = 0.01  # Optimization convergence tolerance
 
 @fieldwise_init
 struct ParameterSet(Copyable, Movable):
-    """Complete set of tunable control parameters."""
+    """
+    Complete set of tunable control parameters for the pendulum control system.
+
+    This struct encapsulates all parameters that can be optimized for the control
+    algorithms, including MPC weights, adaptive gains, and control thresholds.
+    The parameters are organized into logical groups for systematic optimization.
+
+    Attributes:
+        MPC Parameters: Weights and horizons for Model Predictive Control
+        Adaptive Gains: PID-style gains for different control modes
+        Control Thresholds: Angle and velocity thresholds for mode switching
+        Hybrid Weights: Blending weights for hybrid control strategies
+    """
 
     # MPC Parameters
     var mpc_weight_angle: Float64  # MPC angle tracking weight
@@ -59,7 +71,15 @@ struct ParameterSet(Copyable, Movable):
     var classical_hybrid_weight: Float64  # Classical weight in hybrid control
 
     fn is_valid(self) -> Bool:
-        """Check if parameter set is within valid bounds."""
+        """
+        Validate that all parameters are within acceptable bounds.
+
+        Performs comprehensive bounds checking on all control parameters to ensure
+        they are within physically meaningful and numerically stable ranges.
+
+        Returns:
+            True if all parameters are valid, False otherwise.
+        """
         return (
             self.mpc_weight_angle > 0.0
             and self.mpc_weight_angle < 1000.0
@@ -74,7 +94,23 @@ struct ParameterSet(Copyable, Movable):
 
 @fieldwise_init
 struct OptimizationResult(Copyable, Movable):
-    """Results from parameter optimization."""
+    """
+    Comprehensive results from parameter optimization process.
+
+    Contains all metrics and metadata from a parameter optimization run,
+    including performance scores, convergence information, and target achievement.
+    Used for tracking optimization progress and comparing different parameter sets.
+
+    Attributes:
+        best_parameters: The optimal parameter set found
+        best_performance: Composite performance score (0.0 to 1.0)
+        success_rate: Percentage of successful pendulum inversions
+        stability_time: Average time pendulum remains stable
+        control_effort: Average control voltage magnitude
+        convergence_iterations: Number of iterations to reach convergence
+        optimization_time: Total time spent optimizing (seconds)
+        meets_targets: Whether all performance targets were achieved
+    """
 
     var best_parameters: ParameterSet  # Best parameter set found
     var best_performance: Float64  # Best performance score achieved
@@ -86,7 +122,16 @@ struct OptimizationResult(Copyable, Movable):
     var meets_targets: Bool  # Whether targets are met
 
     fn get_performance_grade(self) -> String:
-        """Get performance grade based on results."""
+        """
+        Calculate a qualitative performance grade based on optimization results.
+
+        Evaluates the optimization results against predefined thresholds to assign
+        a human-readable performance grade. Considers both target achievement and
+        the quality of the achieved metrics.
+
+        Returns:
+            Performance grade: "Excellent", "Good", "Acceptable", or "Needs Improvement".
+        """
         if self.meets_targets:
             if self.success_rate > 0.85 and self.stability_time > 20.0:
                 return "Excellent"
@@ -117,8 +162,16 @@ struct ParameterOptimizer:
     var optimizer_initialized: Bool
 
     fn __init__(out self):
-        """Initialize parameter optimizer."""
-        # Initialize with default parameters
+        """
+        Initialize the parameter optimizer with default settings.
+
+        Sets up the optimizer with default parameter values, initializes empty
+        optimization history, creates diverse test scenarios, and configures
+        performance weighting factors for multi-objective optimization.
+
+        The initialization creates a comprehensive test suite covering various
+        pendulum states and disturbance conditions to ensure robust optimization.
+        """
         self.current_parameters = ParameterSet(
             # MPC Parameters
             100.0,  # mpc_weight_angle
@@ -153,10 +206,9 @@ struct ParameterOptimizer:
         """Initialize optimizer with test scenarios and performance weights."""
         print("Initializing Parameter Optimizer...")
 
-        # Create diverse test scenarios
         self._create_test_scenarios()
 
-        # Set performance weights
+        self.performance_weights = List[Float64]()
         self.performance_weights.append(0.4)  # Success rate weight
         self.performance_weights.append(0.3)  # Stability time weight
         self.performance_weights.append(0.2)  # Control effort weight
@@ -170,16 +222,24 @@ struct ParameterOptimizer:
         )
         return True
 
-    fn optimize_parameters(mut self) -> OptimizationResult:
+    fn optimize_parameters(mut self) raises -> OptimizationResult:
         """
-        Run comprehensive parameter optimization.
+        Run comprehensive parameter optimization with error handling.
+
+        Performs multi-stage optimization including grid search, gradient-based
+        fine-tuning, and adaptive parameter refinement. Validates initialization
+        state and handles optimization failures gracefully.
 
         Returns:
-            Optimization results with best parameters and performance.
+            Optimization results with best parameters and performance metrics.
+
+        Raises:
+            Error: If optimizer is not properly initialized or optimization fails.
         """
         if not self.optimizer_initialized:
-            print("Optimizer not initialized")
-            return self._create_failed_result()
+            raise Error(
+                "Parameter optimizer not initialized - call __init__ first"
+            )
 
         print("Starting Parameter Optimization...")
         print("Target: >70% success rate, >15s stability time")
@@ -187,17 +247,15 @@ struct ParameterOptimizer:
 
         var best_result = self._create_failed_result()
         var best_score = 0.0
-        var convergence_count = 0
 
-        # Multi-stage optimization
         print("\nStage 1: Grid Search for Initial Parameters")
-        var grid_result = self._grid_search_optimization()
+        grid_result = self._grid_search_optimization()
         if grid_result.best_performance > best_score:
             best_result = grid_result
             best_score = grid_result.best_performance
 
         print("\nStage 2: Gradient-Based Fine Tuning")
-        var gradient_result = self._gradient_based_optimization(
+        gradient_result = self._gradient_based_optimization(
             best_result.best_parameters
         )
         if gradient_result.best_performance > best_score:
@@ -205,14 +263,13 @@ struct ParameterOptimizer:
             best_score = gradient_result.best_performance
 
         print("\nStage 3: Adaptive Parameter Refinement")
-        var adaptive_result = self._adaptive_parameter_refinement(
+        adaptive_result = self._adaptive_parameter_refinement(
             best_result.best_parameters
         )
         if adaptive_result.best_performance > best_score:
             best_result = adaptive_result
             best_score = adaptive_result.best_performance
 
-        # Store optimization result
         self.optimization_history.append(best_result)
         self.current_parameters = best_result.best_parameters
 
@@ -221,15 +278,26 @@ struct ParameterOptimizer:
 
         return best_result
 
-    fn _grid_search_optimization(self) -> OptimizationResult:
-        """Perform grid search optimization over key parameters."""
+    fn _grid_search_optimization(self) raises -> OptimizationResult:
+        """
+        Perform systematic grid search optimization over key parameters.
+
+        Explores a discretized parameter space using a structured grid approach
+        to find promising parameter regions. Tests multiple combinations of
+        critical parameters to establish a good starting point for fine-tuning.
+
+        Returns:
+            Optimization result with best parameters found during grid search.
+
+        Raises:
+            Error: If grid search encounters invalid parameter combinations.
+        """
         print("  Running grid search over parameter space...")
 
         best_parameters = self.current_parameters
         best_score = 0.0
         evaluations = 0
 
-        # Grid search over critical parameters
         angle_weights = List[Float64]()
         angle_weights.append(50.0)
         angle_weights.append(100.0)
@@ -270,8 +338,22 @@ struct ParameterOptimizer:
 
     fn _gradient_based_optimization(
         self, initial_params: ParameterSet
-    ) -> OptimizationResult:
-        """Perform gradient-based optimization starting from initial parameters.
+    ) raises -> OptimizationResult:
+        """
+        Perform gradient-based optimization starting from initial parameters.
+
+        Uses numerical gradient estimation and gradient descent to fine-tune
+        parameters from a good starting point. Implements adaptive step sizing
+        and convergence detection for efficient optimization.
+
+        Args:
+            initial_params: Starting parameter set from previous optimization stage.
+
+        Returns:
+            Optimization result with refined parameters and performance metrics.
+
+        Raises:
+            Error: If gradient computation fails or parameters become invalid.
         """
         print("  Running gradient-based optimization...")
 
@@ -281,7 +363,6 @@ struct ParameterOptimizer:
         step_size = 0.1
 
         for iteration in range(20):  # Limited iterations for gradient descent
-            # Compute gradients using finite differences
             improved_params = self._compute_parameter_gradients(
                 current_params, step_size
             )
@@ -305,22 +386,35 @@ struct ParameterOptimizer:
 
     fn _adaptive_parameter_refinement(
         self, initial_params: ParameterSet
-    ) -> OptimizationResult:
-        """Perform adaptive parameter refinement based on performance feedback.
+    ) raises -> OptimizationResult:
+        """
+        Perform adaptive parameter refinement based on performance feedback.
+
+        Applies domain-specific refinements and adaptive adjustments to parameters
+        based on performance characteristics. Focuses on fine-tuning critical
+        parameters that have the most impact on system performance.
+
+        Args:
+            initial_params: Parameter set from previous optimization stages.
+
+        Returns:
+            Final optimization result with refined parameters.
+
+        Raises:
+            Error: If refinement process encounters invalid parameter states.
         """
         print("  Running adaptive parameter refinement...")
 
         refined_params = initial_params
         refinement_score = self._evaluate_parameter_set(refined_params)
 
-        # Test different learning rates
         learning_rates = List[Float64]()
         learning_rates.append(0.05)
         learning_rates.append(0.1)
         learning_rates.append(0.15)
         learning_rates.append(0.2)
 
-        var best_lr_score = refinement_score
+        best_lr_score = refinement_score
         for i in range(len(learning_rates)):
             test_params = refined_params
             test_params.learning_rate = learning_rates[i]
@@ -330,7 +424,6 @@ struct ParameterOptimizer:
                 best_lr_score = lr_score
                 refined_params.learning_rate = learning_rates[i]
 
-        # Fine-tune hybrid control weights
         mpc_weights = List[Float64]()
         mpc_weights.append(0.6)
         mpc_weights.append(0.7)
@@ -354,30 +447,39 @@ struct ParameterOptimizer:
         )
 
     fn _evaluate_parameter_set(self, params: ParameterSet) -> Float64:
-        """Evaluate performance of a parameter set across test scenarios."""
+        """
+        Evaluate performance of a parameter set across comprehensive test scenarios.
+
+        Runs the parameter set through all configured test scenarios and computes
+        a weighted composite performance score. Considers success rate, stability
+        time, and control effort to provide a balanced evaluation metric.
+
+        Args:
+            params: Parameter set to evaluate.
+
+        Returns:
+            Composite performance score between 0.0 and 1.0 (higher is better).
+        """
         if not params.is_valid():
             return 0.0  # Invalid parameters get zero score
 
         var total_success = 0.0
         var total_stability = 0.0
         var total_control_effort = 0.0
-        var scenario_count = Float64(len(self.test_scenarios))
+        scenario_count = Float64(len(self.test_scenarios))
 
-        # Test parameters across all scenarios
         for i in range(len(self.test_scenarios)):
             scenario = self.test_scenarios[i]
-            var result = self._test_scenario_performance(scenario, params)
+            result = self._test_scenario_performance(scenario, params)
 
             total_success += result[0]  # Success rate
             total_stability += result[1]  # Stability time
             total_control_effort += result[2]  # Control effort
 
-        # Calculate average performance metrics
-        var avg_success = total_success / scenario_count
-        var avg_stability = total_stability / scenario_count
-        var avg_control_effort = total_control_effort / scenario_count
+        avg_success = total_success / scenario_count
+        avg_stability = total_stability / scenario_count
+        avg_control_effort = total_control_effort / scenario_count
 
-        # Compute weighted performance score
         success_score = min(1.0, avg_success / TARGET_SUCCESS_RATE)
         stability_score = min(1.0, avg_stability / TARGET_STABILITY_TIME)
         effort_score = max(
@@ -395,40 +497,40 @@ struct ParameterOptimizer:
     fn _test_scenario_performance(
         self, initial_state: List[Float64], params: ParameterSet
     ) -> (Float64, Float64, Float64):
-        """Test performance for a single scenario with given parameters using physics-based simulation.
         """
-        # Real control system simulation
-        var success_rate = 0.0
-        var stability_time = 0.0
-        var control_effort = 0.0
+        Test performance for a single scenario using physics-based simulation.
 
-        # Extract initial conditions
+        Simulates the pendulum control system with the given parameters starting
+        from a specific initial state. Uses realistic physics modeling to measure
+        key performance metrics including success rate, stability time, and control effort.
+
+        Args:
+            initial_state: Initial pendulum state [position, velocity, angle].
+            params: Control parameters to test.
+
+        Returns:
+            Performance metrics tuple (success_rate, stability_time, control_effort).
+        """
         position = initial_state[0]
         velocity = initial_state[1]
         angle = initial_state[2]
 
         # Physics-based performance simulation
-        var simulation_time = 30.0  # 30 second simulation
-        var dt = 0.02  # 50 Hz control rate
-        var steps = Int(simulation_time / dt)
+        simulation_time = 30.0  # 30 second simulation
+        dt = 0.02  # 50 Hz control rate
+        steps = Int(simulation_time / dt)
 
-        # State variables for simulation
         var current_angle = angle
-        var current_velocity = velocity
         var current_position = position
         var current_angular_vel = 0.0
 
-        # Performance tracking
         var stable_time = 0.0
         var total_effort = 0.0
         var inversion_achieved = False
         var max_stable_duration = 0.0
         var current_stable_duration = 0.0
 
-        # Run physics simulation
         for step in range(steps):
-            timestamp = Float64(step) * dt
-
             # Determine control mode based on angle
             var control_voltage = 0.0
             if abs(current_angle) < params.stabilize_angle_threshold:
@@ -443,7 +545,7 @@ struct ParameterOptimizer:
                     max_stable_duration = current_stable_duration
             else:
                 # Swing-up control (energy-based)
-                var energy_error = self._calculate_energy_error(
+                energy_error = self._calculate_energy_error(
                     current_angle, current_angular_vel
                 )
                 control_voltage = (
@@ -451,7 +553,6 @@ struct ParameterOptimizer:
                 )
                 current_stable_duration = 0.0
 
-            # Apply MPC weighting to control effort
             control_voltage *= 1.0 + params.mpc_weight_control
 
             # Bound control voltage
@@ -459,7 +560,7 @@ struct ParameterOptimizer:
             total_effort += abs(control_voltage) * dt
 
             # Physics integration (simplified pendulum dynamics)
-            var angular_accel = self._compute_angular_acceleration(
+            angular_accel = self._compute_angular_acceleration(
                 current_angle,
                 current_angular_vel,
                 current_position,
@@ -469,21 +570,16 @@ struct ParameterOptimizer:
             current_angle += current_angular_vel * dt
 
             # Linear actuator dynamics
-            var actuator_accel = (
-                control_voltage * 0.5
-            )  # Simplified actuator model
+            actuator_accel = control_voltage * 0.5  # Simplified actuator model
             velocity += actuator_accel * dt
             current_position += velocity * dt
 
-            # Apply damping
             current_angular_vel *= 0.999
             velocity *= 0.995
 
-            # Track stability
             if abs(current_angle) < 10.0:  # Within 10 degrees
                 stable_time += dt
 
-        # Calculate performance metrics
         if inversion_achieved:
             success_rate = min(
                 1.0, max_stable_duration / 15.0
@@ -499,18 +595,29 @@ struct ParameterOptimizer:
     fn _calculate_energy_error(
         self, angle: Float64, angular_vel: Float64
     ) -> Float64:
-        """Calculate energy error for swing-up control."""
+        """
+        Calculate energy error for swing-up control strategy.
+
+        Computes the difference between target energy (inverted position) and
+        current energy (kinetic + potential) to drive the energy-based swing-up
+        controller. Used to determine control effort needed for pendulum inversion.
+
+        Args:
+            angle: Current pendulum angle in radians.
+            angular_vel: Current angular velocity in rad/s.
+
+        Returns:
+            Energy error in Joules (positive means more energy needed).
+        """
         # Target energy for inverted pendulum (potential energy at top)
-        var target_energy = 9.81 * 0.3  # g * L (assuming 0.3m pendulum)
+        target_energy = 9.81 * 0.3  # g * L (assuming 0.3m pendulum)
 
         # Current energy (kinetic + potential)
-        var kinetic_energy = (
-            0.5 * 0.1 * angular_vel * angular_vel
-        )  # 0.5 * m * v^2
-        var potential_energy = (
+        kinetic_energy = 0.5 * 0.1 * angular_vel * angular_vel  # 0.5 * m * v^2
+        potential_energy = (
             9.81 * 0.1 * 0.3 * (1.0 - cos(angle))
         )  # m * g * L * (1 - cos(θ))
-        var current_energy = kinetic_energy + potential_energy
+        current_energy = kinetic_energy + potential_energy
 
         return target_energy - current_energy
 
@@ -521,31 +628,58 @@ struct ParameterOptimizer:
         position: Float64,
         control_voltage: Float64,
     ) -> Float64:
-        """Compute angular acceleration using pendulum dynamics."""
+        """
+        Compute angular acceleration using inverted pendulum dynamics.
+
+        Implements the nonlinear dynamics equation for an inverted pendulum on a cart:
+        θ̈ = (g/L)sin(θ) + (1/L)ẍ*cos(θ)
+
+        Args:
+            angle: Current pendulum angle in radians.
+            angular_vel: Current angular velocity in rad/s.
+            position: Current cart position in meters.
+            control_voltage: Applied control voltage in volts.
+
+        Returns:
+            Angular acceleration in rad/s².
+        """
         # Simplified inverted pendulum dynamics
         # θ̈ = (g/L)sin(θ) + (1/L)ẍ*cos(θ)
 
-        var g = 9.81  # gravity
-        var L = 0.3  # pendulum length
-        var m_cart = 1.0  # cart mass
-        var m_pend = 0.1  # pendulum mass
+        g = 9.81  # gravity
+        L = 0.3  # pendulum length
+        m_cart = 1.0  # cart mass
 
-        # Linear acceleration from control voltage
-        var linear_accel = control_voltage / m_cart
+        linear_accel = control_voltage / m_cart
 
-        # Angular acceleration
-        var gravity_term = (g / L) * sin(angle)
-        var coupling_term = (linear_accel / L) * cos(angle)
+        gravity_term = (g / L) * sin(angle)
+        gravity_term = (g / L) * sin(angle)
+        coupling_term = (linear_accel / L) * cos(angle)
 
         return gravity_term + coupling_term
 
     fn _compute_parameter_gradients(
         self, params: ParameterSet, step_size: Float64
-    ) -> ParameterSet:
-        """Compute parameter gradients using finite differences."""
+    ) raises -> ParameterSet:
+        """
+        Compute parameter gradients using finite differences.
+
+        Uses finite difference approximation to estimate gradients of the
+        performance function with respect to each parameter. Essential for
+        gradient-based optimization algorithms.
+
+        Args:
+            params: Current parameter set.
+            step_size: Step size for finite difference computation.
+
+        Returns:
+            Parameter set containing gradient estimates.
+
+        Raises:
+            Error: If gradient computation encounters numerical instabilities.
+        """
         improved_params = params
 
-        # Gradient for kp_stabilize
         kp_plus = params
         kp_plus.kp_stabilize += step_size
         kp_minus = params
@@ -560,7 +694,6 @@ struct ParameterOptimizer:
         else:
             improved_params.kp_stabilize -= step_size * 0.5
 
-        # Apply bounds
         improved_params.kp_stabilize = max(
             5.0, min(30.0, improved_params.kp_stabilize)
         )
@@ -617,35 +750,43 @@ struct ParameterOptimizer:
     fn _create_optimization_result(
         self, params: ParameterSet, score: Float64, iterations: Int
     ) -> OptimizationResult:
-        """Create optimization result structure with real performance measurements.
         """
-        # Run comprehensive performance evaluation
+        Create comprehensive optimization result with real performance measurements.
+
+        Evaluates the final parameter set across all test scenarios to generate
+        accurate performance metrics and determines whether optimization targets
+        have been achieved.
+
+        Args:
+            params: Final optimized parameter set.
+            score: Composite performance score achieved.
+            iterations: Number of optimization iterations performed.
+
+        Returns:
+            Complete optimization result with all performance metrics.
+        """
         var total_success = 0.0
         var total_stability = 0.0
         var total_effort = 0.0
-        var scenario_count = Float64(len(self.test_scenarios))
+        scenario_count = Float64(len(self.test_scenarios))
 
-        # Evaluate performance across all test scenarios
         for i in range(len(self.test_scenarios)):
             scenario = self.test_scenarios[i]
-            var result = self._test_scenario_performance(scenario, params)
+            result = self._test_scenario_performance(scenario, params)
             total_success += result[0]
             total_stability += result[1]
             total_effort += result[2]
 
-        # Calculate real performance metrics
-        var measured_success_rate = total_success / scenario_count
-        var measured_stability_time = total_stability / scenario_count
-        var measured_control_effort = total_effort / scenario_count
+        measured_success_rate = total_success / scenario_count
+        measured_stability_time = total_stability / scenario_count
+        measured_control_effort = total_effort / scenario_count
 
-        # Determine if targets are met based on real measurements
-        var meets_targets = (
+        meets_targets = (
             measured_success_rate >= TARGET_SUCCESS_RATE
             and measured_stability_time >= TARGET_STABILITY_TIME
         )
 
-        # Estimate optimization time based on iterations and complexity
-        var optimization_time = Float64(iterations) * 0.5 + scenario_count * 0.1
+        optimization_time = Float64(iterations) * 0.5 + scenario_count * 0.1
 
         return OptimizationResult(
             params,  # best_parameters
@@ -659,13 +800,30 @@ struct ParameterOptimizer:
         )
 
     fn _create_failed_result(self) -> OptimizationResult:
-        """Create failed optimization result."""
+        """
+        Create a failed optimization result with default values.
+
+        Returns a result structure indicating optimization failure, with zero
+        performance metrics and the current parameter set. Used when optimization
+        cannot proceed due to initialization or other errors.
+
+        Returns:
+            Optimization result indicating failure state.
+        """
         return OptimizationResult(
             self.current_parameters, 0.0, 0.0, 0.0, 0.0, 0, 0.0, False
         )
 
     fn _print_optimization_results(self, result: OptimizationResult):
-        """Print detailed optimization results."""
+        """
+        Print detailed optimization results in a formatted report.
+
+        Displays comprehensive optimization results including performance metrics,
+        parameter values, and target achievement status in a human-readable format.
+
+        Args:
+            result: Optimization result to display.
+        """
         print("  Optimization Results:")
         print("    Performance score:", result.best_performance)
         print("    Success rate:", result.success_rate * 100.0, "%")
@@ -681,9 +839,26 @@ struct ParameterOptimizer:
             print("    ⚠ Optimization incomplete - targets not fully met")
 
     fn get_optimized_parameters(self) -> ParameterSet:
-        """Get the current optimized parameter set."""
+        """
+        Get the current optimized parameter set.
+
+        Returns the best parameter set found during the most recent optimization
+        run. These parameters represent the optimal configuration for the control
+        system based on the defined performance criteria.
+
+        Returns:
+            The optimized parameter set.
+        """
         return self.current_parameters
 
     fn get_optimization_history(self) -> List[OptimizationResult]:
-        """Get complete optimization history."""
+        """
+        Get complete optimization history.
+
+        Returns all optimization results from previous runs, allowing analysis
+        of optimization progress and comparison of different parameter sets.
+
+        Returns:
+            List of all optimization results.
+        """
         return self.optimization_history

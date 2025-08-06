@@ -233,7 +233,7 @@ struct TrainingPipelineTests:
         initial_loss = 1000.0
         current_loss = initial_loss
 
-        for epoch in range(epochs):
+        for _ in range(epochs):  # epoch not used in current implementation
             total_loss = 0.0
 
             for i in range(len(inputs)):
