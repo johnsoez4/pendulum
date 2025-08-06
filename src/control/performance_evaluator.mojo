@@ -314,7 +314,7 @@ struct PerformanceEvaluator:
         initial_velocity = initial_state[1]
 
         # Estimate success rate based on initial conditions
-        var success_rate = 0.5
+        success_rate: Float64
         if abs(initial_angle) < 30.0:  # Near inverted
             success_rate = 0.8 + parameters.kp_stabilize / 100.0
         elif abs(initial_angle) < 90.0:  # Transition region

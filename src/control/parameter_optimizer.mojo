@@ -145,14 +145,35 @@ struct OptimizationResult(Copyable, Movable):
 
 struct ParameterOptimizer:
     """
-    Comprehensive parameter optimizer for control algorithms.
+    Comprehensive parameter optimizer for control algorithms with multi-objective optimization.
 
-    Features:
-    - Multi-objective optimization for success rate and stability
-    - Grid search and gradient-based optimization
-    - Robust performance evaluation across diverse scenarios
-    - Automatic parameter bound enforcement
-    - Convergence detection and early stopping
+    Implements sophisticated parameter optimization for control systems using multiple
+    optimization strategies including grid search, gradient-based methods, and hybrid
+    approaches. Designed to optimize control parameters across diverse operating
+    conditions while maintaining robustness and stability.
+
+    Key Features:
+    - Multi-objective optimization balancing success rate, stability, and control effort
+    - Grid search with intelligent parameter space exploration
+    - Gradient-based optimization with adaptive step sizing
+    - Robust performance evaluation across comprehensive test scenarios
+    - Automatic parameter bound enforcement and constraint handling
+    - Convergence detection with early stopping mechanisms
+    - Historical tracking of optimization progress and results
+
+    Optimization Process:
+    1. Initialize with diverse test scenarios covering operating envelope
+    2. Perform grid search to identify promising parameter regions
+    3. Apply gradient-based refinement for local optimization
+    4. Evaluate robustness across all test scenarios
+    5. Track convergence and apply early stopping when appropriate
+
+    Attributes:
+        current_parameters: Current optimized parameter set
+        optimization_history: Historical record of all optimization runs
+        test_scenarios: Comprehensive test scenarios for evaluation
+        performance_weights: Weighting factors for multi-objective optimization
+        optimizer_initialized: Initialization status flag
     """
 
     var current_parameters: ParameterSet
@@ -203,7 +224,16 @@ struct ParameterOptimizer:
         self.optimizer_initialized = False
 
     fn initialize_optimizer(mut self) -> Bool:
-        """Initialize optimizer with test scenarios and performance weights."""
+        """
+        Initialize the parameter optimizer with test scenarios and performance weights.
+
+        Sets up the optimization framework by creating diverse test scenarios,
+        configuring performance weights for different metrics, and preparing
+        the optimizer for parameter tuning operations.
+
+        Returns:
+            True if initialization successful, False otherwise.
+        """
         print("Initializing Parameter Optimizer...")
 
         self._create_test_scenarios()
@@ -245,30 +275,26 @@ struct ParameterOptimizer:
         print("Target: >70% success rate, >15s stability time")
         print("Optimization iterations:", OPTIMIZATION_ITERATIONS)
 
-        var best_result = self._create_failed_result()
-        var best_score = 0.0
+        best_result = self._create_failed_result()
 
         print("\nStage 1: Grid Search for Initial Parameters")
         grid_result = self._grid_search_optimization()
-        if grid_result.best_performance > best_score:
+        if grid_result.best_performance > best_result.best_performance:
             best_result = grid_result
-            best_score = grid_result.best_performance
 
         print("\nStage 2: Gradient-Based Fine Tuning")
         gradient_result = self._gradient_based_optimization(
             best_result.best_parameters
         )
-        if gradient_result.best_performance > best_score:
+        if gradient_result.best_performance > best_result.best_performance:
             best_result = gradient_result
-            best_score = gradient_result.best_performance
 
         print("\nStage 3: Adaptive Parameter Refinement")
         adaptive_result = self._adaptive_parameter_refinement(
             best_result.best_parameters
         )
-        if adaptive_result.best_performance > best_score:
+        if adaptive_result.best_performance > best_result.best_performance:
             best_result = adaptive_result
-            best_score = adaptive_result.best_performance
 
         self.optimization_history.append(best_result)
         self.current_parameters = best_result.best_parameters
@@ -463,9 +489,9 @@ struct ParameterOptimizer:
         if not params.is_valid():
             return 0.0  # Invalid parameters get zero score
 
-        var total_success = 0.0
-        var total_stability = 0.0
-        var total_control_effort = 0.0
+        total_success = 0.0
+        total_stability = 0.0
+        total_control_effort = 0.0
         scenario_count = Float64(len(self.test_scenarios))
 
         for i in range(len(self.test_scenarios)):
@@ -520,19 +546,19 @@ struct ParameterOptimizer:
         dt = 0.02  # 50 Hz control rate
         steps = Int(simulation_time / dt)
 
-        var current_angle = angle
-        var current_position = position
-        var current_angular_vel = 0.0
+        current_angle = angle
+        current_position = position
+        current_angular_vel = 0.0
 
-        var stable_time = 0.0
-        var total_effort = 0.0
-        var inversion_achieved = False
-        var max_stable_duration = 0.0
-        var current_stable_duration = 0.0
+        stable_time = 0.0
+        total_effort = 0.0
+        inversion_achieved = False
+        max_stable_duration = 0.0
+        current_stable_duration = 0.0
 
-        for step in range(steps):
+        for _ in range(steps):
             # Determine control mode based on angle
-            var control_voltage = 0.0
+            control_voltage: Float64
             if abs(current_angle) < params.stabilize_angle_threshold:
                 # Stabilization control (PD controller)
                 control_voltage = -(
@@ -653,7 +679,6 @@ struct ParameterOptimizer:
         linear_accel = control_voltage / m_cart
 
         gravity_term = (g / L) * sin(angle)
-        gravity_term = (g / L) * sin(angle)
         coupling_term = (linear_accel / L) * cos(angle)
 
         return gravity_term + coupling_term
@@ -701,7 +726,19 @@ struct ParameterOptimizer:
         return improved_params
 
     fn _create_test_scenarios(mut self):
-        """Create diverse test scenarios for parameter evaluation."""
+        """
+        Create diverse test scenarios for comprehensive parameter evaluation.
+
+        Generates a comprehensive set of test scenarios covering different
+        operating conditions and difficulty levels. These scenarios are used
+        to evaluate parameter performance across the full operating envelope.
+
+        Scenarios include:
+        - Near inverted positions (easy control scenarios)
+        - Transition regions (moderate difficulty)
+        - Large angle recovery (challenging scenarios)
+        - High velocity conditions (dynamic challenges)
+        """
         # Near inverted scenarios
         scenario1 = List[Float64]()
         scenario1.append(0.5)  # la_position
@@ -765,9 +802,9 @@ struct ParameterOptimizer:
         Returns:
             Complete optimization result with all performance metrics.
         """
-        var total_success = 0.0
-        var total_stability = 0.0
-        var total_effort = 0.0
+        total_success = 0.0
+        total_stability = 0.0
+        total_effort = 0.0
         scenario_count = Float64(len(self.test_scenarios))
 
         for i in range(len(self.test_scenarios)):

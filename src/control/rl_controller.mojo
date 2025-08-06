@@ -593,7 +593,6 @@ struct RLController:
     fn _calculate_rl_success_rate(self, avg_reward: Float64) -> Float64:
         """Calculate success rate using sophisticated RL performance metrics."""
         # Multi-factor success rate calculation
-        var base_success_rate = 0.0
 
         # Factor 1: Reward-based success (normalized sigmoid)
         var reward_factor = 1.0 / (
