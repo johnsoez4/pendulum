@@ -9,3 +9,4 @@ type: "always_apply"
 - Run `update_mojo_syntax.mojo` automation script to systematically review and correct Mojo syntax issues for design pattern compliance.
 - Fix all errors found by `update_mojo_syntax.mojo`.
 - Fix compiler errors and warnings not detected by the automation script.
+- When taking action, create brief and clear responses and summaries.
