@@ -6,7 +6,6 @@ pendulum system characteristics, data quality, and behavioral patterns.
 """
 
 from collections import Dict
-from math import sqrt
 
 alias HANGING_ANGLE_THRESHOLD = 170.0  # Degrees - consider hanging if |angle| > 170
 alias INVERTED_ANGLE_THRESHOLD = 10.0  # Degrees - consider inverted if |angle| < 10
@@ -57,13 +56,13 @@ struct PendulumDataAnalyzer:
         Analyze the pendulum data file and return statistical summary.
 
         Args:
-            file_path: Path to the CSV data file
+            file_path: Path to the CSV data file.
 
         Returns:
-            Dictionary containing statistics for each data column
+            Dictionary containing statistics for each data column.
 
         Raises:
-            Error if file cannot be read or data is invalid
+            Error if file cannot be read or data is invalid.
         """
         # TODO: Implement file reading when Mojo file I/O is available
         # For now, return placeholder statistics based on known data characteristics
@@ -120,9 +119,9 @@ struct PendulumDataAnalyzer:
         Identify different pendulum states in the data.
 
         Returns:
-            Dictionary with counts of different system states
+            Dictionary with counts of different system states.
         """
-        var state_counts = Dict[String, Int]()
+        state_counts = Dict[String, Int]()
 
         # Based on data inspection, most samples show hanging state
         state_counts["hanging"] = 8500  # |angle| > 170 degrees
@@ -137,7 +136,7 @@ struct PendulumDataAnalyzer:
         Validate that data respects known physical constraints.
 
         Returns:
-            Dictionary indicating which constraints are satisfied
+            Dictionary indicating which constraints are satisfied.
         """
         constraints = Dict[String, Bool]()
 
@@ -165,7 +164,7 @@ struct PendulumDataAnalyzer:
         Calculate key system dynamic characteristics.
 
         Returns:
-            Dictionary with estimated system parameters
+            Dictionary with estimated system parameters.
         """
         dynamics = Dict[String, Float64]()
 
@@ -183,7 +182,7 @@ struct PendulumDataAnalyzer:
         Generate a comprehensive analysis report.
 
         Returns:
-            Formatted string containing analysis results
+            Formatted string containing analysis results.
         """
         if not self._data_loaded:
             raise Error("Data must be analyzed before generating report")
@@ -231,12 +230,12 @@ fn analyze_pendulum_data(file_path: String) raises -> String:
     Convenience function to analyze pendulum data and return report.
 
     Args:
-        file_path: Path to the CSV data file
+        file_path: Path to the CSV data file.
 
     Returns:
-        Analysis report string
+        Analysis report string.
     """
-    var analyzer = PendulumDataAnalyzer()
+    analyzer = PendulumDataAnalyzer()
     try:
         _ = analyzer.analyze_data_file(file_path)
     except e:
