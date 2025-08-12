@@ -239,7 +239,7 @@ fn analyze_pendulum_data(file_path: String) raises -> String:
     var analyzer = PendulumDataAnalyzer()
     try:
         _ = analyzer.analyze_data_file(file_path)
-    except:
+    except e:
         # If file analysis fails, continue with default analysis
         pass
     return analyzer.generate_analysis_report()
