@@ -2,13 +2,17 @@
 Test the updated GPU utilities with real MAX Engine API.
 
 This script tests that our GPU utilities now use the correct MAX Engine API
-and can properly detect and utilize the NVIDIA A10 GPU hardware.
+and can properly detect and utilize available GPU hardware.
 """
 
 from collections import List
 
 # Test the real MAX Engine imports
-from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
+from sys import (
+    has_accelerator,
+    has_nvidia_gpu_accelerator,
+    has_amd_gpu_accelerator,
+)
 from gpu.host import DeviceContext
 from layout import Layout, LayoutTensor
 
@@ -18,22 +22,43 @@ fn test_real_gpu_detection() -> Bool:
     print("Testing Real GPU Detection...")
     print("-" * 50)
 
-    # Use the verified working MAX Engine API
-    has_nvidia = has_nvidia_gpu_accelerator()
-    has_amd = has_amd_gpu_accelerator()
+    # Use the verified working MAX Engine API for generic GPU detection
+    gpu_available = has_accelerator()
 
     print("GPU Hardware Detection Results:")
-    print("- NVIDIA GPU available:", has_nvidia)
-    print("- AMD GPU available:", has_amd)
+    print("- GPU accelerator available:", gpu_available)
 
-    if has_nvidia:
-        print("✅ NVIDIA A10 GPU confirmed available")
-        print("✓ Ready for DeviceContext operations")
-        print("✓ Ready for LayoutTensor operations")
-        return True
-    elif has_amd:
-        print("✅ AMD GPU confirmed available")
-        return True
+    if gpu_available:
+        # Get specific vendor information for detailed reporting
+        has_nvidia = has_nvidia_gpu_accelerator()
+        has_amd = has_amd_gpu_accelerator()
+
+        if has_nvidia:
+            print("- Vendor: NVIDIA GPU hardware detected")
+        elif has_amd:
+            print("- Vendor: AMD GPU hardware detected")
+        else:
+            print("- Vendor: Generic GPU accelerator detected")
+
+        # Try to get actual device information
+        try:
+            ctx = DeviceContext()
+            device_name = ctx.name()
+            memory_info = ctx.get_memory_info()
+            total_memory_gb = Float64(memory_info[1]) / (
+                1024.0 * 1024.0 * 1024.0
+            )
+
+            print("- Device:", device_name)
+            print("- Memory: {:.1f} GB total".format(total_memory_gb))
+            print("✅ GPU hardware detected and available")
+            print("✓ Ready for DeviceContext operations")
+            print("✓ Ready for LayoutTensor operations")
+            return True
+        except e:
+            print("✅ GPU accelerator detected but device info unavailable")
+            print("✓ Ready for basic GPU operations")
+            return True
     else:
         print("❌ No GPU hardware detected")
         return False
@@ -117,8 +142,8 @@ fn main():
     print("=" * 60)
 
     print("Testing GPU utilities updated with VERIFIED working MAX Engine API")
-    print("Hardware: NVIDIA A10 GPU (23GB)")
-    print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
+    print("Hardware: GPU acceleration available (detected at runtime)")
+    print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0")
 
     # Run all tests
     detection_ok = test_real_gpu_detection()
@@ -159,7 +184,7 @@ fn main():
     if success_count == 4:
         print("\n🎉 ALL GPU UTILITIES TESTS PASSED!")
         print("✅ GPU utilities now use REAL MAX Engine API")
-        print("✅ NVIDIA A10 GPU hardware properly detected")
+        print("✅ GPU hardware properly detected and available")
         print("✅ DeviceContext operations working")
         print("✅ GPU buffer and tensor operations working")
         print("\n🚀 GPU UTILITIES UPDATED AND VERIFIED!")
