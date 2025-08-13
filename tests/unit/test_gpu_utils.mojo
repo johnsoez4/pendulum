@@ -28,7 +28,7 @@ fn main():
 
     # Test basic GPU availability simulation
     gpu_available = True  # Simulate GPU detection
-    var device_count = 1
+    device_count = 1
     device_name = "NVIDIA A10"
     memory_total = 23028
 
@@ -75,7 +75,7 @@ fn test_gpu_memory_leaks():
 
     # Simulate memory allocation tracking
     initial_memory = 1024  # MB
-    var allocated_memory = 0
+    allocated_memory = 0
     max_allocations = 10
 
     print("  SIMULATED: Initial GPU memory -", initial_memory, "MB")
