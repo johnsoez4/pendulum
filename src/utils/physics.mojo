@@ -392,7 +392,7 @@ struct PhysicsUtils:
         Returns:
             Normalized angle in [-pi, pi].
         """
-        var normalized = angle
+        normalized = angle
         while normalized > pi:
             normalized -= 2.0 * pi
         while normalized < -pi:
