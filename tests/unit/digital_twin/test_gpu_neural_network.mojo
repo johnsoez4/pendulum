@@ -7,7 +7,11 @@ and performance monitoring.
 """
 
 from collections import List
-from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
+from sys import (
+    has_accelerator,
+    has_nvidia_gpu_accelerator,
+    has_amd_gpu_accelerator,
+)
 from gpu.host import DeviceContext
 
 
@@ -17,27 +21,51 @@ fn main():
     print("=" * 70)
 
     print("Testing comprehensive GPU neural network with advanced features")
-    print("Hardware: NVIDIA A10 GPU (23GB)")
-    print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0 + CUDA 12.8")
+    print("Hardware: GPU acceleration available (detected at runtime)")
+    print("Environment: Mojo 25.5.0 + MAX Engine 25.5.0")
 
     # Test 1: GPU Hardware Detection for Advanced Neural Network
     print("\n1. Testing GPU Hardware for Advanced Neural Network...")
     print("-" * 60)
 
-    has_nvidia = has_nvidia_gpu_accelerator()
-    has_amd = has_amd_gpu_accelerator()
+    # Use generic GPU detection first
+    gpu_available = has_accelerator()
 
     print("Advanced GPU Detection Results:")
-    print("- NVIDIA GPU available:", has_nvidia)
-    print("- AMD GPU available:", has_amd)
+    print("- GPU accelerator available:", gpu_available)
 
-    if has_nvidia:
-        print(
-            "✅ NVIDIA A10 GPU confirmed for advanced neural network"
-            " acceleration"
-        )
-    elif has_amd:
-        print("✅ AMD GPU confirmed for advanced neural network acceleration")
+    if gpu_available:
+        # Get specific vendor information for detailed reporting
+        has_nvidia = has_nvidia_gpu_accelerator()
+        has_amd = has_amd_gpu_accelerator()
+
+        if has_nvidia:
+            print("- Vendor: NVIDIA GPU hardware detected")
+        elif has_amd:
+            print("- Vendor: AMD GPU hardware detected")
+        else:
+            print("- Vendor: Generic GPU accelerator detected")
+
+        # Try to get actual device information
+        try:
+            ctx = DeviceContext()
+            device_name = ctx.name()
+            memory_info = ctx.get_memory_info()
+            total_memory_gb = Float64(memory_info[1]) / (
+                1024.0 * 1024.0 * 1024.0
+            )
+
+            print("- Device:", device_name)
+            print("- Memory: {:.1f} GB total".format(total_memory_gb))
+            print(
+                "✅ GPU hardware detected for advanced neural network"
+                " acceleration"
+            )
+        except e:
+            print(
+                "✅ GPU accelerator detected for advanced neural network"
+                " acceleration"
+            )
     else:
         print("❌ No GPU hardware detected")
         return
@@ -78,7 +106,7 @@ fn main():
         print("✓ Advanced GPU memory management completed")
         print("✅ Advanced GPU Memory Management: SUCCESS")
 
-    except:
+    except e:
         print("❌ Advanced GPU memory management failed")
 
     # Test 3: Advanced GPU Neural Network Pipeline
@@ -158,7 +186,7 @@ fn main():
         print("✓ All test cases processed with advanced GPU acceleration")
         print("✅ Advanced GPU Neural Network Pipeline: SUCCESS")
 
-    except:
+    except e:
         print("❌ Advanced GPU neural network pipeline failed")
 
     # Test 4: GPU Performance Monitoring
@@ -193,7 +221,7 @@ fn main():
         print("✓ Performance monitoring verified")
         print("✅ GPU Performance Monitoring: SUCCESS")
 
-    except:
+    except e:
         print("❌ GPU performance monitoring failed")
 
     # Summary
