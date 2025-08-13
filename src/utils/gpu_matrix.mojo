@@ -73,12 +73,12 @@ fn gpu_matrix_multiply_kernel(
 
     # Bounds checking
     if row < rows_a and col < cols_b:
-        var sum = Scalar[DType.float64](0.0)
+        sum = Scalar[DType.float64](0.0)
 
         # Compute dot product for this element
         for k in range(cols_a):
-            var a_val = a[row * cols_a + k]
-            var b_val = b[k * cols_b + col]
+            a_val = a[row * cols_a + k]
+            b_val = b[k * cols_b + col]
             sum += a_val * b_val
 
         # Store result
@@ -175,7 +175,7 @@ struct GPUMemoryManager(Copyable):
         print("✓ Ready for production GPU memory operations")
         print("✓ Buffer tracking enabled - max buffers:", self.max_buffers)
 
-    fn __del__(owned self):
+    fn __del__(deinit self):
         """
         Destructor for automatic GPU memory cleanup.
 
@@ -278,8 +278,8 @@ struct GPUMemoryManager(Copyable):
         Raises:
             Error: If buffer deallocation fails.
         """
-        var buffer_size = 0
-        var buffer_found = False
+        buffer_size = 0
+        buffer_found = False
 
         # Find and remove the specific buffer from reuse pool using identity matching
         for i in range(len(self.buffer_pool)):
@@ -394,12 +394,12 @@ struct GPUMemoryManager(Copyable):
 
         # No suitable buffer found, create a new one
         print("Creating new GPU buffer:", size, "elements")
-        var buffer_optional = self.allocate_gpu_buffer(size)
+        buffer_optional = self.allocate_gpu_buffer(size)
         if not buffer_optional:
             raise Error("Failed to allocate GPU buffer")
 
         # Extract buffer from Optional and add to pool for tracking
-        var buffer = buffer_optional.value()
+        buffer = buffer_optional.value()
         self.buffer_pool.append(buffer^)
         self.buffer_sizes.append(size)
         self.buffer_available.append(False)  # Mark as in use
@@ -606,7 +606,7 @@ struct AdvancedGPUMemoryOptimizer:
                             row = block_row + i
                             col = block_col + j
                             if row < matrix_rows and col < matrix_cols:
-                                var index = row * matrix_cols + col
+                                index = row * matrix_cols + col
                                 if index < min(
                                     total_elements, 1000
                                 ):  # Limit for performance
@@ -734,7 +734,7 @@ struct AdvancedGPUMemoryOptimizer:
             print("✓ Optimizing neural network memory layout")
             print("  - Number of layers:", len(layer_sizes))
 
-            var total_nn_memory = 0
+            total_nn_memory = 0
 
             # Optimize memory layout for each layer
             for i in range(len(layer_sizes)):
@@ -906,7 +906,7 @@ struct GPUTensor(Copyable):
         self.is_on_gpu = False
         self.data = List[Float64]()
 
-        var total_size = 1
+        total_size = 1
         for i in range(len(shape)):
             total_size *= shape[i]
         for _ in range(total_size):
@@ -1063,7 +1063,7 @@ struct GPUTensor(Copyable):
 
     fn get_total_elements(self) -> Int:
         """Get total number of elements in tensor."""
-        var total = 1
+        total = 1
         for i in range(len(self.shape)):
             total *= self.shape[i]
         return total
@@ -1147,7 +1147,7 @@ struct GPUTensor(Copyable):
             except e:
                 print("⚠️  GPU synchronization failed:", e)
 
-        var result = List[Float64]()
+        result = List[Float64]()
         for i in range(len(self.data)):
             result.append(self.data[i])
         return result
@@ -1162,7 +1162,7 @@ struct GPUTensor(Copyable):
         Returns:
             Result tensor.
         """
-        var result = GPUTensor(self.shape, self.device_id)
+        result = GPUTensor(self.shape, self.device_id)
 
         # Real GPU tensor addition using compatible GPU hardware
         # Hardware: Compatible GPU with sufficient memory
@@ -1184,12 +1184,12 @@ struct GPUTensor(Copyable):
                 # Get GPU buffers from memory manager (reuse if available)
                 lhs_buffer = memory_manager.get_buffer(size)
                 rhs_buffer = memory_manager.get_buffer(size)
-                var result_buffer = memory_manager.get_buffer(size)
+                result_buffer = memory_manager.get_buffer(size)
 
                 # Transfer data to GPU buffers using proper array copy
                 # Create host arrays for the data
-                var host_lhs = UnsafePointer[Float64].alloc(size)
-                var host_rhs = UnsafePointer[Float64].alloc(size)
+                host_lhs = UnsafePointer[Float64].alloc(size)
+                host_rhs = UnsafePointer[Float64].alloc(size)
 
                 # Copy tensor data to host arrays
                 for i in range(size):
@@ -1226,7 +1226,7 @@ struct GPUTensor(Copyable):
                 print("📥 Transferring GPU computation results to CPU...")
 
                 # Create host buffer to receive GPU results
-                var host_result_buffer = UnsafePointer[Float64].alloc(size)
+                host_result_buffer = UnsafePointer[Float64].alloc(size)
 
                 # Copy GPU-computed results from device buffer to host buffer
                 memory_manager.ctx.enqueue_copy(
@@ -1280,7 +1280,7 @@ struct GPUTensor(Copyable):
         Returns:
             Result tensor.
         """
-        var result = GPUTensor(self.shape, self.device_id)
+        result = GPUTensor(self.shape, self.device_id)
 
         # Real GPU tensor multiplication using compatible GPU hardware
         # Hardware: Compatible GPU with sufficient memory
@@ -1301,9 +1301,7 @@ struct GPUTensor(Copyable):
                 # Create GPU buffers for operands and result
                 lhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
                 rhs_buffer = ctx.enqueue_create_buffer[DType.float64](size)
-                var result_buffer = ctx.enqueue_create_buffer[DType.float64](
-                    size
-                )
+                result_buffer = ctx.enqueue_create_buffer[DType.float64](size)
 
                 # Transfer data to GPU buffers
                 for i in range(size):
@@ -1471,9 +1469,7 @@ struct GPUMatrix(Copyable):
             # Try to allocate from memory manager first
             size = self.rows * self.cols
             try:
-                var buffer_optional = self.memory_manager.allocate_gpu_buffer(
-                    size
-                )
+                buffer_optional = self.memory_manager.allocate_gpu_buffer(size)
                 if buffer_optional:
                     self.gpu_allocated = True
                     print(
@@ -1680,11 +1676,11 @@ struct GPUMatrix(Copyable):
 
     fn _cpu_multiply(self, other: GPUMatrix) raises -> GPUMatrix:
         """CPU-based matrix multiplication."""
-        var result = GPUMatrix(self.rows, other.cols, ComputeMode_CPU_ONLY)
+        result = GPUMatrix(self.rows, other.cols, ComputeMode_CPU_ONLY)
 
         for i in range(self.rows):
             for j in range(other.cols):
-                var sum = 0.0
+                sum = 0.0
                 for k in range(self.cols):
                     sum += self.get(i, k) * other.get(k, j)
                 result.set(i, j, sum)
@@ -1701,7 +1697,7 @@ struct GPUMatrix(Copyable):
         3. Return result with GPU data
         """
         # Create result matrix for GPU computation
-        var result = GPUMatrix(self.rows, other.cols, ComputeMode_GPU_ONLY)
+        result = GPUMatrix(self.rows, other.cols, ComputeMode_GPU_ONLY)
 
         # REAL GPU IMPLEMENTATION using DeviceContext
         if self.gpu_allocated and other.gpu_allocated:
@@ -1718,7 +1714,7 @@ struct GPUMatrix(Copyable):
 
             # Real GPU matrix multiplication using memory manager
             try:
-                var result_size = self.rows * other.cols
+                result_size = self.rows * other.cols
 
                 # Get GPU buffers from memory manager (reuse if available)
                 a_buffer = self.memory_manager.get_buffer(self.rows * self.cols)
@@ -1729,10 +1725,8 @@ struct GPUMatrix(Copyable):
 
                 # Transfer matrix data to GPU buffers using proper array copy
                 # Create host arrays for the matrix data
-                var host_a = UnsafePointer[Float64].alloc(self.rows * self.cols)
-                var host_b = UnsafePointer[Float64].alloc(
-                    other.rows * other.cols
-                )
+                host_a = UnsafePointer[Float64].alloc(self.rows * self.cols)
+                host_b = UnsafePointer[Float64].alloc(other.rows * other.cols)
 
                 # Copy matrix data to host arrays in row-major order
                 for i in range(self.rows):
@@ -1778,9 +1772,7 @@ struct GPUMatrix(Copyable):
                 print("📥 Transferring GPU matrix results to CPU...")
 
                 # Create host buffer to receive GPU matrix results
-                var host_result_buffer = UnsafePointer[Float64].alloc(
-                    result_size
-                )
+                host_result_buffer = UnsafePointer[Float64].alloc(result_size)
 
                 # Copy GPU-computed matrix results from device buffer to host buffer
                 self.memory_manager.ctx.enqueue_copy(
@@ -1791,7 +1783,7 @@ struct GPUMatrix(Copyable):
                 # Transfer GPU-computed results to result matrix
                 for i in range(self.rows):
                     for j in range(other.cols):
-                        var index = i * other.cols + j
+                        index = i * other.cols + j
                         result.set(i, j, host_result_buffer[index])
 
                 # Clean up host buffer
@@ -1823,7 +1815,7 @@ struct GPUMatrix(Copyable):
                 # CPU fallback
                 for i in range(self.rows):
                     for j in range(other.cols):
-                        var sum = 0.0
+                        sum = 0.0
                         for k in range(self.cols):
                             sum += self.get(i, k) * other.get(k, j)
                         result.set(i, j, sum)
@@ -1843,7 +1835,7 @@ struct GPUMatrix(Copyable):
         3. Thread block optimization for GPU architecture
         4. Kernel fusion for reduced memory transfers
         """
-        var result = GPUMatrix(self.rows, other.cols, ComputeMode_GPU_ONLY)
+        result = GPUMatrix(self.rows, other.cols, ComputeMode_GPU_ONLY)
 
         if self.gpu_allocated and other.gpu_allocated:
             # Advanced GPU optimization using DeviceContext
@@ -1876,7 +1868,7 @@ struct GPUMatrix(Copyable):
                 # Perform optimized GPU matrix multiplication
                 for i in range(self.rows):
                     for j in range(other.cols):
-                        var sum = 0.0
+                        sum = 0.0
                         # Simulate memory coalescing by processing in blocks
                         for k_block in range(
                             0, self.cols, 16
@@ -1934,7 +1926,7 @@ struct GPUMatrix(Copyable):
             Kernel fusion optimization reduces memory transfers and improves performance.
             Falls back to separate operations if fused kernels are unavailable.
         """
-        var result = GPUMatrix(self.rows, weights.cols, ComputeMode_GPU_ONLY)
+        result = GPUMatrix(self.rows, weights.cols, ComputeMode_GPU_ONLY)
 
         if self.gpu_allocated and weights.gpu_allocated:
             # Kernel fusion using DeviceContext
@@ -1974,7 +1966,7 @@ struct GPUMatrix(Copyable):
                 for i in range(self.rows):
                     for j in range(weights.cols):
                         # Fused: linear transformation + bias + activation
-                        var sum = 0.0
+                        sum = 0.0
                         for k in range(self.cols):
                             sum += self.get(i, k) * weights.get(k, j)
 
@@ -2426,11 +2418,11 @@ struct Matrix(Copyable):
 
     fn multiply(self, other: Matrix) -> Matrix:
         """Matrix multiplication."""
-        var result = Matrix(self.rows, other.cols)
+        result = Matrix(self.rows, other.cols)
 
         for i in range(self.rows):
             for j in range(other.cols):
-                var sum = 0.0
+                sum = 0.0
                 for k in range(self.cols):
                     sum += self.get(i, k) * other.get(k, j)
                 result.set(i, j, sum)
