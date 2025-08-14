@@ -1,15 +1,4 @@
-"""
-Unit and Performance Tests for AdvancedGPUMemoryOptimizer.
-
-This test suite validates the AdvancedGPUMemoryOptimizer struct functionality,
-performance characteristics, and integration with real GPU hardware.
-
-Test Categories:
-1. Unit Tests - Basic functionality and correctness
-2. Performance Tests - Timing and efficiency validation
-3. Integration Tests - Real GPU hardware validation
-4. Edge Case Tests - Error handling and boundary conditions
-"""
+"""Test AdvancedGPUMemoryOptimizer with real GPU hardware validation."""
 
 from src.utils.gpu_matrix import AdvancedGPUMemoryOptimizer
 from collections import List
@@ -22,7 +11,7 @@ fn test_struct_instantiation() raises -> Bool:
     print("🧪 Testing struct instantiation...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
+        optimizer = AdvancedGPUMemoryOptimizer()
 
         # Verify default values
         if optimizer.memory_alignment != 128:
@@ -56,15 +45,15 @@ fn test_memory_coalescing_optimization() raises -> Bool:
     print("🧪 Testing memory coalescing optimization...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
-        var test_sizes = List[Int]()
+        optimizer = AdvancedGPUMemoryOptimizer()
+        test_sizes = List[Int]()
         test_sizes.append(1024)  # Small
         test_sizes.append(65536)  # Medium
         test_sizes.append(262144)  # Large
 
         for i in range(len(test_sizes)):
-            var size = test_sizes[i]
-            var result = optimizer.optimize_memory_coalescing(size)
+            size = test_sizes[i]
+            result = optimizer.optimize_memory_coalescing(size)
 
             if not result:
                 print("❌ Coalescing optimization failed for size:", size)
@@ -94,24 +83,24 @@ fn test_cache_access_optimization() raises -> Bool:
     print("🧪 Testing cache access pattern optimization...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
-        var matrix_configs = List[List[Int]]()
+        optimizer = AdvancedGPUMemoryOptimizer()
+        matrix_configs = List[List[Int]]()
 
         # Test different matrix sizes
-        var small_matrix = List[Int]()
+        small_matrix = List[Int]()
         small_matrix.append(64)
         small_matrix.append(64)
         matrix_configs.append(small_matrix)
 
-        var large_matrix = List[Int]()
+        large_matrix = List[Int]()
         large_matrix.append(512)
         large_matrix.append(512)
         matrix_configs.append(large_matrix)
 
         for i in range(len(matrix_configs)):
-            var rows = matrix_configs[i][0]
-            var cols = matrix_configs[i][1]
-            var result = optimizer.optimize_cache_access_patterns(rows, cols)
+            rows = matrix_configs[i][0]
+            cols = matrix_configs[i][1]
+            result = optimizer.optimize_cache_access_patterns(rows, cols)
 
             if not result:
                 print(
@@ -142,14 +131,14 @@ fn test_bandwidth_optimization() raises -> Bool:
     print("🧪 Testing memory bandwidth optimization...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
-        var transfer_sizes = List[Float64]()
+        optimizer = AdvancedGPUMemoryOptimizer()
+        transfer_sizes = List[Float64]()
         transfer_sizes.append(16.0)  # 16 MB
         transfer_sizes.append(128.0)  # 128 MB
 
         for i in range(len(transfer_sizes)):
-            var transfer_mb = transfer_sizes[i]
-            var result = optimizer.optimize_memory_bandwidth(transfer_mb)
+            transfer_mb = transfer_sizes[i]
+            result = optimizer.optimize_memory_bandwidth(transfer_mb)
 
             if not result:
                 print("❌ Bandwidth optimization failed for:", transfer_mb, "MB")
@@ -179,15 +168,15 @@ fn test_neural_network_optimization() raises -> Bool:
     print("🧪 Testing neural network memory optimization...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
+        optimizer = AdvancedGPUMemoryOptimizer()
 
         # Test MNIST-like architecture
-        var nn_config = List[Int]()
+        nn_config = List[Int]()
         nn_config.append(784)  # Input
         nn_config.append(128)  # Hidden
         nn_config.append(10)  # Output
 
-        var result = optimizer.optimize_neural_network_memory(nn_config)
+        result = optimizer.optimize_neural_network_memory(nn_config)
 
         if not result:
             print("❌ Neural network optimization failed")
@@ -206,7 +195,7 @@ fn test_advanced_optimizations() raises -> Bool:
     print("🧪 Testing advanced optimization features...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
+        optimizer = AdvancedGPUMemoryOptimizer()
 
         # Record initial settings
         var _ = optimizer.memory_alignment  # Initial alignment for reference
@@ -236,7 +225,7 @@ fn test_synchronization_and_metrics() raises -> Bool:
     print("🧪 Testing synchronization and metrics...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
+        optimizer = AdvancedGPUMemoryOptimizer()
 
         # Run some optimizations to generate metrics
         _ = optimizer.optimize_memory_coalescing(32768)
@@ -281,18 +270,18 @@ fn performance_test_coalescing_scaling() raises -> Bool:
     print("⚡ Performance test: Memory coalescing scaling...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
-        var sizes = List[Int]()
+        optimizer = AdvancedGPUMemoryOptimizer()
+        sizes = List[Int]()
         sizes.append(4096)  # 4K elements
         sizes.append(16384)  # 16K elements
         sizes.append(65536)  # 64K elements
 
         for i in range(len(sizes)):
-            var size = sizes[i]
-            var start_time = now()
-            var result = optimizer.optimize_memory_coalescing(size)
-            var end_time = now()
-            var duration_ms = Float64(end_time - start_time) / 1_000_000.0
+            size = sizes[i]
+            start_time = now()
+            result = optimizer.optimize_memory_coalescing(size)
+            end_time = now()
+            duration_ms = Float64(end_time - start_time) / 1_000_000.0
 
             if not result:
                 print("❌ Performance test failed for size:", size)
@@ -321,18 +310,18 @@ fn performance_test_bandwidth_utilization() raises -> Bool:
     print("⚡ Performance test: Memory bandwidth utilization...")
 
     try:
-        var optimizer = AdvancedGPUMemoryOptimizer()
-        var transfer_sizes = List[Float64]()
+        optimizer = AdvancedGPUMemoryOptimizer()
+        transfer_sizes = List[Float64]()
         transfer_sizes.append(8.0)  # 8 MB
         transfer_sizes.append(64.0)  # 64 MB
         transfer_sizes.append(256.0)  # 256 MB
 
         for i in range(len(transfer_sizes)):
-            var transfer_mb = transfer_sizes[i]
-            var start_time = now()
-            var result = optimizer.optimize_memory_bandwidth(transfer_mb)
-            var end_time = now()
-            var duration_ms = Float64(end_time - start_time) / 1_000_000.0
+            transfer_mb = transfer_sizes[i]
+            start_time = now()
+            result = optimizer.optimize_memory_bandwidth(transfer_mb)
+            end_time = now()
+            duration_ms = Float64(end_time - start_time) / 1_000_000.0
 
             if not result:
                 print(
@@ -342,7 +331,7 @@ fn performance_test_bandwidth_utilization() raises -> Bool:
                 )
                 return False
 
-            var efficiency = (
+            efficiency = (
                 optimizer.memory_throughput / optimizer.memory_bandwidth_gb_s
             ) * 100.0
             print(
@@ -365,7 +354,7 @@ fn performance_test_bandwidth_utilization() raises -> Bool:
         return False
 
 
-fn main() raises:
+fn main() raises -> None:
     """Main test runner for AdvancedGPUMemoryOptimizer tests."""
     print("🧪 ADVANCED GPU MEMORY OPTIMIZER - UNIT & PERFORMANCE TESTS")
     print("=" * 80)
@@ -388,8 +377,8 @@ fn main() raises:
         print("✅ AMD GPU detected - proceeding with tests")
 
     # Track test results
-    var total_tests = 0
-    var passed_tests = 0
+    total_tests = 0
+    passed_tests = 0
 
     # Unit Tests
     print("\n📋 UNIT TESTS")
@@ -449,7 +438,7 @@ fn main() raises:
     print("🎯 TEST RESULTS SUMMARY")
     print("=" * 80)
 
-    var success_rate = Float64(passed_tests) / Float64(total_tests) * 100.0
+    success_rate = Float64(passed_tests) / Float64(total_tests) * 100.0
 
     print("📊 Test Statistics:")
     print("  - Total tests run:", total_tests)
