@@ -1,5 +1,4 @@
-"""
-Test the GPU utilities module with real MAX Engine API.
+"""Test the GPU utilities module with real MAX Engine API.
 
 This script tests the src/utils/gpu_utils.mojo module to ensure it properly
 detects and utilizes available GPU hardware using the MAX Engine API.
@@ -54,14 +53,14 @@ fn test_gpu_utils_detection_logic() -> Bool:
                 free_memory_mb = memory_info[0] // (1024 * 1024)
                 print("- Total memory: {} MB".format(total_memory_mb))
                 print("- Free memory: {} MB".format(free_memory_mb))
-            except e:
+            except Exception:
                 print("- Memory info: Not available")
 
             print("✅ GPU Utils detection logic working correctly")
             print("✓ detect_gpu_hardware() would return: gpu_available=True")
             print("✓ GPUManager would initialize successfully")
             return True
-        except e:
+        except Exception:
             print("❌ DeviceContext creation failed")
             print("✓ gpu_utils.mojo would fall back to CPU mode")
             return False
@@ -109,7 +108,7 @@ fn test_real_gpu_detection() -> Bool:
             print("✓ Ready for DeviceContext operations")
             print("✓ Ready for LayoutTensor operations")
             return True
-        except e:
+        except Exception:
             print("✅ GPU accelerator detected but device info unavailable")
             print("✓ Ready for basic GPU operations")
             return True
@@ -143,7 +142,7 @@ fn test_gpu_manager_functionality() -> Bool:
 
             print("✅ GPU Manager functionality validated")
             return True
-        except e:
+        except Exception:
             print("❌ GPU Manager would fall back to CPU")
             print("✓ Fallback behavior working correctly")
             return True
@@ -164,7 +163,7 @@ fn test_device_context_creation() -> Bool:
         print("✓ Ready for GPU buffer operations")
         print("✓ Ready for GPU kernel execution")
         return True
-    except e:
+    except Exception:
         print("❌ DeviceContext creation failed")
         return False
 
@@ -192,7 +191,7 @@ fn test_gpu_buffer_creation() -> Bool:
         print("✅ GPU operations synchronized")
 
         return True
-    except e:
+    except Exception:
         print("❌ GPU buffer operations failed")
         return False
 
@@ -220,12 +219,12 @@ fn test_layout_tensor_creation() -> Bool:
         print("✓ Ready for matrix operations on GPU")
 
         return True
-    except e:
+    except Exception:
         print("❌ LayoutTensor creation failed")
         return False
 
 
-fn main():
+fn main() -> None:
     """Test the GPU utilities module functionality with real MAX Engine API."""
     print("GPU Utilities Module Test with Real MAX Engine API")
     print("=" * 65)
@@ -247,8 +246,8 @@ fn main():
     print("\n" + "=" * 65)
     print("GPU UTILITIES MODULE TEST RESULTS:")
 
-    var success_count = 0
-    var total_tests = 6
+    success_count = 0
+    total_tests = 6
 
     # GPU utilities module tests
     if utils_detection_ok:
