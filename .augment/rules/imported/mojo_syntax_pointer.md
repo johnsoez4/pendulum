@@ -11,3 +11,4 @@ type: "always_apply"
 - Fix compiler errors and warnings not detected by the automation script.
 - Fix compiler language server protocol (LSP) errors and warnings not detected by the automation script.
 - When taking action, create brief and clear responses and summaries.
+- When commiting changes, delete build artifacts (e.g. executables) generated during the editing session before commiting.
