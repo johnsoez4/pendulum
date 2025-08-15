@@ -438,44 +438,38 @@ fn main():
     print("\n6. Testing Comprehensive Regression Test Summary...")
     print("-" * 60)
 
-    try:
-        print("✓ Generating comprehensive regression test summary...")
+    print("✓ Generating comprehensive regression test summary...")
 
-        # Simulate test results from previous tests
-        gpu_available = has_nvidia or has_amd
-        total_tests = 4  # Matrix, Neural, Memory, Tensor
-        passed_tests = 4 if gpu_available else 0  # All tests pass with GPU
-        regression_detected = False
+    # Simulate test results from previous tests
+    gpu_available = has_nvidia or has_amd
+    total_tests = 4  # Matrix, Neural, Memory, Tensor
+    passed_tests = 4 if gpu_available else 0  # All tests pass with GPU
+    regression_detected = False
 
-        # Calculate overall results
-        pass_rate = Float64(passed_tests) / Float64(total_tests) * 100.0
-        overall_success = passed_tests == total_tests
+    # Calculate overall results
+    pass_rate = Float64(passed_tests) / Float64(total_tests) * 100.0
+    overall_success = passed_tests == total_tests
 
-        print("  ✓ Comprehensive regression test summary completed")
-        print("    - Total tests:", total_tests)
-        print("    - Passed tests:", passed_tests)
-        print("    - Pass rate:", round(pass_rate, 2), "%")
-        print("    - Regression detected:", regression_detected)
-        print("    - Overall result:", "PASS" if overall_success else "FAIL")
+    print("  ✓ Comprehensive regression test summary completed")
+    print("    - Total tests:", total_tests)
+    print("    - Passed tests:", passed_tests)
+    print("    - Pass rate:", round(pass_rate, 2), "%")
+    print("    - Regression detected:", regression_detected)
+    print("    - Overall result:", "PASS" if overall_success else "FAIL")
 
-        if overall_success:
-            print("  🎉 PERFORMANCE REGRESSION TESTS: SUCCESS!")
-            print(
-                "    - All real GPU performance meets or exceeds simulation"
-                " targets"
-            )
-            print("    - No performance regression detected")
-        else:
-            print("  ⚠️  PERFORMANCE REGRESSION TESTS: ISSUES DETECTED")
-            print(
-                "    - Some real GPU performance does not meet simulation"
-                " targets"
-            )
+    if overall_success:
+        print("  🎉 PERFORMANCE REGRESSION TESTS: SUCCESS!")
+        print(
+            "    - All real GPU performance meets or exceeds simulation targets"
+        )
+        print("    - No performance regression detected")
+    else:
+        print("  ⚠️  PERFORMANCE REGRESSION TESTS: ISSUES DETECTED")
+        print(
+            "    - Some real GPU performance does not meet simulation targets"
+        )
 
-        print("✅ Comprehensive Regression Test Summary: SUCCESS")
-
-    except _:
-        print("❌ Comprehensive regression test summary failed")
+    print("✅ Comprehensive Regression Test Summary: SUCCESS")
 
     # Summary
     print("\n" + "=" * 70)
