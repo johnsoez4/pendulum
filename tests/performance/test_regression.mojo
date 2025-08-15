@@ -211,7 +211,7 @@ fn main():
             target_speedup = 3.5
             meets_target = speedup >= target_speedup
             tolerance_percent = 15.0
-            var speedup_diff = speedup - simulated_speedup
+            speedup_diff = speedup - simulated_speedup
             if speedup_diff < 0:
                 speedup_diff = -speedup_diff
             within_tolerance = speedup_diff <= (
@@ -219,18 +219,18 @@ fn main():
             )
 
             print("  ✓ Matrix operations performance test completed")
-            print("    - CPU time:", cpu_time_ms, "ms")
-            print("    - GPU time:", gpu_time_ms, "ms")
-            print("    - Actual speedup:", speedup, "x")
-            print("    - Simulated speedup:", simulated_speedup, "x")
-            print("    - Target speedup:", target_speedup, "x")
+            print("    - CPU time:", round(cpu_time_ms, 2), "ms")
+            print("    - GPU time:", round(gpu_time_ms, 2), "ms")
+            print("    - Actual speedup:", round(speedup, 2), "x")
+            print("    - Simulated speedup:", round(simulated_speedup, 2), "x")
+            print("    - Target speedup:", round(target_speedup, 2), "x")
             print("    - Meets target:", meets_target)
             print("    - Within tolerance:", within_tolerance)
             print("    - Test result:", "PASS" if meets_target else "FAIL")
         else:
             print("  ⚠️  GPU matrix operations test skipped - no GPU available")
             speedup = 1.0
-            print("    - CPU fallback speedup:", speedup, "x")
+            print("    - CPU fallback speedup:", round(speedup, 2), "x")
 
         print("✅ Matrix Operations Performance Regression: SUCCESS")
 
@@ -322,7 +322,7 @@ fn main():
             target_speedup = 3.0
             meets_target = speedup >= target_speedup
             tolerance_percent = 10.0
-            var speedup_diff2 = speedup - simulated_speedup
+            speedup_diff2 = speedup - simulated_speedup
             if speedup_diff2 < 0:
                 speedup_diff2 = -speedup_diff2
             within_tolerance = speedup_diff2 <= (
@@ -330,18 +330,18 @@ fn main():
             )
 
             print("  ✓ Neural network performance test completed")
-            print("    - CPU time:", cpu_time_ms, "ms")
-            print("    - GPU time:", gpu_time_ms, "ms")
-            print("    - Actual speedup:", speedup, "x")
-            print("    - Simulated speedup:", simulated_speedup, "x")
-            print("    - Target speedup:", target_speedup, "x")
+            print("    - CPU time:", round(cpu_time_ms, 2), "ms")
+            print("    - GPU time:", round(gpu_time_ms, 2), "ms")
+            print("    - Actual speedup:", round(speedup, 2), "x")
+            print("    - Simulated speedup:", round(simulated_speedup, 2), "x")
+            print("    - Target speedup:", round(target_speedup, 2), "x")
             print("    - Meets target:", meets_target)
             print("    - Within tolerance:", within_tolerance)
             print("    - Test result:", "PASS" if meets_target else "FAIL")
         else:
             print("  ⚠️  GPU neural network test skipped - no GPU available")
             speedup = 1.0
-            print("    - CPU fallback speedup:", speedup, "x")
+            print("    - CPU fallback speedup:", round(speedup, 2), "x")
 
         print("✅ Neural Network Performance Regression: SUCCESS")
 
@@ -408,7 +408,7 @@ fn main():
             target_speedup = 2.5
             meets_target = speedup >= target_speedup
             tolerance_percent = 12.0
-            var speedup_diff3 = speedup - simulated_speedup
+            speedup_diff3 = speedup - simulated_speedup
             if speedup_diff3 < 0:
                 speedup_diff3 = -speedup_diff3
             within_tolerance = speedup_diff3 <= (
@@ -416,18 +416,18 @@ fn main():
             )
 
             print("  ✓ Memory operations performance test completed")
-            print("    - CPU time:", cpu_time_ms, "ms")
-            print("    - GPU time:", gpu_time_ms, "ms")
-            print("    - Actual speedup:", speedup, "x")
-            print("    - Simulated speedup:", simulated_speedup, "x")
-            print("    - Target speedup:", target_speedup, "x")
+            print("    - CPU time:", round(cpu_time_ms, 2), "ms")
+            print("    - GPU time:", round(gpu_time_ms, 2), "ms")
+            print("    - Actual speedup:", round(speedup, 2), "x")
+            print("    - Simulated speedup:", round(simulated_speedup, 2), "x")
+            print("    - Target speedup:", round(target_speedup, 2), "x")
             print("    - Meets target:", meets_target)
             print("    - Within tolerance:", within_tolerance)
             print("    - Test result:", "PASS" if meets_target else "FAIL")
         else:
             print("  ⚠️  GPU memory operations test skipped - no GPU available")
             speedup = 1.0
-            print("    - CPU fallback speedup:", speedup, "x")
+            print("    - CPU fallback speedup:", round(speedup, 2), "x")
 
         print("✅ Memory Operations Performance Regression: SUCCESS")
 
@@ -454,7 +454,7 @@ fn main():
         print("  ✓ Comprehensive regression test summary completed")
         print("    - Total tests:", total_tests)
         print("    - Passed tests:", passed_tests)
-        print("    - Pass rate:", pass_rate, "%")
+        print("    - Pass rate:", round(pass_rate, 2), "%")
         print("    - Regression detected:", regression_detected)
         print("    - Overall result:", "PASS" if overall_success else "FAIL")
 
@@ -489,19 +489,4 @@ fn main():
     print("✅ DeviceContext Integration: WORKING")
 
     print("\n🎉 PERFORMANCE REGRESSION TESTING COMPLETE!")
-    print("✅ Production-ready performance regression testing verified")
-    print("✅ Real MAX Engine DeviceContext regression testing working")
-    print("✅ Speedup validation against simulation targets operational")
-    print("✅ Performance regression detection functional")
-
-    print("\n🚀 PRODUCTION-READY PERFORMANCE REGRESSION TESTING!")
-    print("Neural networks can now be validated for performance regression")
-    print("with comprehensive comparison against simulation targets!")
-
-    print("\n📊 PERFORMANCE REGRESSION TESTING STATUS:")
-    print("✓ Matrix operations regression testing: WORKING")
-    print("✓ Neural network regression testing: WORKING")
-    print("✓ Memory operations regression testing: WORKING")
-    print("✓ Speedup validation: WORKING")
-    print("✓ Regression detection: WORKING")
-    print("✓ Production deployment: READY")
+    print("✅ All regression tests operational with GPU acceleration support")
