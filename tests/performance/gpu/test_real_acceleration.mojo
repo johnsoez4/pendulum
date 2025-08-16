@@ -1,14 +1,14 @@
 """
 Test real GPU acceleration with universal hardware support.
 
-This module provides comprehensive testing for real GPU acceleration capabilities
+This module provides comprehensive testing for GPU acceleration capabilities
 across all supported GPU hardware platforms including NVIDIA, AMD, and Intel
-architectures. Tests actual GPU operations, kernel execution, and performance
+architectures. Tests GPU operations, kernel execution, and performance
 validation using the MAX Engine GPU programming interface.
 
 Key Components Tested:
 - Universal GPU hardware detection and validation
-- Real GPU device context creation and management
+- GPU device context creation and management
 - GPU buffer allocation and memory operations
 - GPU kernel execution and computation validation
 - Memory bandwidth measurement across hardware platforms
@@ -112,11 +112,11 @@ fn test_real_gpu_hardware_detection() -> Bool:
             print(
                 "✅",
                 gpu_description,
-                "confirmed available for real acceleration",
+                "confirmed available for acceleration",
             )
         else:
             print(
-                "✅ MAX Engine supported GPU confirmed available for real"
+                "✅ MAX Engine supported GPU confirmed available for"
                 " acceleration"
             )
         return True
@@ -126,8 +126,8 @@ fn test_real_gpu_hardware_detection() -> Bool:
 
 
 fn test_real_device_context_creation() -> Bool:
-    """Test that we can create real DeviceContext for GPU operations."""
-    print("\nTesting Real DeviceContext Creation...")
+    """Test that we can create DeviceContext for GPU operations."""
+    print("\nTesting DeviceContext Creation...")
     print("-" * 50)
 
     try:
@@ -143,8 +143,8 @@ fn test_real_device_context_creation() -> Bool:
 
 
 fn test_real_gpu_buffer_operations() -> Bool:
-    """Test real GPU buffer creation and operations."""
-    print("\nTesting Real GPU Buffer Operations...")
+    """Test GPU buffer creation and operations."""
+    print("\nTesting GPU Buffer Operations...")
     print("-" * 50)
 
     try:
@@ -154,7 +154,7 @@ fn test_real_gpu_buffer_operations() -> Bool:
         # Create real GPU buffer (based on working vector_addition.mojo)
         size = 10
         buffer = ctx.enqueue_create_buffer[DType.float64](size)
-        print("✅ Real GPU buffer created for", size, "elements")
+        print("✅ GPU buffer created for", size, "elements")
 
         # Fill buffer with test data
         test_value = 3.14
@@ -172,8 +172,8 @@ fn test_real_gpu_buffer_operations() -> Bool:
 
 
 fn test_real_layout_tensor_operations() -> Bool:
-    """Test real LayoutTensor operations for tensor computations."""
-    print("\nTesting Real LayoutTensor Operations...")
+    """Test LayoutTensor operations for tensor computations."""
+    print("\nTesting LayoutTensor Operations...")
     print("-" * 50)
 
     try:
@@ -191,7 +191,7 @@ fn test_real_layout_tensor_operations() -> Bool:
         # Create LayoutTensor from buffer
         var _ = LayoutTensor[DType.float64, layout](buffer)
         print("✅ LayoutTensor created successfully")
-        print("✓ Ready for real tensor operations on GPU")
+        print("✓ Ready for tensor operations on GPU")
 
         return True
     except:
@@ -200,12 +200,12 @@ fn test_real_layout_tensor_operations() -> Bool:
 
 
 fn test_real_gpu_computation() -> Bool:
-    """Test actual GPU computation with kernel execution across all hardware.
+    """Test GPU computation with kernel execution across all hardware.
 
     Returns:
         True if GPU computation succeeds or no GPU is available, False on failure.
     """
-    print("\nTesting Real GPU Computation...")
+    print("\nTesting GPU Computation...")
     print("-" * 50)
 
     # Use universal accelerator detection
@@ -276,12 +276,12 @@ fn test_real_gpu_computation() -> Bool:
 
 
 fn test_gpu_memory_bandwidth_real() -> Bool:
-    """Test real GPU memory bandwidth across all supported hardware.
+    """Test GPU memory bandwidth across all supported hardware.
 
     Returns:
         True if bandwidth test succeeds or no GPU is available, False on failure.
     """
-    print("\nTesting Real GPU Memory Bandwidth...")
+    print("\nTesting GPU Memory Bandwidth...")
     print("-" * 50)
 
     # Use universal accelerator detection
@@ -319,7 +319,7 @@ fn test_gpu_memory_bandwidth_real() -> Bool:
                     "GB/s",
                 )
 
-            print("✅ Real GPU memory bandwidth measurement completed")
+            print("✅ GPU memory bandwidth measurement completed")
             return True
 
         except:
@@ -477,13 +477,10 @@ fn main():
     supported hardware platforms using has_accelerator() for universal
     detection and provides detailed results for validation.
     """
-    print("Universal Real GPU Hardware Acceleration Verification")
+    print("Universal GPU Hardware Acceleration Verification")
     print("=" * 60)
 
-    print(
-        "Testing ACTUAL GPU hardware acceleration across all supported"
-        " platforms"
-    )
+    print("Testing GPU hardware acceleration across all supported platforms")
     print(
         "Universal Detection: Using has_accelerator() for comprehensive"
         " hardware support"
@@ -507,7 +504,7 @@ fn main():
     error_handling_ok = test_gpu_error_handling()
 
     print("\n" + "=" * 60)
-    print("REAL GPU ACCELERATION VERIFICATION RESULTS:")
+    print("GPU ACCELERATION VERIFICATION RESULTS:")
 
     success_count = 0
     if hardware_ok:
@@ -562,17 +559,13 @@ fn main():
 
     if success_count == 8:
         print("\n🎉 ALL UNIVERSAL GPU ACCELERATION TESTS PASSED!")
-        print("✅ CONFIRMED: Using actual GPU hardware acceleration")
-        print("✅ CONFIRMED: Real DeviceContext operations working")
-        print("✅ CONFIRMED: Real GPU buffer operations working")
-        print("✅ CONFIRMED: Real LayoutTensor operations working")
+        print("✅ CONFIRMED: Using GPU hardware acceleration")
+        print("✅ CONFIRMED: DeviceContext operations working")
+        print("✅ CONFIRMED: GPU buffer operations working")
+        print("✅ CONFIRMED: LayoutTensor operations working")
         print("✅ CONFIRMED: Universal GPU detection with has_accelerator()")
         print("✅ CONFIRMED: Compatible with all MAX Engine supported hardware")
-        print("\n🚀 UNIVERSAL REAL GPU HARDWARE ACCELERATION VERIFIED!")
-        print(
-            "This is NOT simulation - this is actual GPU acceleration across"
-            " all platforms!"
-        )
+        print("\n🚀 UNIVERSAL GPU HARDWARE ACCELERATION VERIFIED!")
     else:
         print("\n⚠️  Some universal GPU tests failed")
         print("Check GPU drivers and MAX Engine installation")
