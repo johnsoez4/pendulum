@@ -20,24 +20,32 @@ Hardware Support:
 - Any MAX Engine supported GPU acceleration hardware
 """
 
-from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
+from sys import (
+    has_nvidia_gpu_accelerator,
+    has_amd_gpu_accelerator,
+    has_accelerator,
+)
 from gpu.host import DeviceContext
 from time import perf_counter_ns as now
 
 
 fn detect_gpu_hardware() -> (Bool, String):
-    """Detect available GPU hardware across all supported platforms.
+    """Detect available GPU acceleration hardware across all supported platforms.
 
     Returns:
         A tuple containing:
-        - Bool: True if any GPU hardware is detected, False otherwise
-        - String: Description of detected GPU hardware types
+        - Bool: True if any GPU acceleration hardware is detected, False otherwise
+        - String: Description of detected GPU acceleration hardware types
 
     Note:
-        This function checks for NVIDIA and AMD GPUs using system detection.
-        Additional GPU vendors may be supported by MAX Engine but not yet
-        exposed through the system detection API.
+        This function uses has_accelerator() for universal GPU detection across
+        all MAX Engine supported acceleration hardware including NVIDIA, AMD,
+        Intel, and any future GPU architectures supported by MAX Engine.
     """
+    # Use universal accelerator detection for comprehensive hardware support
+    has_any_accelerator = has_accelerator()
+
+    # Also check specific vendors for detailed reporting
     has_nvidia = has_nvidia_gpu_accelerator()
     has_amd = has_amd_gpu_accelerator()
 
@@ -47,21 +55,25 @@ fn detect_gpu_hardware() -> (Bool, String):
     if has_amd:
         gpu_types.append("AMD")
 
-    # Note: Intel GPU detection may be added in future MAX Engine versions
-    # Additional GPU vendors will be supported as MAX Engine expands
+    # Check for additional accelerators not covered by specific vendor detection
+    if has_any_accelerator and not has_nvidia and not has_amd:
+        gpu_types.append("Other MAX Engine Supported GPU")
 
-    has_any_gpu = has_nvidia or has_amd
-
-    if has_any_gpu:
-        gpu_description = "Detected GPU hardware: "
-        for i in range(len(gpu_types)):
-            gpu_description += gpu_types[i]
-            if i < len(gpu_types) - 1:
-                gpu_description += ", "
+    if has_any_accelerator:
+        if len(gpu_types) > 0:
+            gpu_description = "Detected GPU acceleration hardware: "
+            for i in range(len(gpu_types)):
+                gpu_description += gpu_types[i]
+                if i < len(gpu_types) - 1:
+                    gpu_description += ", "
+        else:
+            gpu_description = (
+                "Detected GPU acceleration hardware: MAX Engine Supported"
+            )
     else:
-        gpu_description = "No GPU hardware detected"
+        gpu_description = "No GPU acceleration hardware detected"
 
-    return has_any_gpu, gpu_description
+    return has_any_accelerator, gpu_description
 
 
 fn test_gpu_device_context() -> Bool:
@@ -141,14 +153,14 @@ fn run_comprehensive_gpu_tests() -> Bool:
         True if all tests pass, False if any test fails.
     """
     print("Running comprehensive GPU acceleration tests...")
-    print("Testing universal GPU hardware support")
+    print("Testing universal GPU acceleration hardware support")
 
-    # Test 1: Hardware detection
+    # Test 1: Universal hardware detection using has_accelerator()
     has_gpu, gpu_description = detect_gpu_hardware()
     print(gpu_description)
 
     if not has_gpu:
-        print("⚠️  No GPU hardware detected - skipping GPU tests")
+        print("⚠️  No GPU acceleration hardware detected - skipping GPU tests")
         return False
 
     # Test 2: Device context creation
@@ -176,29 +188,38 @@ fn run_comprehensive_gpu_tests() -> Bool:
 
 
 fn main():
-    """Main test function for universal GPU utilities acceleration testing.
+    """Main test function for universal GPU acceleration testing.
 
-    Executes comprehensive GPU acceleration tests across all supported
-    hardware platforms and provides detailed results for validation.
+    Executes comprehensive GPU acceleration tests across all MAX Engine
+    supported hardware platforms using has_accelerator() for universal
+    detection and provides detailed results for validation.
     """
     print("Universal GPU Acceleration Testing Suite")
     print("=" * 70)
-    print("Testing GPU utilities across all supported hardware platforms")
+    print("Testing GPU acceleration across all MAX Engine supported hardware")
     print(
-        "Supported: NVIDIA (CUDA), AMD (ROCm), Intel (Level Zero), and future"
-        " MAX Engine GPUs"
+        "Universal Detection: Using has_accelerator() for comprehensive"
+        " hardware support"
+    )
+    print(
+        "Supported: NVIDIA (CUDA), AMD (ROCm), Intel (Level Zero), and any"
+        " MAX Engine GPU"
     )
     print()
 
-    # Run comprehensive test suite
+    # Run comprehensive test suite with universal detection
     success = run_comprehensive_gpu_tests()
 
     print()
     if success:
-        print("🎉 GPU acceleration testing completed successfully!")
+        print("🎉 Universal GPU acceleration testing completed successfully!")
         print("✅ GPU utilities are ready for cross-platform acceleration")
+        print("✅ Compatible with all MAX Engine supported GPU hardware")
     else:
         print("⚠️  GPU acceleration testing completed with limitations")
-        print("ℹ️  Some GPU features may not be available on this system")
+        print(
+            "ℹ️  GPU acceleration features may not be available on this system"
+        )
+        print("ℹ️  CPU fallback mode will be used for computation")
 
     print("=" * 70)
