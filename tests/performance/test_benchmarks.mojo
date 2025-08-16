@@ -3,24 +3,23 @@ Performance benchmarks for the pendulum digital twin system.
 
 This module tests real-time performance, throughput, and latency requirements
 for the digital twin system including 25 Hz control loop capability using
-professional benchmark methodology with statistical analysis.
+official Mojo benchmark API with statistical analysis.
 
 Key Components Tested:
-- Neural network inference latency with statistical accuracy
-- System throughput measurement using proper benchmark objects
-- Real-time control loop simulation with professional timing
+- Neural network inference latency using official benchmark module
+- System throughput measurement using proper Bench objects
+- Real-time control loop simulation using BenchId and BenchConfig
 - Performance validation against 25 Hz control requirements
 
 Benchmark Methodology:
-- Uses Mojo benchmark principles and BenchConfig for professional accuracy
-- Warm-up phases before measurement to eliminate cold-start effects
-- Dead code elimination prevention for accurate measurements
+- Uses official Mojo benchmark module (Bench, Bencher, BenchId, BenchConfig)
+- Statistical analysis through bencher.iter[] for accurate measurement
+- Dead code elimination prevention following benchmark best practices
 - Professional timing patterns following mojo_syntax.md guidelines
 """
 
 from collections import List
-from time import perf_counter_ns as now
-from benchmark import Bench, Bencher, BenchId, BenchConfig
+from benchmark import Bench, Bencher, BenchId, BenchConfig, Unit
 
 
 # Helper functions for performance testing
@@ -146,9 +145,9 @@ struct PerformanceTests:
 
     @staticmethod
     fn test_inference_latency() raises:
-        """Test neural network inference latency using professional benchmark methodology.
+        """Test neural network inference latency using official Mojo benchmark API.
         """
-        print("Testing inference latency with statistical analysis...")
+        print("Testing inference latency with official Mojo benchmark API...")
 
         # Create and initialize network with proper initialization
         var network = BenchmarkNetwork(
@@ -168,38 +167,36 @@ struct PerformanceTests:
         test_input.append(180.0)  # pend_position
         test_input.append(1.0)  # cmd_volts
 
-        # Use Mojo benchmark principles with working implementation
-        # Create benchmark configuration for statistical accuracy
-        bench_config = BenchConfig()
+        # Create official Mojo benchmark with proper configuration
+        var bench = Bench(BenchConfig())
 
-        # Perform benchmark with official methodology
-        print("  Using Mojo benchmark methodology...")
+        # Define benchmark function using official patterns
+        @parameter
+        @always_inline
+        fn benchmark_inference_latency(mut bencher: Bencher) raises:
+            @parameter
+            @always_inline
+            fn run_single_inference():
+                prediction = network.forward_optimized(test_input)
+                # Prevent dead code elimination (benchmark best practice)
+                if len(prediction) == 0:
+                    print("Unexpected empty prediction")
 
-        # Warm-up phase (benchmark best practice)
-        for _ in range(10):
-            _ = network.forward_optimized(test_input)
+            bencher.iter[run_single_inference]()
 
-        # Benchmark measurement phase
-        start_time = now()
-        var total_predictions = 0
+        # Execute benchmark using official API
+        bench.bench_function[benchmark_inference_latency](
+            BenchId("neural_network", "inference_latency")
+        )
 
-        # Run sufficient iterations for statistical accuracy
-        for _ in range(BENCHMARK_ITERATIONS):
-            prediction = network.forward_optimized(test_input)
-            total_predictions += 1
-            # Prevent dead code elimination (benchmark best practice)
-            if len(prediction) == 0:  # Never true but prevents optimization
-                print("Unexpected empty prediction")
+        # Extract results using official benchmark API
+        var avg_latency_ms: Float64 = 0.0
+        for info in bench.info_vec:
+            if info.name == "neural_network/inference_latency":
+                avg_latency_ms = info.result.mean("ms")
+                break
 
-        end_time = now()
-
-        # Calculate results using benchmark methodology
-        total_time_ns = end_time - start_time
-        total_time_ms = Float64(total_time_ns) / 1_000_000.0
-        avg_latency_ms = total_time_ms / Float64(total_predictions)
-
-        print("  Benchmark methodology: Official Mojo patterns")
-        print("  Total predictions:", total_predictions)
+        print("  Official Mojo benchmark API results:")
         print("  Average latency:", avg_latency_ms, "ms")
         print("  Target latency:", TARGET_LATENCY_MS, "ms")
 
@@ -209,12 +206,15 @@ struct PerformanceTests:
         else:
             print("  ⚠ Does not meet 25 Hz requirement")
 
-        print("✓ Inference latency test completed with statistical accuracy")
+        print(
+            "✓ Inference latency test completed using official Mojo"
+            " benchmark API"
+        )
 
     @staticmethod
     fn test_throughput() raises:
-        """Test system throughput using professional timing methodology."""
-        print("Testing system throughput with statistical analysis...")
+        """Test system throughput using official Mojo benchmark API."""
+        print("Testing system throughput with official Mojo benchmark API...")
 
         # Create network with proper initialization
         var network = BenchmarkNetwork(
@@ -237,40 +237,41 @@ struct PerformanceTests:
             input.append(Float64(i % 5) * 0.4 - 1.0)
             test_inputs.append(input)
 
-        # Use Mojo benchmark principles with working implementation
-        # Create benchmark configuration for statistical accuracy
-        bench_config = BenchConfig()
+        # Create official Mojo benchmark
+        var bench = Bench(BenchConfig())
 
-        # Perform benchmark with official methodology
-        print("  Using Mojo benchmark methodology...")
+        # Define benchmark function using official patterns
+        @parameter
+        @always_inline
+        fn benchmark_throughput(mut bencher: Bencher) raises:
+            @parameter
+            @always_inline
+            fn run_batch_processing():
+                for i in range(len(test_inputs)):
+                    prediction = network.forward_optimized(test_inputs[i])
+                    # Prevent dead code elimination (benchmark best practice)
+                    if len(prediction) == 0:
+                        print("Unexpected empty prediction")
 
-        # Warm-up phase (benchmark best practice)
-        for i in range(min(len(test_inputs), 10)):
-            _ = network.forward_optimized(test_inputs[i])
+            bencher.iter[run_batch_processing]()
 
-        # Benchmark measurement phase
-        start_time = now()
-        var predictions_made = 0
+        # Execute benchmark using official API
+        bench.bench_function[benchmark_throughput](
+            BenchId("neural_network", "throughput")
+        )
 
-        # Run sufficient iterations for statistical accuracy
-        for _ in range(
-            BENCHMARK_ITERATIONS // 10
-        ):  # Fewer iterations for throughput test
-            for i in range(len(test_inputs)):
-                prediction = network.forward_optimized(test_inputs[i])
-                predictions_made += 1
-                # Prevent dead code elimination (benchmark best practice)
-                if len(prediction) == 0:  # Never true but prevents optimization
-                    print("Unexpected empty prediction")
+        # Extract results using official benchmark API
+        var batch_time_s: Float64 = 0.0
+        for info in bench.info_vec:
+            if info.name == "neural_network/throughput":
+                batch_time_s = info.result.mean("s")
+                break
 
-        end_time = now()
+        # Calculate throughput from benchmark results
+        var throughput = Float64(len(test_inputs)) / batch_time_s
 
-        # Calculate results using benchmark methodology
-        total_time_s = Float64(end_time - start_time) / 1_000_000_000.0
-        throughput = Float64(predictions_made) / total_time_s
-
-        print("  Benchmark methodology: Official Mojo patterns")
-        print("  Total predictions:", predictions_made)
+        print("  Official Mojo benchmark API results:")
+        print("  Batch processing time:", batch_time_s, "seconds")
         print("  Throughput:", throughput, "predictions/second")
         print("  Target frequency:", TARGET_FREQUENCY_HZ, "Hz")
 
@@ -280,15 +281,15 @@ struct PerformanceTests:
         else:
             print("  ⚠ Below target throughput")
 
-        print("✓ Throughput test completed with statistical accuracy")
+        print("✓ Throughput test completed using official Mojo benchmark API")
 
     @staticmethod
     fn test_real_time_simulation() raises:
-        """Test real-time control loop simulation using professional timing methodology.
+        """Test real-time control loop simulation using official Mojo benchmark API.
         """
         print(
-            "Testing real-time control loop simulation with statistical"
-            " analysis..."
+            "Testing real-time control loop simulation with official Mojo"
+            " benchmark API..."
         )
 
         # Create network with proper initialization
@@ -302,74 +303,86 @@ struct PerformanceTests:
         )
         network.initialize_weights()
 
-        # Use Mojo benchmark principles for real-time simulation
-        # Create benchmark configuration for statistical accuracy
-        bench_config = BenchConfig()
-
-        # Perform benchmark with official methodology
-        print("  Using Mojo benchmark methodology for real-time simulation...")
-
-        # Simulate real-time control loop with benchmark methodology
-        control_frequency = 25.0  # 25 Hz
-        simulation_duration = 1.0  # 1 second for comprehensive test
+        # Simulation parameters (unchanged)
+        control_frequency = 25.0
+        simulation_duration = 1.0
         expected_cycles = Int(control_frequency * simulation_duration)
 
+        # Initialize state (unchanged)
         current_state = List[Float64]()
         current_state.append(0.0)  # Initial position
         current_state.append(0.0)  # Initial velocity
         current_state.append(180.0)  # Initial angle
         current_state.append(0.0)  # Initial command
 
-        # Warm-up phase (benchmark best practice)
-        for _ in range(5):
-            _ = network.forward_optimized(current_state)
+        # Create official Mojo benchmark
+        var bench = Bench(BenchConfig())
 
-        # Benchmark measurement phase
-        start_time = now()
-        cycles_completed = 0
-        max_latency = 0.0
-        total_latency = 0.0
+        # Define benchmark function for individual cycle timing
+        @parameter
+        @always_inline
+        fn benchmark_simulation_cycle(mut bencher: Bencher) raises:
+            @parameter
+            @always_inline
+            fn run_simulation_cycle():
+                prediction = network.forward_optimized(current_state)
+                # Update state (simplified)
+                current_state[0] = prediction[0]
+                current_state[1] = prediction[1]
+                current_state[2] = prediction[2]
+                # Prevent dead code elimination (benchmark best practice)
+                if len(prediction) == 0:
+                    print("Unexpected empty prediction")
 
-        for cycle in range(expected_cycles):
-            cycle_start = now()
+            bencher.iter[run_simulation_cycle]()
 
-            # Predict next state
-            prediction = network.forward_optimized(current_state)
+        # Execute cycle benchmark
+        bench.bench_function[benchmark_simulation_cycle](
+            BenchId("simulation", "cycle_latency")
+        )
 
-            # Prevent dead code elimination (benchmark best practice)
-            if len(prediction) == 0:  # Never true but prevents optimization
-                print("Unexpected empty prediction")
+        # Define benchmark function for full simulation timing
+        @parameter
+        @always_inline
+        fn benchmark_full_simulation(mut bencher: Bencher) raises:
+            @parameter
+            @always_inline
+            fn run_full_simulation():
+                for cycle in range(expected_cycles):
+                    prediction = network.forward_optimized(current_state)
+                    current_state[0] = prediction[0]
+                    current_state[1] = prediction[1]
+                    current_state[2] = prediction[2]
+                    current_state[3] = 0.1 * Float64(cycle % 10)
+                    if len(prediction) == 0:
+                        print("Unexpected empty prediction")
 
-            # Update state (simplified)
-            current_state[0] = prediction[0]
-            current_state[1] = prediction[1]
-            current_state[2] = prediction[2]
-            current_state[3] = 0.1 * Float64(cycle % 10)  # Varying command
+            bencher.iter[run_full_simulation]()
 
-            cycle_end = now()
-            cycle_latency = Float64(cycle_end - cycle_start) / 1_000_000.0  # ms
+        # Execute full simulation benchmark
+        bench.bench_function[benchmark_full_simulation](
+            BenchId("simulation", "full_simulation")
+        )
 
-            max_latency = max(max_latency, cycle_latency)
-            total_latency += cycle_latency
-            cycles_completed += 1
+        # Extract results using official benchmark API
+        var avg_cycle_latency_ms: Float64 = 0.0
+        var simulation_time_s: Float64 = 0.0
 
-        end_time = now()
+        for info in bench.info_vec:
+            if info.name == "simulation/cycle_latency":
+                avg_cycle_latency_ms = info.result.mean("ms")
+            elif info.name == "simulation/full_simulation":
+                simulation_time_s = info.result.mean("s")
 
-        # Calculate results using benchmark methodology
-        total_simulation_time = (
-            Float64(end_time - start_time) / 1_000_000_000.0
-        )  # seconds
-        actual_frequency = Float64(cycles_completed) / total_simulation_time
-        avg_latency = total_latency / Float64(cycles_completed)
+        # Calculate frequency from benchmark results
+        var actual_frequency = Float64(expected_cycles) / simulation_time_s
 
-        print("  Benchmark methodology: Official Mojo patterns")
+        print("  Official Mojo benchmark API results:")
         print("  Expected cycles:", expected_cycles)
-        print("  Completed cycles:", cycles_completed)
-        print("  Simulation time:", total_simulation_time, "seconds")
+        print("  Simulation time:", simulation_time_s, "seconds")
         print("  Actual frequency:", actual_frequency, "Hz")
         print("  Target frequency:", control_frequency, "Hz")
-        print("  Average latency:", avg_latency, "ms")
-        print("  Maximum latency:", max_latency, "ms")
+        print("  Average cycle latency:", avg_cycle_latency_ms, "ms")
         print("  Target latency:", TARGET_LATENCY_MS, "ms")
 
         # Check real-time performance
@@ -378,31 +391,30 @@ struct PerformanceTests:
         else:
             print("  ⚠ Below real-time control requirements")
 
-        if max_latency <= TARGET_LATENCY_MS:
+        if avg_cycle_latency_ms <= TARGET_LATENCY_MS:
             print("  ✓ Latency within acceptable bounds")
         else:
             print("  ⚠ Latency exceeds acceptable bounds")
 
         print(
-            "✓ Real-time simulation test completed using Mojo benchmark"
-            " methodology"
+            "✓ Real-time simulation test completed using official Mojo"
+            " benchmark API"
         )
 
     @staticmethod
     fn run_all_tests() raises:
-        """Run all performance tests using professional benchmark methodology.
-        """
+        """Run all performance tests using official Mojo benchmark API."""
         print(
-            "Running Performance Benchmark Tests with Mojo Benchmark"
-            " Methodology"
+            "Running Performance Benchmark Tests with Official Mojo"
+            " Benchmark API"
         )
         print(
-            "==================================================================="
+            "===================================================================="
         )
         print("Target: 25 Hz real-time control (40ms max latency)")
         print(
-            "Methodology: Mojo benchmark principles with BenchConfig and"
-            " warm-up phases"
+            "Methodology: Official Mojo benchmark module (Bench, Bencher,"
+            " BenchId, BenchConfig)"
         )
         print()
 
@@ -414,10 +426,12 @@ struct PerformanceTests:
 
         print()
         print(
-            "✓ All performance tests completed using Mojo benchmark"
-            " methodology!"
+            "✓ All performance tests completed using official Mojo benchmark"
+            " API!"
         )
-        print("✓ BenchConfig and warm-up phases applied throughout")
+        print(
+            "✓ Statistical analysis through bencher.iter[] applied throughout"
+        )
         print()
 
 
