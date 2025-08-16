@@ -99,7 +99,7 @@ struct BenchmarkNetwork(Copyable, Movable):
         # Layer 1: Input to Hidden1
         hidden1 = List[Float64]()
         for j in range(HIDDEN_SIZE):
-            var sum = self.biases1[j]
+            sum = self.biases1[j]
             for i in range(INPUT_DIM):
                 if i < len(input):
                     sum += input[i] * self.weights1[i][j]
@@ -108,7 +108,7 @@ struct BenchmarkNetwork(Copyable, Movable):
         # Layer 2: Hidden1 to Hidden2
         hidden2 = List[Float64]()
         for j in range(HIDDEN_SIZE):
-            var sum = self.biases2[j]
+            sum = self.biases2[j]
             for i in range(HIDDEN_SIZE):
                 sum += hidden1[i] * self.weights2[i][j]
             hidden2.append(tanh_approx(sum))
@@ -116,7 +116,7 @@ struct BenchmarkNetwork(Copyable, Movable):
         # Layer 3: Hidden2 to Output
         output = List[Float64]()
         for j in range(OUTPUT_DIM):
-            var sum = self.biases3[j]
+            sum = self.biases3[j]
             for i in range(HIDDEN_SIZE):
                 sum += hidden2[i] * self.weights3[i][j]
             output.append(sum)
@@ -150,7 +150,7 @@ struct PerformanceTests:
         print("Testing inference latency with official Mojo benchmark API...")
 
         # Create and initialize network with proper initialization
-        var network = BenchmarkNetwork(
+        network = BenchmarkNetwork(
             List[List[Float64]](),  # weights1
             List[Float64](),  # biases1
             List[List[Float64]](),  # weights2
@@ -168,15 +168,26 @@ struct PerformanceTests:
         test_input.append(1.0)  # cmd_volts
 
         # Create official Mojo benchmark with proper configuration
-        var bench = Bench(BenchConfig())
+        bench = Bench(BenchConfig())
 
         # Define benchmark function using official patterns
         @parameter
         @always_inline
         fn benchmark_inference_latency(mut bencher: Bencher) raises:
+            """Benchmark neural network inference latency using official Mojo benchmark API.
+
+            Args:
+                bencher: Mojo benchmark iteration manager for statistical analysis.
+
+            Raises:
+                Error: If neural network forward pass fails.
+            """
+
             @parameter
             @always_inline
             fn run_single_inference():
+                """Execute single neural network inference with dead code elimination prevention.
+                """
                 prediction = network.forward_optimized(test_input)
                 # Prevent dead code elimination (benchmark best practice)
                 if len(prediction) == 0:
@@ -217,7 +228,7 @@ struct PerformanceTests:
         print("Testing system throughput with official Mojo benchmark API...")
 
         # Create network with proper initialization
-        var network = BenchmarkNetwork(
+        network = BenchmarkNetwork(
             List[List[Float64]](),  # weights1
             List[Float64](),  # biases1
             List[List[Float64]](),  # weights2
@@ -238,15 +249,26 @@ struct PerformanceTests:
             test_inputs.append(input)
 
         # Create official Mojo benchmark
-        var bench = Bench(BenchConfig())
+        bench = Bench(BenchConfig())
 
         # Define benchmark function using official patterns
         @parameter
         @always_inline
         fn benchmark_throughput(mut bencher: Bencher) raises:
+            """Benchmark system throughput using batch processing with official Mojo benchmark API.
+
+            Args:
+                bencher: Mojo benchmark iteration manager for statistical analysis.
+
+            Raises:
+                Error: If neural network forward pass fails during batch processing.
+            """
+
             @parameter
             @always_inline
             fn run_batch_processing():
+                """Execute batch neural network processing with dead code elimination prevention.
+                """
                 for i in range(len(test_inputs)):
                     prediction = network.forward_optimized(test_inputs[i])
                     # Prevent dead code elimination (benchmark best practice)
@@ -268,7 +290,7 @@ struct PerformanceTests:
                 break
 
         # Calculate throughput from benchmark results
-        var throughput = Float64(len(test_inputs)) / batch_time_s
+        throughput = Float64(len(test_inputs)) / batch_time_s
 
         print("  Official Mojo benchmark API results:")
         print("  Batch processing time:", batch_time_s, "seconds")
@@ -293,7 +315,7 @@ struct PerformanceTests:
         )
 
         # Create network with proper initialization
-        var network = BenchmarkNetwork(
+        network = BenchmarkNetwork(
             List[List[Float64]](),  # weights1
             List[Float64](),  # biases1
             List[List[Float64]](),  # weights2
@@ -316,15 +338,26 @@ struct PerformanceTests:
         current_state.append(0.0)  # Initial command
 
         # Create official Mojo benchmark
-        var bench = Bench(BenchConfig())
+        bench = Bench(BenchConfig())
 
         # Define benchmark function for individual cycle timing
         @parameter
         @always_inline
         fn benchmark_simulation_cycle(mut bencher: Bencher) raises:
+            """Benchmark individual simulation cycle latency using official Mojo benchmark API.
+
+            Args:
+                bencher: Mojo benchmark iteration manager for statistical analysis.
+
+            Raises:
+                Error: If neural network forward pass fails during simulation cycle.
+            """
+
             @parameter
             @always_inline
             fn run_simulation_cycle():
+                """Execute single simulation cycle with state updates and dead code elimination prevention.
+                """
                 prediction = network.forward_optimized(current_state)
                 # Update state (simplified)
                 current_state[0] = prediction[0]
@@ -345,9 +378,20 @@ struct PerformanceTests:
         @parameter
         @always_inline
         fn benchmark_full_simulation(mut bencher: Bencher) raises:
+            """Benchmark complete simulation timing using official Mojo benchmark API.
+
+            Args:
+                bencher: Mojo benchmark iteration manager for statistical analysis.
+
+            Raises:
+                Error: If neural network forward pass fails during full simulation.
+            """
+
             @parameter
             @always_inline
             fn run_full_simulation():
+                """Execute complete simulation with multiple cycles and dead code elimination prevention.
+                """
                 for cycle in range(expected_cycles):
                     prediction = network.forward_optimized(current_state)
                     current_state[0] = prediction[0]
@@ -375,7 +419,7 @@ struct PerformanceTests:
                 simulation_time_s = info.result.mean("s")
 
         # Calculate frequency from benchmark results
-        var actual_frequency = Float64(expected_cycles) / simulation_time_s
+        actual_frequency = Float64(expected_cycles) / simulation_time_s
 
         print("  Official Mojo benchmark API results:")
         print("  Expected cycles:", expected_cycles)
