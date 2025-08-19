@@ -76,7 +76,7 @@ fn main():
         print("✓ Optimization enabled:", optimization_enabled)
         print("✅ Memory Optimizer Initialization: SUCCESS")
 
-    except:
+    except e:
         print("❌ Memory optimizer initialization failed")
 
     # Test 3: Memory Coalescing Optimization
@@ -125,7 +125,7 @@ fn main():
         print("✓ All memory coalescing optimizations completed")
         print("✅ Memory Coalescing Optimization: SUCCESS")
 
-    except:
+    except e:
         print("❌ Memory coalescing optimization failed")
 
     # Test 4: Cache Access Pattern Optimization
@@ -194,7 +194,7 @@ fn main():
         print("✓ All cache optimizations completed")
         print("✅ Cache Access Pattern Optimization: SUCCESS")
 
-    except:
+    except e:
         print("❌ Cache access pattern optimization failed")
 
     # Test 5: Memory Bandwidth Optimization
@@ -254,7 +254,7 @@ fn main():
         print("✓ All bandwidth optimizations completed")
         print("✅ Memory Bandwidth Optimization: SUCCESS")
 
-    except:
+    except e:
         print("❌ Memory bandwidth optimization failed")
 
     # Test 6: Neural Network Memory Optimization
@@ -318,7 +318,7 @@ fn main():
         print("✓ NN memory efficiency:", nn_efficiency, "%")
         print("✅ Neural Network Memory Optimization: SUCCESS")
 
-    except:
+    except e:
         print("❌ Neural network memory optimization failed")
 
     # Summary
