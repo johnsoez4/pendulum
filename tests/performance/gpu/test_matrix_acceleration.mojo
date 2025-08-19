@@ -13,7 +13,16 @@ from sys import (
     has_accelerator,
 )
 from gpu.host import DeviceContext
-from time import perf_counter_ns as now
+from benchmark import (
+    Bench,
+    Bencher,
+    BenchId,
+    BenchConfig,
+    BenchMetric,
+    ThroughputMeasure,
+    run,
+    keep,
+)
 
 
 fn test_simple_matrix_operations():
@@ -100,28 +109,25 @@ fn test_simple_matrix_operations():
         print("⚠️  No GPU hardware detected")
 
 
-fn benchmark_matrix_performance():
-    """Benchmark GPU vs CPU matrix operations across all hardware platforms."""
-    print("\nBenchmarking Matrix Performance...")
-    print("-" * 50)
+fn benchmark_matrix_performance() raises:
+    """Benchmark GPU vs CPU matrix operations using Mojo's benchmark API."""
+    print("\nBenchmarking Matrix Performance with Mojo Benchmark API...")
+    print("-" * 60)
 
     # Use universal accelerator detection
     has_any_accelerator = has_accelerator()
 
     if has_any_accelerator:
         try:
-            device_context = DeviceContext()
-
             # Test different matrix sizes
             sizes = [8, 16, 32, 64]
 
             for size in sizes:
                 total_elements = size * size
+                print("Benchmarking matrix size", size, "x", size, ":")
 
-                # GPU benchmark
-                start_time = now()
-
-                # Allocate GPU buffers
+                # Pre-allocate GPU resources outside benchmark
+                device_context = DeviceContext()
                 a_buffer = device_context.enqueue_create_buffer[DType.float64](
                     total_elements
                 )
@@ -132,57 +138,79 @@ fn benchmark_matrix_performance():
                     total_elements
                 )
 
-                # Initialize data
+                # Initialize GPU data once
                 with a_buffer.map_to_host() as a_host:
                     for i in range(total_elements):
                         a_host[i] = Float64(i)
-
                 with b_buffer.map_to_host() as b_host:
                     for i in range(total_elements):
                         b_host[i] = Float64(i + 1)
 
-                # Perform operation
-                with c_buffer.map_to_host() as c_host:
-                    with a_buffer.map_to_host() as a_host:
-                        with b_buffer.map_to_host() as b_host:
-                            for i in range(total_elements):
-                                c_host[i] = a_host[i] * b_host[i]
+                # GPU benchmark function
+                @parameter
+                @always_inline
+                fn gpu_matrix_multiply() raises:
+                    """GPU matrix element-wise multiplication benchmark kernel.
+                    """
+                    with c_buffer.map_to_host() as c_host:
+                        with a_buffer.map_to_host() as a_host:
+                            with b_buffer.map_to_host() as b_host:
+                                for i in range(total_elements):
+                                    c_host[i] = a_host[i] * b_host[i]
+                    device_context.synchronize()
 
-                device_context.synchronize()
-                gpu_time = now() - start_time
-
-                # CPU benchmark
-                start_time = now()
+                # Pre-allocate CPU data outside benchmark
                 cpu_a = List[Float64]()
                 cpu_b = List[Float64]()
                 cpu_c = List[Float64]()
-
                 for i in range(total_elements):
                     cpu_a.append(Float64(i))
                     cpu_b.append(Float64(i + 1))
                     cpu_c.append(0.0)
 
-                for i in range(total_elements):
-                    cpu_c[i] = cpu_a[i] * cpu_b[i]
+                # CPU benchmark function
+                @parameter
+                @always_inline
+                fn cpu_matrix_multiply() raises:
+                    """CPU matrix element-wise multiplication benchmark kernel.
+                    """
+                    for i in range(total_elements):
+                        cpu_c[i] = cpu_a[i] * cpu_b[i]
 
-                cpu_time = now() - start_time
+                # Benchmark GPU
+                gpu_report = run[gpu_matrix_multiply](
+                    min_runtime_secs=0.1, max_runtime_secs=1.0
+                )
+                gpu_time_ms = gpu_report.mean("ms")
 
-                # Calculate performance metrics
-                gpu_time_ms = Float64(gpu_time) / 1e6
-                cpu_time_ms = Float64(cpu_time) / 1e6
+                # Benchmark CPU
+                cpu_report = run[cpu_matrix_multiply](
+                    min_runtime_secs=0.1, max_runtime_secs=1.0
+                )
+                cpu_time_ms = cpu_report.mean("ms")
 
-                print("Matrix size", size, "x", size, ":")
+                # Calculate and display results
                 print("  GPU time:", gpu_time_ms, "ms")
                 print("  CPU time:", cpu_time_ms, "ms")
 
                 if cpu_time_ms > 0:
                     speedup = cpu_time_ms / gpu_time_ms
                     print("  GPU speedup:", speedup, "x")
-
                     if speedup > 1.0:
                         print("  ✅ GPU faster than CPU")
                     else:
                         print("  ⚠️  CPU competitive with GPU")
+
+                # Calculate throughput
+                gpu_throughput = (
+                    Float64(total_elements) / (gpu_time_ms / 1000.0) / 1e9
+                )  # GElems/s
+                cpu_throughput = (
+                    Float64(total_elements) / (cpu_time_ms / 1000.0) / 1e9
+                )  # GElems/s
+                print("  GPU throughput:", gpu_throughput, "GElems/s")
+                print("  CPU throughput:", cpu_throughput, "GElems/s")
+                print()
 
         except _:
             print("❌ Matrix performance benchmarking failed")
@@ -290,7 +318,7 @@ fn test_matrix_correctness():
         print("⚠️  No GPU available for correctness testing")
 
 
-fn main():
+fn main() raises:
     """Main test function for universal GPU matrix acceleration."""
     print("Universal GPU Matrix Acceleration Test")
     print("=" * 70)
