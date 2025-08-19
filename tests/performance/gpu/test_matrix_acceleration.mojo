@@ -17,11 +17,8 @@ from benchmark import (
     Bench,
     Bencher,
     BenchId,
-    BenchConfig,
     BenchMetric,
     ThroughputMeasure,
-    run,
-    keep,
 )
 
 
@@ -122,6 +119,9 @@ fn benchmark_matrix_performance() raises:
             # Test different matrix sizes
             sizes = [8, 16, 32, 64]
 
+            # Initialize benchmark system
+            bench = Bench()
+
             for size in sizes:
                 total_elements = size * size
                 print("Benchmarking matrix size", size, "x", size, ":")
@@ -146,19 +146,6 @@ fn benchmark_matrix_performance() raises:
                     for i in range(total_elements):
                         b_host[i] = Float64(i + 1)
 
-                # GPU benchmark function
-                @parameter
-                @always_inline
-                fn gpu_matrix_multiply() raises:
-                    """GPU matrix element-wise multiplication benchmark kernel.
-                    """
-                    with c_buffer.map_to_host() as c_host:
-                        with a_buffer.map_to_host() as a_host:
-                            with b_buffer.map_to_host() as b_host:
-                                for i in range(total_elements):
-                                    c_host[i] = a_host[i] * b_host[i]
-                    device_context.synchronize()
-
                 # Pre-allocate CPU data outside benchmark
                 cpu_a = List[Float64]()
                 cpu_b = List[Float64]()
@@ -168,49 +155,65 @@ fn benchmark_matrix_performance() raises:
                     cpu_b.append(Float64(i + 1))
                     cpu_c.append(0.0)
 
+                # Define throughput measures using Mojo's benchmark API
+                elements_measure = ThroughputMeasure(
+                    BenchMetric.elements, total_elements
+                )
+                bytes_measure = ThroughputMeasure(
+                    BenchMetric.bytes, total_elements * 8 * 3
+                )  # 3 arrays, 8 bytes each
+                measures = List[ThroughputMeasure](
+                    elements_measure, bytes_measure
+                )
+
+                # GPU benchmark function
+                @parameter
+                @always_inline
+                fn gpu_benchmark(mut bencher: Bencher) raises:
+                    """GPU matrix element-wise multiplication benchmark with proper API.
+                    """
+
+                    @parameter
+                    @always_inline
+                    fn gpu_kernel() raises:
+                        """GPU matrix multiplication kernel for benchmarking."""
+                        with c_buffer.map_to_host() as c_host:
+                            with a_buffer.map_to_host() as a_host:
+                                with b_buffer.map_to_host() as b_host:
+                                    for i in range(total_elements):
+                                        c_host[i] = a_host[i] * b_host[i]
+                        device_context.synchronize()
+
+                    bencher.iter[gpu_kernel]()
+
                 # CPU benchmark function
                 @parameter
                 @always_inline
-                fn cpu_matrix_multiply() raises:
-                    """CPU matrix element-wise multiplication benchmark kernel.
+                fn cpu_benchmark(mut bencher: Bencher) raises:
+                    """CPU matrix element-wise multiplication benchmark with proper API.
                     """
-                    for i in range(total_elements):
-                        cpu_c[i] = cpu_a[i] * cpu_b[i]
 
-                # Benchmark GPU
-                gpu_report = run[gpu_matrix_multiply](
-                    min_runtime_secs=0.1, max_runtime_secs=1.0
+                    @parameter
+                    @always_inline
+                    fn cpu_kernel():
+                        """CPU matrix multiplication kernel for benchmarking."""
+                        for i in range(total_elements):
+                            cpu_c[i] = cpu_a[i] * cpu_b[i]
+
+                    bencher.iter[cpu_kernel]()
+
+                # Run benchmarks with proper API
+                bench.bench_function[gpu_benchmark](
+                    BenchId("gpu", "matrix_multiply"), measures
                 )
-                gpu_time_ms = gpu_report.mean("ms")
-
-                # Benchmark CPU
-                cpu_report = run[cpu_matrix_multiply](
-                    min_runtime_secs=0.1, max_runtime_secs=1.0
+                bench.bench_function[cpu_benchmark](
+                    BenchId("cpu", "matrix_multiply"), measures
                 )
-                cpu_time_ms = cpu_report.mean("ms")
 
-                # Calculate and display results
-                print("  GPU time:", gpu_time_ms, "ms")
-                print("  CPU time:", cpu_time_ms, "ms")
-
-                if cpu_time_ms > 0:
-                    speedup = cpu_time_ms / gpu_time_ms
-                    print("  GPU speedup:", speedup, "x")
-                    if speedup > 1.0:
-                        print("  ✅ GPU faster than CPU")
-                    else:
-                        print("  ⚠️  CPU competitive with GPU")
-
-                # Calculate throughput
-                gpu_throughput = (
-                    Float64(total_elements) / (gpu_time_ms / 1000.0) / 1e9
-                )  # GElems/s
-                cpu_throughput = (
-                    Float64(total_elements) / (cpu_time_ms / 1000.0) / 1e9
-                )  # GElems/s
-                print("  GPU throughput:", gpu_throughput, "GElems/s")
-                print("  CPU throughput:", cpu_throughput, "GElems/s")
-                print()
+            # Print comprehensive benchmark results
+            print("\n" + "=" * 60)
+            print("COMPREHENSIVE BENCHMARK RESULTS:")
+            print(bench)
 
         except _:
             print("❌ Matrix performance benchmarking failed")
