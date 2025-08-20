@@ -1,5 +1,5 @@
 """
-Test real GPU acceleration with universal hardware support.
+Test GPU acceleration with universal hardware support.
 
 This module provides comprehensive testing for GPU acceleration capabilities
 across all supported GPU hardware platforms including NVIDIA, AMD, and Intel
@@ -71,7 +71,7 @@ fn gpu_reduction_kernel(
         output[0] = sum
 
 
-fn test_real_gpu_hardware_detection() -> Bool:
+fn test_gpu_hardware_detection() -> Bool:
     """Test universal GPU hardware detection across all supported platforms.
 
     Returns:
@@ -125,24 +125,24 @@ fn test_real_gpu_hardware_detection() -> Bool:
         return False
 
 
-fn test_real_device_context_creation() -> Bool:
+fn test_device_context_creation() -> Bool:
     """Test that we can create DeviceContext for GPU operations."""
     print("\nTesting DeviceContext Creation...")
     print("-" * 50)
 
     try:
-        # Create actual DeviceContext (verified working from examples)
+        # Create DeviceContext
         _ = DeviceContext()
         print("✅ DeviceContext created successfully")
-        print("✓ Ready for real GPU buffer operations")
-        print("✓ Ready for real GPU kernel execution")
+        print("✓ Ready for GPU buffer operations")
+        print("✓ Ready for GPU kernel execution")
         return True
-    except:
+    except _:
         print("❌ DeviceContext creation failed")
         return False
 
 
-fn test_real_gpu_buffer_operations() -> Bool:
+fn test_gpu_buffer_operations() -> Bool:
     """Test GPU buffer creation and operations."""
     print("\nTesting GPU Buffer Operations...")
     print("-" * 50)
@@ -151,7 +151,7 @@ fn test_real_gpu_buffer_operations() -> Bool:
         ctx = DeviceContext()
         print("✓ DeviceContext created")
 
-        # Create real GPU buffer (based on working vector_addition.mojo)
+        # Create GPU buffer
         size = 10
         buffer = ctx.enqueue_create_buffer[DType.float64](size)
         print("✅ GPU buffer created for", size, "elements")
@@ -166,12 +166,12 @@ fn test_real_gpu_buffer_operations() -> Bool:
         print("✅ GPU operations synchronized successfully")
 
         return True
-    except:
+    except _:
         print("❌ GPU buffer operations failed")
         return False
 
 
-fn test_real_layout_tensor_operations() -> Bool:
+fn test_layout_tensor_operations() -> Bool:
     """Test LayoutTensor operations for tensor computations."""
     print("\nTesting LayoutTensor Operations...")
     print("-" * 50)
@@ -179,7 +179,7 @@ fn test_real_layout_tensor_operations() -> Bool:
     try:
         ctx = DeviceContext()
 
-        # Create layout for 2x2 tensor (based on working examples)
+        # Create layout for 2x2 tensor
         alias width = 2
         alias height = 2
         alias layout = Layout.row_major(width, height)
@@ -194,12 +194,12 @@ fn test_real_layout_tensor_operations() -> Bool:
         print("✓ Ready for tensor operations on GPU")
 
         return True
-    except:
+    except _:
         print("❌ LayoutTensor operations failed")
         return False
 
 
-fn test_real_gpu_computation() -> Bool:
+fn test_gpu_computation() -> Bool:
     """Test GPU computation with kernel execution across all hardware.
 
     Returns:
@@ -267,7 +267,7 @@ fn test_real_gpu_computation() -> Bool:
                 print("❌", errors, "computation errors found")
                 return False
 
-        except:
+        except _:
             print("❌ GPU computation test failed")
             return False
     else:
@@ -275,7 +275,7 @@ fn test_real_gpu_computation() -> Bool:
         return True  # Not a failure, just no GPU
 
 
-fn test_gpu_memory_bandwidth_real() -> Bool:
+fn test_gpu_memory_bandwidth() -> Bool:
     """Test GPU memory bandwidth across all supported hardware.
 
     Returns:
@@ -322,7 +322,7 @@ fn test_gpu_memory_bandwidth_real() -> Bool:
             print("✅ GPU memory bandwidth measurement completed")
             return True
 
-        except:
+        except _:
             print("❌ GPU memory bandwidth test failed")
             return False
     else:
@@ -413,7 +413,7 @@ fn test_gpu_vs_cpu_performance() -> Bool:
             print("✅ GPU vs CPU performance comparison completed")
             return True
 
-        except:
+        except _:
             print("❌ GPU vs CPU performance test failed")
             return False
     else:
@@ -445,7 +445,7 @@ fn test_gpu_error_handling() -> Bool:
                 _ = buffer.enqueue_fill(1.0)
                 device_context.synchronize()
                 print("✅ Valid GPU operation successful")
-            except:
+            except _:
                 print("❌ Valid GPU operation failed")
                 return False
 
@@ -456,13 +456,13 @@ fn test_gpu_error_handling() -> Bool:
                     large_size
                 )
                 print("⚠️  Large GPU allocation succeeded (unexpected)")
-            except:
+            except _:
                 print("✅ Large GPU allocation failed gracefully (expected)")
 
             print("✅ GPU error handling tests completed")
             return True
 
-        except:
+        except _:
             print("❌ GPU error handling test failed")
             return False
     else:
@@ -491,15 +491,15 @@ fn main():
         " Engine GPU"
     )
 
-    # Run all real hardware tests
-    hardware_ok = test_real_gpu_hardware_detection()
-    context_ok = test_real_device_context_creation()
-    buffer_ok = test_real_gpu_buffer_operations()
-    tensor_ok = test_real_layout_tensor_operations()
+    # Run all hardware tests
+    hardware_ok = test_gpu_hardware_detection()
+    context_ok = test_device_context_creation()
+    buffer_ok = test_gpu_buffer_operations()
+    tensor_ok = test_layout_tensor_operations()
 
     # Run enhanced GPU tests
-    computation_ok = test_real_gpu_computation()
-    bandwidth_ok = test_gpu_memory_bandwidth_real()
+    computation_ok = test_gpu_computation()
+    bandwidth_ok = test_gpu_memory_bandwidth()
     performance_ok = test_gpu_vs_cpu_performance()
     error_handling_ok = test_gpu_error_handling()
 
