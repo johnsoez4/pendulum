@@ -1,7 +1,7 @@
 """
 Test Asynchronous GPU Transfers.
 
-This script tests the comprehensive asynchronous GPU transfer system
+This script demonstrates the comprehensive asynchronous GPU transfer system
 using the MAX Engine DeviceContext API across all supported GPU hardware
 platforms including:
 - Asynchronous CPU to GPU transfers
@@ -79,9 +79,16 @@ fn main():
         bandwidth_utilization = 0.0
         async_operations_enabled = True
 
+        # Display async transfer manager state
         print("✓ Asynchronous GPU Transfer Manager initialized")
         print("✓ DeviceContext ready for async operations")
+        print("✓ Active transfers:", active_transfers)
         print("✓ Max concurrent transfers:", max_concurrent_transfers)
+        print("✓ Transfer queue size:", transfer_queue_size)
+        print("✓ Transfers completed:", total_transfers_completed)
+        print("✓ Bytes transferred:", total_bytes_transferred)
+        print("✓ Transfer efficiency:", transfer_efficiency, "%")
+        print("✓ Bandwidth utilization:", bandwidth_utilization, "%")
         print("✓ Async operations enabled:", async_operations_enabled)
         print("✅ Async Transfer Manager Initialization: SUCCESS")
 
