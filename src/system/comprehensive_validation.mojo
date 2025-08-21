@@ -234,13 +234,11 @@ struct ComprehensiveValidation:
             print("    Test duration:", scenario.test_duration, "s")
 
             # Run scenario test
-            var scenario_result = self._test_performance_scenario(
-                scenario, system
-            )
+            scenario_result = self._test_performance_scenario(scenario, system)
 
-            var success_rate = scenario_result[0]
-            var stability_time = scenario_result[1]
-            var performance_score = scenario_result[2]
+            success_rate = scenario_result[0]
+            stability_time = scenario_result[1]
+            performance_score = scenario_result[2]
 
             total_success_rate += success_rate * scenario.get_scenario_weight()
             total_stability_time += (
@@ -262,7 +260,7 @@ struct ComprehensiveValidation:
             print()
 
         # Calculate weighted averages
-        var total_weight = 0.0
+        total_weight = 0.0
         for i in range(total_scenarios):
             total_weight += self.validation_scenarios[i].get_scenario_weight()
 
@@ -307,7 +305,7 @@ struct ComprehensiveValidation:
             test_name = stress_tests[i]
             print("  Running:", test_name)
 
-            var stress_result = self._run_single_stress_test(i, system)
+            stress_result = self._run_single_stress_test(i, system)
             self.stress_test_results.append(stress_result)
 
             print("    Stress test result:", stress_result * 100.0, "%")
@@ -342,7 +340,7 @@ struct ComprehensiveValidation:
             )
 
             # Test with parameter variation
-            var robustness_result = self._test_parameter_variation(
+            robustness_result = self._test_parameter_variation(
                 variation_factor, system
             )
             self.robustness_test_results.append(robustness_result)
@@ -359,9 +357,7 @@ struct ComprehensiveValidation:
                     "robustness tests",
                 )
 
-        var robustness_score = Float64(successful_tests) / Float64(
-            robustness_tests
-        )
+        robustness_score = Float64(successful_tests) / Float64(robustness_tests)
 
         print("Robustness Analysis Summary:")
         print("  Successful tests:", successful_tests, "/", robustness_tests)
@@ -377,8 +373,8 @@ struct ComprehensiveValidation:
         print("Running reliability testing for long-term operation...")
 
         # Simulate long-term operation (simplified)
-        var reliability_cycles = 100  # Simplified for demonstration
-        var successful_cycles = 0
+        reliability_cycles = 100  # Simplified for demonstration
+        successful_cycles = 0
 
         for i in range(reliability_cycles):
             # Simulate reliability test cycle
@@ -397,7 +393,7 @@ struct ComprehensiveValidation:
                     "reliability cycles",
                 )
 
-        var reliability_score = Float64(successful_cycles) / Float64(
+        reliability_score = Float64(successful_cycles) / Float64(
             reliability_cycles
         )
 
@@ -417,11 +413,11 @@ struct ComprehensiveValidation:
         print("Verifying production deployment readiness...")
 
         # Get system status
-        var system_status = system.get_system_status()
-        var production_ready = system_status[0]
-        var success_rate = system_status[1]
-        var stability_time = system_status[2]
-        var overall_score = system_status[3]
+        system_status = system.get_system_status()
+        production_ready = system_status[0]
+        success_rate = system_status[1]
+        stability_time = system_status[2]
+        overall_score = system_status[3]
 
         print("  Production readiness check:")
         print("    System initialized:", "✓" if production_ready else "✗")
@@ -489,7 +485,7 @@ struct ComprehensiveValidation:
     ) -> Float64:
         """Run a single stress test."""
         # Simplified stress testing
-        var base_performance = 0.85
+        base_performance = 0.85
         stress_factor = 0.9 - Float64(test_id) * 0.05  # Increasing stress
 
         return max(0.0, min(1.0, base_performance * stress_factor))
@@ -663,3 +659,64 @@ struct ComprehensiveValidation:
             self.validation_results.average_stability_time,
             self.validation_results.validation_grade,
         )
+
+
+fn main():
+    """Main function for standalone execution of comprehensive validation framework.
+    """
+    print("Comprehensive Validation Framework - Standalone Execution")
+    print("=" * 70)
+    print("Complete System Validation and Testing")
+    print("Validates: Performance, Stress, Robustness, Reliability")
+    print()
+
+    try:
+        # Create complete system integration for validation
+        from src.system.complete_system_integration import (
+            CompleteSystemIntegration,
+        )
+
+        system = CompleteSystemIntegration()
+
+        # Create comprehensive validation framework
+        validator = ComprehensiveValidation()
+
+        print("Running comprehensive validation framework...")
+        print()
+
+        # Run complete validation
+        validation_results = validator.run_complete_validation(system)
+
+        print()
+        print("=" * 70)
+        print("COMPREHENSIVE VALIDATION COMPLETE")
+        print("=" * 70)
+
+        if validation_results.production_ready:
+            print("✅ RESULT: SYSTEM READY FOR PRODUCTION")
+            print("✅ All validation criteria met")
+            print("✅ Production deployment approved")
+        else:
+            print("❌ RESULT: SYSTEM NOT READY FOR PRODUCTION")
+            print("⚠️  Some validation criteria not met")
+            print("⚠️  Review validation results above")
+
+        print()
+        print("📊 VALIDATION SUMMARY:")
+        print("- Total scenarios:", validation_results.total_scenarios)
+        print("- Passed scenarios:", validation_results.passed_scenarios)
+        print(
+            "- Success rate:",
+            validation_results.overall_success_rate * 100.0,
+            "%",
+        )
+        print(
+            "- Stability time:", validation_results.average_stability_time, "s"
+        )
+        print("- Validation grade:", validation_results.validation_grade)
+        print("- Production ready:", validation_results.production_ready)
+
+    except Exception:
+        print("❌ CRITICAL ERROR during comprehensive validation:")
+        print("⚠️  Comprehensive validation failed to complete")
+        print("   Please check system integration and dependencies")
