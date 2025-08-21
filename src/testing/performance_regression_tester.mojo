@@ -62,7 +62,7 @@ struct PerformanceTarget(Copyable, Movable):
         return self.test_passed
 
 
-struct PerformanceRegressionTester(Copyable):
+struct PerformanceRegressionTester:
     """
     Performance regression tester using MAX Engine DeviceContext API.
 
@@ -482,3 +482,46 @@ fn run_performance_regression_tests() raises -> Bool:
     """Run comprehensive performance regression testing."""
     tester = create_regression_tester()
     return tester.run_comprehensive_regression_tests()
+
+
+fn main():
+    """Main function for standalone execution of performance regression tests.
+    """
+    print("Performance Regression Testing - Standalone Execution")
+    print("=" * 70)
+    print("Universal GPU Acceleration Performance Validation")
+    print("Supports: NVIDIA, AMD, and Generic GPU Hardware")
+    print()
+
+    try:
+        # Create and run performance regression tester
+        success = run_performance_regression_tests()
+
+        print()
+        print("=" * 70)
+        print("PERFORMANCE REGRESSION TESTING COMPLETE")
+        print("=" * 70)
+
+        if success:
+            print("✅ RESULT: ALL PERFORMANCE TARGETS MET")
+            print("✅ No performance regression detected")
+            print("✅ GPU acceleration meets or exceeds simulation targets")
+        else:
+            print("❌ RESULT: PERFORMANCE REGRESSION DETECTED")
+            print("⚠️  Some performance targets not met")
+            print("⚠️  Review test results above for details")
+
+        print()
+        print("📊 PERFORMANCE SUMMARY:")
+        print("- Universal GPU support: NVIDIA, AMD, Generic accelerators")
+        print(
+            "- Target validation: Matrix 3.5x, Neural 3.0x, Memory 2.5x, Tensor"
+            " 3.2x"
+        )
+        print("- Real GPU vs simulation comparison: Complete")
+        print("- Performance regression detection: Active")
+
+    except Exception:
+        print("❌ CRITICAL ERROR during performance regression testing:")
+        print("⚠️  Performance regression testing failed to complete")
+        print("   Please check GPU drivers and MAX Engine installation")
