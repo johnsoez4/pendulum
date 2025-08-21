@@ -35,17 +35,6 @@ struct SystemIntegrationResult(Copyable, Movable):
         self.performance_score = 0.0
         self.error_message = ""
 
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.test_name = other.test_name
-        self.gpu_enabled = other.gpu_enabled
-        self.cpu_fallback_tested = other.cpu_fallback_tested
-        self.real_time_performance = other.real_time_performance
-        self.integration_success = other.integration_success
-        self.execution_time_ms = other.execution_time_ms
-        self.performance_score = other.performance_score
-        self.error_message = other.error_message
-
     fn print_result(self):
         """Print integration test result."""
         print("System Integration Test Result:", self.test_name)
@@ -63,7 +52,7 @@ struct SystemIntegrationResult(Copyable, Movable):
         )
 
 
-struct SystemIntegrationTester:
+struct SystemIntegrationTester(Copyable):
     """
     System integration tester using real MAX Engine DeviceContext API.
 
@@ -103,16 +92,6 @@ struct SystemIntegrationTester:
             )
         else:
             print("⚠️  No GPU detected - testing CPU fallback functionality")
-
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.device_context = other.device_context
-        self.gpu_available = other.gpu_available
-        self.testing_enabled = other.testing_enabled
-        self.integration_results = other.integration_results
-        self.total_tests = other.total_tests
-        self.passed_tests = other.passed_tests
-        self.real_time_target_ms = other.real_time_target_ms
 
     fn test_gpu_matrix_integration(mut self) raises -> SystemIntegrationResult:
         """Test GPU matrix operations integration."""
