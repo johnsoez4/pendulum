@@ -90,14 +90,15 @@ struct SystemIntegrationTester(Copyable):
         print("✓ Real-time Target:", self.real_time_target_ms, "ms (25 Hz)")
 
         if self.gpu_available:
-            gpu_type = self._detect_gpu_type()
+            gpu_type = SystemIntegrationTester._detect_gpu_type()
             print(
                 "✓ Testing end-to-end system with", gpu_type, "GPU acceleration"
             )
         else:
             print("⚠️  No GPU detected - testing CPU fallback functionality")
 
-    fn _detect_gpu_type(self) -> String:
+    @staticmethod
+    fn _detect_gpu_type() -> String:
         """Detect the type of GPU hardware available."""
         if has_nvidia_gpu_accelerator():
             return "NVIDIA"
@@ -442,7 +443,7 @@ struct SystemIntegrationTester(Copyable):
         )
 
         if self.gpu_available:
-            gpu_type = self._detect_gpu_type()
+            gpu_type = SystemIntegrationTester._detect_gpu_type()
             print("Hardware:", gpu_type, "GPU")
         else:
             print("Hardware: CPU-only (no GPU detected)")
@@ -561,7 +562,7 @@ fn main():
         print("- Real-time performance: 25 Hz target validation")
         print("- End-to-end system integration: Complete")
 
-    except:
+    except Exception:
         print("❌ CRITICAL ERROR during system integration testing:")
         print("⚠️  System integration testing failed to complete")
         print("   Please check GPU drivers and MAX Engine installation")
