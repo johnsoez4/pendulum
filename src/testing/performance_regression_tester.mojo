@@ -7,7 +7,11 @@ Validates actual speedup factors meet or exceed previous simulation targets (3.5
 """
 
 from collections import List
-from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
+from sys import (
+    has_nvidia_gpu_accelerator,
+    has_amd_gpu_accelerator,
+    has_accelerator,
+)
 from gpu.host import DeviceContext
 from time import perf_counter_ns as now
 
@@ -38,14 +42,6 @@ struct PerformanceTarget(Copyable, Movable):
         self.tolerance_percent = tolerance_percent
         self.test_passed = False
 
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.operation_name = other.operation_name
-        self.simulated_speedup = other.simulated_speedup
-        self.target_speedup = other.target_speedup
-        self.tolerance_percent = other.tolerance_percent
-        self.test_passed = other.test_passed
-
     fn validate_performance(mut self, actual_speedup: Float64) -> Bool:
         """Validate actual performance against targets."""
         meets_target = actual_speedup >= self.target_speedup
@@ -66,7 +62,7 @@ struct PerformanceTarget(Copyable, Movable):
         return self.test_passed
 
 
-struct PerformanceRegressionTester:
+struct PerformanceRegressionTester(Copyable):
     """
     Performance regression tester using MAX Engine DeviceContext API.
 
@@ -88,9 +84,7 @@ struct PerformanceRegressionTester:
     fn __init__(out self) raises:
         """Initialize performance regression tester."""
         self.device_context = DeviceContext()
-        self.gpu_available = (
-            has_nvidia_gpu_accelerator() or has_amd_gpu_accelerator()
-        )
+        self.gpu_available = has_accelerator()
         self.testing_enabled = True
         self.performance_targets = List[PerformanceTarget]()
         self.total_tests = 0
@@ -103,21 +97,22 @@ struct PerformanceRegressionTester:
         print("✓ Performance Regression Tester initialized")
         print("✓ GPU Hardware Available:", String(self.gpu_available))
         if self.gpu_available:
-            print("✓ Testing real GPU performance on NVIDIA A10")
+            gpu_type = PerformanceRegressionTester._detect_gpu_type()
+            print("✓ Testing real GPU performance on", gpu_type, "hardware")
         else:
             print(
                 "⚠️  No GPU detected - regression testing will use CPU fallback"
             )
 
-    fn __copyinit__(out self, other: Self):
-        """Copy constructor."""
-        self.device_context = other.device_context
-        self.gpu_available = other.gpu_available
-        self.testing_enabled = other.testing_enabled
-        self.performance_targets = other.performance_targets
-        self.total_tests = other.total_tests
-        self.passed_tests = other.passed_tests
-        self.regression_detected = other.regression_detected
+    @staticmethod
+    fn _detect_gpu_type() -> String:
+        """Detect the type of GPU hardware available."""
+        if has_nvidia_gpu_accelerator():
+            return "NVIDIA"
+        elif has_amd_gpu_accelerator():
+            return "AMD"
+        else:
+            return "Generic GPU"
 
     fn _initialize_performance_targets(mut self):
         """Initialize performance targets based on simulation claims."""
@@ -161,13 +156,13 @@ struct PerformanceRegressionTester:
 
             # Test parameters
             matrix_size = 512
-            var iterations = 20  # Reduced for testing
+            iterations = 20  # Reduced for testing
 
             # CPU benchmark
             cpu_start_time = Float64(now()) / 1_000_000_000.0
             for _ in range(iterations):
                 # Simulate CPU matrix operations
-                var cpu_result = 0.0
+                cpu_result = 0.0
                 for i in range(
                     min(matrix_size, 100)
                 ):  # Simplified CPU computation
@@ -230,7 +225,7 @@ struct PerformanceRegressionTester:
             cpu_start_time = Float64(now()) / 1_000_000_000.0
             for _ in range(iterations):
                 # Simulate CPU neural network forward pass
-                var cpu_result = 0.0
+                cpu_result = 0.0
                 for i in range(batch_size):
                     for j in range(hidden_dim):
                         for k in range(input_dim):
@@ -358,7 +353,7 @@ struct PerformanceRegressionTester:
             cpu_start_time = Float64(now()) / 1_000_000_000.0
             for _ in range(iterations):
                 # Simulate CPU tensor operations
-                var cpu_result = 0.0
+                cpu_result = 0.0
                 for i in range(min(tensor_size, 1000)):
                     cpu_result += Float64(i) * 0.001
             cpu_end_time = Float64(now()) / 1_000_000_000.0
@@ -403,7 +398,13 @@ struct PerformanceRegressionTester:
         print("COMPREHENSIVE PERFORMANCE REGRESSION TESTING")
         print("=" * 70)
         print("Comparing real GPU performance vs simulation targets")
-        print("Hardware: NVIDIA A10 GPU")
+
+        if self.gpu_available:
+            gpu_type = PerformanceRegressionTester._detect_gpu_type()
+            print("Hardware:", gpu_type, "GPU")
+        else:
+            print("Hardware: CPU-only (no GPU detected)")
+
         print("Targets: Matrix 3.5x, Neural 3.0x, Memory 2.5x, Tensor 3.2x")
         print()
 
