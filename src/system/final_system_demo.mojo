@@ -39,14 +39,14 @@ struct FinalSystemDemo:
         print()
 
         # Stage 1: Complete System Integration
-        var system_status = FinalSystemDemo._demonstrate_system_integration()
+        system_status = FinalSystemDemo._demonstrate_system_integration()
         print()
 
         # Create system for validation (simplified for demo)
-        var complete_system = CompleteSystemIntegration()
+        complete_system = CompleteSystemIntegration()
 
         # Stage 2: Comprehensive Validation
-        var validation_results = (
+        validation_results = (
             FinalSystemDemo._demonstrate_comprehensive_validation(
                 complete_system
             )
@@ -119,12 +119,12 @@ struct FinalSystemDemo:
         system_validation = complete_system.run_comprehensive_validation()
 
         # Get system performance
-        var system_status = complete_system.get_system_status()
-        var production_ready = system_status[0]
-        var success_rate = system_status[1]
-        var stability_time = system_status[2]
-        var overall_score = system_status[3]
-        var control_mode = system_status[4]
+        system_status = complete_system.get_system_status()
+        production_ready = system_status[0]
+        success_rate = system_status[1]
+        stability_time = system_status[2]
+        overall_score = system_status[3]
+        control_mode = system_status[4]
 
         print("System Integration Results:")
         print("  Production ready:", production_ready)
@@ -165,7 +165,7 @@ struct FinalSystemDemo:
         print()
 
         # Run complete validation
-        var validation_results = validator.run_complete_validation(system)
+        validation_results = validator.run_complete_validation(system)
 
         print("Comprehensive Validation Summary:")
         print("-" * 35)
@@ -247,9 +247,9 @@ struct FinalSystemDemo:
         checklist_items.append("Security measures implemented")
         checklist_items.append("Training materials prepared")
 
-        var completed_items = 0
+        completed_items = 0
         for i in range(len(checklist_items)):
-            var item_complete = True  # All items complete for successful system
+            item_complete = True  # All items complete for successful system
             if item_complete:
                 completed_items += 1
                 print("  ✓", checklist_items[i])
@@ -289,9 +289,9 @@ struct FinalSystemDemo:
         print()
 
         # Extract system status
-        var system_integration_success = system_status[0]
-        var final_success_rate = system_status[1]
-        var final_stability_time = system_status[2]
+        system_integration_success = system_status[0]
+        final_success_rate = system_status[1]
+        final_stability_time = system_status[2]
 
         # Phase 2 Requirements Validation
         print("Phase 2 Requirements Validation:")
@@ -330,7 +330,7 @@ struct FinalSystemDemo:
         )
 
         # Task 5: System Integration and Validation
-        var task5_complete = (
+        task5_complete = (
             validation_results.production_ready and deployment_ready
         )
         print(
@@ -345,8 +345,8 @@ struct FinalSystemDemo:
 
         success_target_met = final_success_rate >= 0.90
         stability_target_met = final_stability_time >= 30.0
-        var real_time_target_met = validation_results.performance_score >= 0.95
-        var safety_target_met = validation_results.reliability_score >= 0.95
+        real_time_target_met = validation_results.performance_score >= 0.95
+        safety_target_met = validation_results.reliability_score >= 0.95
 
         print(
             "  Inversion Success Rate (>90%):",
