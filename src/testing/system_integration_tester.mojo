@@ -116,7 +116,7 @@ struct SystemIntegrationTester:
 
     fn test_gpu_matrix_integration(mut self) raises -> SystemIntegrationResult:
         """Test GPU matrix operations integration."""
-        var result = SystemIntegrationResult("GPU Matrix Integration")
+        result = SystemIntegrationResult("GPU Matrix Integration")
 
         if not self.testing_enabled:
             result.error_message = "Testing disabled"
@@ -143,13 +143,13 @@ struct SystemIntegrationTester:
                 result.gpu_enabled = True
 
                 # Test CPU fallback
-                var cpu_result = 0.0
+                cpu_result = 0.0
                 for i in range(100):
                     cpu_result += Float64(i) * 0.001
                 result.cpu_fallback_tested = True
             else:
                 # CPU-only testing
-                var cpu_result = 0.0
+                cpu_result = 0.0
                 for i in range(1000):
                     cpu_result += Float64(i) * 0.001
                 result.cpu_fallback_tested = True
@@ -182,7 +182,7 @@ struct SystemIntegrationTester:
         mut self,
     ) raises -> SystemIntegrationResult:
         """Test GPU neural network integration."""
-        var result = SystemIntegrationResult("GPU Neural Network Integration")
+        result = SystemIntegrationResult("GPU Neural Network Integration")
 
         if not self.testing_enabled:
             result.error_message = "Testing disabled"
@@ -228,14 +228,14 @@ struct SystemIntegrationTester:
                 result.gpu_enabled = True
 
                 # Test CPU fallback neural network
-                var cpu_nn_result = 0.0
+                cpu_nn_result = 0.0
                 for i in range(batch_size):
                     for j in range(input_dim):
                         cpu_nn_result += Float64(i * j) * 0.001
                 result.cpu_fallback_tested = True
             else:
                 # CPU-only neural network testing
-                var cpu_nn_result = 0.0
+                cpu_nn_result = 0.0
                 for i in range(100):
                     for j in range(10):
                         cpu_nn_result += Float64(i * j) * 0.001
@@ -269,7 +269,7 @@ struct SystemIntegrationTester:
         mut self,
     ) raises -> SystemIntegrationResult:
         """Test end-to-end pendulum control system integration."""
-        var result = SystemIntegrationResult("End-to-End Control System")
+        result = SystemIntegrationResult("End-to-End Control System")
 
         if not self.testing_enabled:
             result.error_message = "Testing disabled"
@@ -319,7 +319,7 @@ struct SystemIntegrationTester:
                     result.gpu_enabled = True
                 else:
                     # CPU fallback control computation
-                    var cpu_control_result = Float64(cycle) * 0.05
+                    _ = Float64(cycle) * 0.05
                     result.cpu_fallback_tested = True
 
                 cycle_end = Float64(now()) / 1_000_000_000.0
@@ -361,7 +361,7 @@ struct SystemIntegrationTester:
         mut self,
     ) raises -> SystemIntegrationResult:
         """Test system stability and CPU fallback functionality."""
-        var result = SystemIntegrationResult("System Stability and Fallback")
+        result = SystemIntegrationResult("System Stability and Fallback")
 
         if not self.testing_enabled:
             result.error_message = "Testing disabled"
@@ -397,7 +397,7 @@ struct SystemIntegrationTester:
                     result.gpu_enabled = True
 
                 # Always test CPU fallback
-                var cpu_fallback_result = 0.0
+                cpu_fallback_result = 0.0
                 for i in range(100):
                     cpu_fallback_result += Float64(test * 100 + i) * 0.001
                 result.cpu_fallback_tested = True
@@ -453,28 +453,28 @@ struct SystemIntegrationTester:
         print()
 
         # Run all integration tests
-        var matrix_result = self.test_gpu_matrix_integration()
+        matrix_result = self.test_gpu_matrix_integration()
         self.integration_results.append(matrix_result)
         self.total_tests += 1
         if matrix_result.integration_success:
             self.passed_tests += 1
         print()
 
-        var neural_result = self.test_gpu_neural_network_integration()
+        neural_result = self.test_gpu_neural_network_integration()
         self.integration_results.append(neural_result)
         self.total_tests += 1
         if neural_result.integration_success:
             self.passed_tests += 1
         print()
 
-        var control_result = self.test_end_to_end_control_system()
+        control_result = self.test_end_to_end_control_system()
         self.integration_results.append(control_result)
         self.total_tests += 1
         if control_result.integration_success:
             self.passed_tests += 1
         print()
 
-        var stability_result = self.test_system_stability_and_fallback()
+        stability_result = self.test_system_stability_and_fallback()
         self.integration_results.append(stability_result)
         self.total_tests += 1
         if stability_result.integration_success:
@@ -487,7 +487,7 @@ struct SystemIntegrationTester:
         print("=" * 70)
 
         for i in range(len(self.integration_results)):
-            var result = self.integration_results[i]
+            result = self.integration_results[i]
             result.print_result()
             print()
 
