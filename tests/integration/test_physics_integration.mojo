@@ -35,7 +35,7 @@ fn assert_near(
     actual: Float64, expected: Float64, tolerance: Float64 = 1e-6
 ) raises:
     """Assert that two floating point values are close."""
-    var diff = abs(actual - expected)
+    diff = abs(actual - expected)
     if diff > tolerance:
         print(
             "Assertion failed: expected",
@@ -78,7 +78,7 @@ fn test_pendulum_state() raises:
     print("Testing PendulumState...")
 
     # Test from_data_sample method (only takes 4 parameters)
-    var state = PendulumState.from_data_sample(
+    state = PendulumState.from_data_sample(
         1.0,  # la_pos_inches
         -0.5,  # pend_vel_deg_s
         180.0,  # pend_pos_deg (hanging position)
@@ -86,12 +86,10 @@ fn test_pendulum_state() raises:
     )
 
     # Validate conversions
-    var expected_cart_pos = 1.0 * INCHES_TO_METERS  # 0.0254 meters
-    var expected_pend_angle = (
-        180.0 * DEGREES_TO_RADIANS
-    )  # ~3.14 radians (hanging)
-    var expected_pend_vel = -0.5 * DEGREES_TO_RADIANS  # ~-0.0087 rad/s
-    var expected_force = 0.8 * ACTUATOR_GAIN  # 0.016 N
+    expected_cart_pos = 1.0 * INCHES_TO_METERS  # 0.0254 meters
+    expected_pend_angle = 180.0 * DEGREES_TO_RADIANS  # ~3.14 radians (hanging)
+    expected_pend_vel = -0.5 * DEGREES_TO_RADIANS  # ~-0.0087 rad/s
+    expected_force = 0.8 * ACTUATOR_GAIN  # 0.016 N
 
     assert_near(state.cart_position, expected_cart_pos, 1e-6)
     assert_near(state.pendulum_angle, expected_pend_angle, 1e-6)
@@ -106,7 +104,7 @@ fn test_pendulum_state() raises:
     assert_false(state.is_inverted())
 
     # Test energy calculation
-    var energy = state.total_energy()
+    energy = state.total_energy()
     assert_true(energy >= 0.0)  # Energy should be non-negative
 
     # Test to_data_format method
