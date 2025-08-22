@@ -679,6 +679,11 @@ fn main():
     # Create comprehensive validation framework
     validator = ComprehensiveValidation()
 
+    # Initialize the validation framework
+    if not validator.initialize_validation_framework():
+        print("❌ Failed to initialize validation framework")
+        return
+
     print("Running comprehensive validation framework...")
     print()
 
