@@ -670,53 +670,45 @@ fn main():
     print("Validates: Performance, Stress, Robustness, Reliability")
     print()
 
-    try:
-        # Create complete system integration for validation
-        from src.system.complete_system_integration import (
-            CompleteSystemIntegration,
-        )
+    # Create complete system integration for validation
+    from src.system.complete_system_integration import (
+        CompleteSystemIntegration,
+    )
 
-        system = CompleteSystemIntegration()
+    system = CompleteSystemIntegration()
 
-        # Create comprehensive validation framework
-        validator = ComprehensiveValidation()
+    # Create comprehensive validation framework
+    validator = ComprehensiveValidation()
 
-        print("Running comprehensive validation framework...")
-        print()
+    print("Running comprehensive validation framework...")
+    print()
 
-        # Run complete validation
-        validation_results = validator.run_complete_validation(system)
+    # Run complete validation
+    validation_results = validator.run_complete_validation(system)
 
-        print()
-        print("=" * 70)
-        print("COMPREHENSIVE VALIDATION COMPLETE")
-        print("=" * 70)
+    print()
+    print("=" * 70)
+    print("COMPREHENSIVE VALIDATION COMPLETE")
+    print("=" * 70)
 
-        if validation_results.production_ready:
-            print("✅ RESULT: SYSTEM READY FOR PRODUCTION")
-            print("✅ All validation criteria met")
-            print("✅ Production deployment approved")
-        else:
-            print("❌ RESULT: SYSTEM NOT READY FOR PRODUCTION")
-            print("⚠️  Some validation criteria not met")
-            print("⚠️  Review validation results above")
+    if validation_results.production_ready:
+        print("✅ RESULT: SYSTEM READY FOR PRODUCTION")
+        print("✅ All validation criteria met")
+        print("✅ Production deployment approved")
+    else:
+        print("❌ RESULT: SYSTEM NOT READY FOR PRODUCTION")
+        print("⚠️  Some validation criteria not met")
+        print("⚠️  Review validation results above")
 
-        print()
-        print("📊 VALIDATION SUMMARY:")
-        print("- Total scenarios:", validation_results.total_scenarios)
-        print("- Passed scenarios:", validation_results.passed_scenarios)
-        print(
-            "- Success rate:",
-            validation_results.overall_success_rate * 100.0,
-            "%",
-        )
-        print(
-            "- Stability time:", validation_results.average_stability_time, "s"
-        )
-        print("- Validation grade:", validation_results.validation_grade)
-        print("- Production ready:", validation_results.production_ready)
-
-    except Exception:
-        print("❌ CRITICAL ERROR during comprehensive validation:")
-        print("⚠️  Comprehensive validation failed to complete")
-        print("   Please check system integration and dependencies")
+    print()
+    print("📊 VALIDATION SUMMARY:")
+    print("- Total scenarios:", validation_results.total_scenarios)
+    print("- Passed scenarios:", validation_results.passed_scenarios)
+    print(
+        "- Success rate:",
+        validation_results.overall_success_rate * 100.0,
+        "%",
+    )
+    print("- Stability time:", validation_results.average_stability_time, "s")
+    print("- Validation grade:", validation_results.validation_grade)
+    print("- Production ready:", validation_results.production_ready)
