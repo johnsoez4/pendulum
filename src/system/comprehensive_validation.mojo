@@ -584,7 +584,6 @@ struct ComprehensiveValidation:
     ):
         """Compile final validation results."""
         # Calculate performance score
-        performance_score = 0.0
         if performance_passed:
             performance_score = 0.9
         else:
