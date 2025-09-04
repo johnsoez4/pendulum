@@ -2,15 +2,17 @@
 Neural network architecture for pendulum digital twin.
 
 This module implements a physics-informed neural network for modeling
-pendulum dynamics using Mojo with GPU acceleration capabilities using
-MAX Engine DeviceContext API and automatic CPU fallback.
+pendulum dynamics using Mojo with hardware-agnostic GPU acceleration
+capabilities using MAX Engine DeviceContext API and automatic CPU fallback.
+Supports all GPU hardware types (NVIDIA, AMD, Apple Metal, etc.) through
+unified acceleration detection and device context management.
 """
 
 from collections import List
 from math import exp, tanh, sqrt
 from random import random_float64
 from memory import UnsafePointer
-from sys import has_nvidia_gpu_accelerator, has_amd_gpu_accelerator
+from sys import has_accelerator
 from gpu.host import DeviceContext
 from gpu import thread_idx, block_dim, block_idx
 from layout import Layout, LayoutTensor
@@ -131,19 +133,20 @@ fn gpu_apply_activation_kernel(
 
 struct Matrix(Copyable, Movable):
     """
-    GPU-accelerated matrix implementation for neural network operations.
+    Hardware-agnostic GPU-accelerated matrix implementation for neural network operations.
 
     This struct provides high-performance matrix operations using MAX Engine
     DeviceContext API with automatic CPU fallback when GPU hardware is unavailable.
-    Supports real GPU acceleration for matrix multiplication, bias addition, and
-    activation functions while maintaining identical mathematical results.
+    Supports all GPU hardware types (NVIDIA, AMD, Apple Metal, etc.) through
+    unified acceleration detection and device context management.
 
     Features:
-        - GPU-accelerated matrix operations with thread-level parallelism
+        - Hardware-agnostic GPU acceleration with thread-level parallelism
         - Automatic CPU fallback for reliability and compatibility
         - Proper GPU memory management and synchronization
         - Identical results between GPU and CPU implementations
         - Performance optimization following MAX Engine best practices
+        - Universal GPU support without vendor-specific code
     """
 
     var data: List[Float64]
@@ -163,10 +166,8 @@ struct Matrix(Copyable, Movable):
         self.cols = cols
         self.data = List[Float64]()
 
-        # Detect GPU availability for hardware acceleration
-        self.gpu_available = (
-            has_nvidia_gpu_accelerator() or has_amd_gpu_accelerator()
-        )
+        # Detect GPU availability for hardware acceleration (any GPU hardware)
+        self.gpu_available = has_accelerator()
 
         for _ in range(rows * cols):
             self.data.append(0.0)
@@ -197,10 +198,11 @@ struct Matrix(Copyable, Movable):
 
     fn multiply(self, other: Matrix) -> Matrix:
         """
-        GPU-accelerated matrix multiplication with automatic CPU fallback.
+        Hardware-agnostic GPU-accelerated matrix multiplication with automatic CPU fallback.
 
-        Attempts GPU acceleration first using DeviceContext and GPU kernels,
+        Attempts GPU acceleration first using hardware-agnostic DeviceContext and GPU kernels,
         automatically falls back to CPU implementation if GPU operations fail.
+        Works with all GPU hardware types (NVIDIA, AMD, Apple Metal, etc.).
         Ensures identical mathematical results between GPU and CPU paths.
 
         Args:
@@ -226,7 +228,10 @@ struct Matrix(Copyable, Movable):
 
     fn _gpu_multiply(self, other: Matrix, mut result: Matrix) raises -> Bool:
         """
-        GPU matrix multiplication implementation using DeviceContext API.
+        Hardware-agnostic GPU matrix multiplication implementation using DeviceContext API.
+
+        Uses MAX Engine DeviceContext to automatically detect and utilize available
+        GPU hardware (NVIDIA, AMD, Apple Metal, etc.) without vendor-specific code.
 
         Args:
             other: Second matrix for multiplication.
@@ -314,10 +319,11 @@ struct Matrix(Copyable, Movable):
 
     fn add_bias(mut self, bias: List[Float64]):
         """
-        GPU-accelerated bias addition with automatic CPU fallback.
+        Hardware-agnostic GPU-accelerated bias addition with automatic CPU fallback.
 
-        Attempts GPU acceleration first using DeviceContext and GPU kernels,
+        Attempts GPU acceleration first using hardware-agnostic DeviceContext and GPU kernels,
         automatically falls back to CPU implementation if GPU operations fail.
+        Works with all GPU hardware types (NVIDIA, AMD, Apple Metal, etc.).
         Ensures identical mathematical results between GPU and CPU paths.
 
         Args:
@@ -337,7 +343,10 @@ struct Matrix(Copyable, Movable):
 
     fn _gpu_add_bias(mut self, bias: List[Float64]) raises -> Bool:
         """
-        GPU bias addition implementation using DeviceContext API.
+        Hardware-agnostic GPU bias addition implementation using DeviceContext API.
+
+        Uses MAX Engine DeviceContext to automatically detect and utilize available
+        GPU hardware (NVIDIA, AMD, Apple Metal, etc.) without vendor-specific code.
 
         Args:
             bias: Bias vector to add to each row.
@@ -415,10 +424,11 @@ struct Matrix(Copyable, Movable):
 
     fn apply_activation(mut self, activation: String):
         """
-        GPU-accelerated activation function application with automatic CPU fallback.
+        Hardware-agnostic GPU-accelerated activation function application with automatic CPU fallback.
 
-        Attempts GPU acceleration first using DeviceContext and GPU kernels,
+        Attempts GPU acceleration first using hardware-agnostic DeviceContext and GPU kernels,
         automatically falls back to CPU implementation if GPU operations fail.
+        Works with all GPU hardware types (NVIDIA, AMD, Apple Metal, etc.).
         Ensures identical mathematical results between GPU and CPU paths.
 
         Args:
@@ -438,7 +448,10 @@ struct Matrix(Copyable, Movable):
 
     fn _gpu_apply_activation(mut self, activation: String) raises -> Bool:
         """
-        GPU activation function implementation using DeviceContext API.
+        Hardware-agnostic GPU activation function implementation using DeviceContext API.
+
+        Uses MAX Engine DeviceContext to automatically detect and utilize available
+        GPU hardware (NVIDIA, AMD, Apple Metal, etc.) without vendor-specific code.
 
         Args:
             activation: Activation function name.

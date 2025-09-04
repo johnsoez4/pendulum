@@ -9,7 +9,7 @@ tests = "sh test.sh"
 update = "sh update.sh"
 
 [dependencies]
-mojo = ">=25.6.0.dev2025082022"
+mojo = "<1.0.0"
 max = "*"
-python = ">=3.10,<3.13"
+python = ">=3.10,<3.14"
 pip = ">=24.3.1"

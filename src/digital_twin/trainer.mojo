@@ -24,7 +24,12 @@ alias PHYSICS_LOSS_WEIGHT = 0.1  # Weight for physics-informed loss
 
 @fieldwise_init
 struct TrainingBatch(Copyable, Movable):
-    """Training batch containing input and target data."""
+    """
+    Training batch containing input and target data for neural network training.
+
+    This struct represents a batch of training samples with corresponding inputs
+    and targets, along with the batch size for efficient processing.
+    """
 
     var inputs: List[List[Float64]]  # Batch of input vectors
     var targets: List[List[Float64]]  # Batch of target vectors
@@ -33,7 +38,12 @@ struct TrainingBatch(Copyable, Movable):
 
 @fieldwise_init
 struct TrainingMetrics(Copyable, Movable):
-    """Training metrics for monitoring progress."""
+    """
+    Training metrics for monitoring progress during neural network training.
+
+    Contains comprehensive metrics including losses, learning rate, and epoch
+    information for tracking training progress and performance.
+    """
 
     var epoch: Int  # Current epoch
     var train_loss: Float64  # Training loss
@@ -44,7 +54,12 @@ struct TrainingMetrics(Copyable, Movable):
 
 @fieldwise_init
 struct AdamOptimizer(Copyable, Movable):
-    """Adam optimizer for neural network training."""
+    """
+    Adam optimizer for neural network training with adaptive learning rates.
+
+    Implements the Adam optimization algorithm with momentum and adaptive
+    learning rate scaling for efficient neural network parameter updates.
+    """
 
     var learning_rate: Float64
     var beta1: Float64
@@ -78,7 +93,12 @@ struct AdamOptimizer(Copyable, Movable):
 
 @fieldwise_init
 struct ModelCheckpoint(Copyable, Movable):
-    """Model checkpoint for saving/loading trained models."""
+    """
+    Model checkpoint for saving and loading trained models.
+
+    Contains model state including parameters, training metrics, and timestamp
+    for model persistence and recovery during training.
+    """
 
     var epoch: Int
     var loss: Float64
@@ -87,11 +107,21 @@ struct ModelCheckpoint(Copyable, Movable):
 
 
 struct TrainingConfig:
-    """Configuration for training process."""
+    """
+    Configuration for training process with default parameter values.
+
+    Provides centralized configuration management for training hyperparameters
+    and settings used throughout the training pipeline.
+    """
 
     @staticmethod
     fn get_default_config() -> Dict[String, Float64]:
-        """Get default training configuration."""
+        """
+        Get default training configuration with standard hyperparameters.
+
+        Returns:
+            Dictionary containing default training configuration values.
+        """
         config = Dict[String, Float64]()
         config["learning_rate"] = LEARNING_RATE
         config["batch_size"] = Float64(BATCH_SIZE)
@@ -120,7 +150,7 @@ struct LossFunctions:
         if len(predictions) != len(targets):
             return 1000.0  # High penalty for mismatched dimensions
 
-        var total_error = 0.0
+        total_error = 0.0
         for i in range(len(predictions)):
             error = predictions[i] - targets[i]
             total_error += error * error
@@ -163,7 +193,7 @@ struct LossFunctions:
             energy_violation = abs(pred_energy - current_energy) / denominator
 
         # Constraint violation penalties
-        var constraint_penalty = 0.0
+        constraint_penalty = 0.0
         if len(predicted_state) >= 3:
             # Actuator position constraint
             if abs(predicted_state[0]) > 4.0:
@@ -311,9 +341,9 @@ struct PendulumTrainer(Copyable, Movable):
                 combined.append(target_data[i][j])
             combined_data.append(combined)
 
-        var split_result = DataSplitter.split_data(combined_data, val_ratio)
-        var train_split = split_result[0]
-        var val_split = split_result[1]
+        split_result = DataSplitter.split_data(combined_data, val_ratio)
+        train_split = split_result[0]
+        val_split = split_result[1]
 
         # Extract inputs and targets from split data
         train_inputs = List[List[Float64]]()
@@ -416,22 +446,38 @@ struct PendulumTrainer(Copyable, Movable):
         return True
 
     fn _train_epoch(mut self, batches: List[TrainingBatch]) -> Float64:
-        """Train for one epoch."""
-        var total_loss = 0.0
-        var total_samples = 0
+        """
+        Train for one epoch across all batches.
+
+        Args:
+            batches: List of training batches to process.
+
+        Returns:
+            Average training loss for the epoch.
+        """
+        total_loss = 0.0
+        total_samples = 0
 
         for i in range(len(batches)):
             batch = batches[i]
-            var batch_loss = self._train_batch(batch)
+            batch_loss = self._train_batch(batch)
             total_loss += batch_loss * Float64(batch.size)
             total_samples += batch.size
 
         return total_loss / Float64(total_samples) if total_samples > 0 else 0.0
 
     fn _train_batch(mut self, batch: TrainingBatch) -> Float64:
-        """Train on a single batch."""
+        """
+        Train on a single batch of data.
+
+        Args:
+            batch: Training batch containing inputs and targets.
+
+        Returns:
+            Average loss for the batch.
+        """
         # Simplified training step - in practice would involve forward/backward pass
-        var batch_loss = 0.0
+        batch_loss = 0.0
 
         for i in range(batch.size):
             if i < len(batch.inputs) and i < len(batch.targets):
@@ -446,8 +492,17 @@ struct PendulumTrainer(Copyable, Movable):
     fn _validate_epoch(
         self, val_inputs: List[List[Float64]], val_targets: List[List[Float64]]
     ) -> Float64:
-        """Validate for one epoch."""
-        var total_loss = 0.0
+        """
+        Validate model performance for one epoch.
+
+        Args:
+            val_inputs: Validation input data.
+            val_targets: Validation target data.
+
+        Returns:
+            Average validation loss for the epoch.
+        """
+        total_loss = 0.0
 
         for i in range(len(val_inputs)):
             if i < len(val_targets):
@@ -464,8 +519,17 @@ struct PendulumTrainer(Copyable, Movable):
     fn _compute_physics_loss(
         self, inputs: List[List[Float64]], targets: List[List[Float64]]
     ) -> Float64:
-        """Compute physics-informed loss component."""
-        var total_physics_loss = 0.0
+        """
+        Compute physics-informed loss component for training.
+
+        Args:
+            inputs: Input state data.
+            targets: Target state data.
+
+        Returns:
+            Average physics-informed loss across all samples.
+        """
+        total_physics_loss = 0.0
 
         for i in range(len(inputs)):
             if i < len(targets):
